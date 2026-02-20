@@ -1,5 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <ItemGroup>
+    <ProjectReference Include="..\ListingService.Domain\ListingService.Domain.csproj" />
+    <ProjectReference Include="..\ListingService.Application\ListingService.Application.csproj" />
+    <ProjectReference Include="..\ListingService.Infrastructure\ListingService.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.0.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

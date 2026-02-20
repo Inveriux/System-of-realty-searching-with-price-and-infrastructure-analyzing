@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="ListingService.Presentation/ListingService.Presentation.csproj" />
+  <Project Path="../../BasicBuildingBlocks/BasicBuildingBlocks.csproj" />
   <Project Path="ListingService.Application/ListingService.Application.csproj" />
   <Project Path="ListingService.Domain/ListingService.Domain.csproj" />
   <Project Path="ListingService.Infrastructure/ListingService.Infrastructure.csproj" />

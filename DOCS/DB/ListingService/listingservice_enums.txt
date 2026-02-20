@@ -1,0 +1,107 @@
+BuildingType:
+  1. Apartment Building (Multi-family)
+  2. Detached House
+  3. Townhouse
+  4. Business Center
+  5. Warehouse Complex
+  6. Industrial Building
+  7. Shopping Mall
+  8. Mixed-use Building
+  9. Other
+
+ListingType:
+  1. Sale
+  2. Rent
+
+BathroomType:
+  1. Combined (shared)
+  2. Separate
+  3. Two or more
+  4. Bathroom + WC (separate rooms)
+
+RenovationType:
+  1. No renovation / requires renovation
+  2. Cosmetic
+  3. Major / Capital
+  4. Designer
+  5. Shell & Core
+  6. Finished / Turnkey
+
+BuildingMaterial:
+  1. Brick
+  2. Panel
+  3. Monolith
+  4. Monolith-Brick
+  5. Wood
+  6. Block (foam/gas block)
+  7. Metal frame
+  8. Other
+
+WallMaterial:
+  1. Brick
+  2. Concrete
+  3. Sandwich panels
+  4. Metal
+  5. Wood
+  6. Block (foam/gas block)
+  7. Other
+
+HeatingType:
+  1. Central
+  2. Autonomous (building)
+  3. Individual gas boiler
+  4. Electric
+  5. Solid fuel
+  6. None
+
+WaterSupplyType:
+  1. Central
+  2. Well
+  3. Borehole
+  4. Delivered / tank
+  5. None
+
+SewerType:
+  1. Central
+  2. Septic tank
+  3. Cesspool
+  4. None
+
+GasType:
+  1. Central gas
+  2. Gas holder / tank
+  3. Bottled gas
+  4. None
+
+LandCategory:
+  1. Residential (IЖС)
+  2. Personal subsidiary plot (ЛПХ)
+  3. Garden / dacha (СНТ)
+  4. Agricultural
+  5. Industrial / commercial
+  6. Forestry / protected
+  7. Other
+
+RoadAccessType:
+  1. Asphalt
+  2. Gravel
+  3. Dirt road
+  4. No direct access / off-road
+
+ClassType:
+  1. A
+  2. B
+  3. C
+  4. D
+
+LayoutType:
+  1. Open space
+  2. Cabinet / rooms
+  3. Mixed
+  4. Coworking
+
+OfficeClass:
+  1. A
+  2. B+
+  3. B
+  4. C

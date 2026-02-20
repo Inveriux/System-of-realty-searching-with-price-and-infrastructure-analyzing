@@ -2,3 +2,5 @@ _Artifacts/
 bin/
 obj/
 .vscode/
+*.Development.json
+Directory.Build.props
