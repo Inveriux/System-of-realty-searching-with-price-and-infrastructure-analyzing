@@ -1,3 +1,5 @@
+using ListingService.Application.Common.Lookups.Abstractions;
+using ListingService.Application.Common.Lookups;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
@@ -13,5 +15,6 @@ public static class DependencyInjection
 
         services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        services.AddScoped(typeof(ILookupHandler<,>), typeof(LookupHandler<,>));
     }
 }

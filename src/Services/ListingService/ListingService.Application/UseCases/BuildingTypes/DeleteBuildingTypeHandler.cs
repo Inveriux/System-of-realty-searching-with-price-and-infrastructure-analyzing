@@ -1,0 +1,17 @@
+using ListingService.Application.Common.Lookups.Abstractions;
+using ListingService.Application.DTOs.Lookups;
+using ListingService.Domain.Models;
+using FluentResults;
+using MediatR;
+
+namespace ListingService.Application.UseCases.BuildingTypes;
+
+public sealed record DeleteBuildingTypeCommand(string TypeName) : IRequest<Result>;
+
+public sealed class DeleteBuildingTypeHandler(ILookupHandler<BuildingType, LookupTypeNameDto> lookupHandler)
+    : IRequestHandler<DeleteBuildingTypeCommand, Result>
+{
+    public async Task<Result> Handle(DeleteBuildingTypeCommand request,
+        CancellationToken cancellationToken)
+        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+}
