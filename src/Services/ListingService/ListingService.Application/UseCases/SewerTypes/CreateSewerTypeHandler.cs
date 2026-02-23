@@ -6,11 +6,11 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.SewerTypes;
 
-public sealed record CreateSewerTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record CreateSewerTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class CreateSewerTypeHandler(ILookupHandler<SewerType, LookupTypeNameDto> lookupHandler)
+public sealed class CreateSewerTypeHandler(ILookupHandler<SewerType, LookupNameDto> lookupHandler)
     : IRequestHandler<CreateSewerTypeCommand, Result>
 {
     public async Task<Result> Handle(CreateSewerTypeCommand request, CancellationToken cancellationToken)
-        => await lookupHandler.CreateAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.CreateAsync(new LookupNameDto { Name = request.Name }, cancellationToken);
 }

@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.WaterSupplyTypes;
 
-public sealed record DeleteWaterSupplyTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteWaterSupplyTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteWaterSupplyTypeHandler(ILookupHandler<WaterSupplyType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteWaterSupplyTypeHandler(ILookupHandler<WaterSupplyType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteWaterSupplyTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteWaterSupplyTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

@@ -18,7 +18,7 @@ internal class BuildingMaterialConfiguration : IEntityTypeConfiguration<Building
         builder.Property(x => x.Id)
             .IsRequired();
 
-        builder.Property(x => x.TypeName)
+        builder.Property(x => x.Name)
             .HasMaxLength(StringMaxLength)
             .IsRequired();
     }

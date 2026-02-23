@@ -1,0 +1,16 @@
+using ListingService.Application.UseCases.RoadAccessTypes;
+using FluentValidation;
+
+namespace ListingService.Application.Validators.Lookups;
+
+public class DeleteRoadAccessTypeValidator : AbstractValidator<DeleteRoadAccessTypeCommand>
+{
+    public const int MaximumLength = 100;
+
+    public DeleteRoadAccessTypeValidator()
+    {
+        RuleFor(x => x.Name)
+            .MaximumLength(MaximumLength)
+            .NotEmpty();
+    }
+}

@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.OfficeClasses;
 
-public record GetOfficeClassesQuery() : IRequest<Result<PagedResult<LookupClassNameDto>>>;
+public record GetOfficeClassesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetOfficeClassesHandler(ILookupHandler<OfficeClass, LookupClassNameDto> lookupHandler)
-    : IRequestHandler<GetOfficeClassesQuery, Result<PagedResult<LookupClassNameDto>>>
+public class GetOfficeClassesHandler(ILookupHandler<OfficeClass, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetOfficeClassesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupClassNameDto>>> Handle(GetOfficeClassesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetOfficeClassesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.LayoutTypes;
 
-public record GetLayoutTypesQuery() : IRequest<Result<PagedResult<LookupClassNameDto>>>;
+public record GetLayoutTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetLayoutTypesHandler(ILookupHandler<LayoutType, LookupClassNameDto> lookupHandler)
-    : IRequestHandler<GetLayoutTypesQuery, Result<PagedResult<LookupClassNameDto>>>
+public class GetLayoutTypesHandler(ILookupHandler<LayoutType, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetLayoutTypesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupClassNameDto>>> Handle(GetLayoutTypesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetLayoutTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

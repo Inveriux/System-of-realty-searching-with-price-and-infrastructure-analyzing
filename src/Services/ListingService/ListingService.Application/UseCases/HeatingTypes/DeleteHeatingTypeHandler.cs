@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.HeatingTypes;
 
-public sealed record DeleteHeatingTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteHeatingTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteHeatingTypeHandler(ILookupHandler<HeatingType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteHeatingTypeHandler(ILookupHandler<HeatingType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteHeatingTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteHeatingTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

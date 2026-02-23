@@ -11,9 +11,17 @@ builder.AddInfrastructure();
 
 var app = builder.Build();
 
-await app.InitializeDatabaseAsync();
+if(builder.Environment.IsDevelopment())
+{
+    await app.InitializeTestDatabaseAsync();
+}
 
 app.MapGet("/bathroom_types", async (ISender sender, 
     CancellationToken cancellationToken) => await sender.Send(new GetBathroomTypesQuery(), cancellationToken));
+
+app.MapPost("/bathroom_types/{name}", async (ISender sender, string name) =>
+{
+    await sender.Send(new CreateBathroomTypeCommand(name));
+});
 
 app.Run();

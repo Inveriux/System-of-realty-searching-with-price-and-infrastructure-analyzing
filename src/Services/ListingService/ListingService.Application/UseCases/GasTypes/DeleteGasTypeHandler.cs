@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.GasTypes;
 
-public sealed record DeleteGasTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteGasTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteGasTypeHandler(ILookupHandler<GasType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteGasTypeHandler(ILookupHandler<GasType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteGasTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteGasTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.LayoutTypes;
 
-public sealed record DeleteLayoutTypeCommand(string ClassName) : IRequest<Result>;
+public sealed record DeleteLayoutTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteLayoutTypeHandler(ILookupHandler<LayoutType, LookupClassNameDto> lookupHandler)
+public sealed class DeleteLayoutTypeHandler(ILookupHandler<LayoutType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteLayoutTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteLayoutTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.ClassName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

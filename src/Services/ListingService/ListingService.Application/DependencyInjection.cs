@@ -1,8 +1,11 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.Common.Lookups;
 using Microsoft.Extensions.DependencyInjection;
+using BasicBuildingBlocks.Behaviors;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
+using FluentValidation;
+using MediatR;
 
 namespace ListingService.Application;
 
@@ -14,7 +17,14 @@ public static class DependencyInjection
         var confgiuration = hostApplicationBuilder.Configuration;
 
         services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        });
         services.AddScoped(typeof(ILookupHandler<,>), typeof(LookupHandler<,>));
+
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }

@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.BuildingTypes;
 
-public sealed record DeleteBuildingTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteBuildingTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteBuildingTypeHandler(ILookupHandler<BuildingType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteBuildingTypeHandler(ILookupHandler<BuildingType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteBuildingTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteBuildingTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

@@ -6,11 +6,11 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.LandCategories;
 
-public sealed record CreateLandCategoryCommand(string TypeName) : IRequest<Result>;
+public sealed record CreateLandCategoryCommand(string Name) : IRequest<Result>;
 
-public sealed class CreateLandCategoryHandler(ILookupHandler<LandCategory, LookupTypeNameDto> lookupHandler)
+public sealed class CreateLandCategoryHandler(ILookupHandler<LandCategory, LookupNameDto> lookupHandler)
     : IRequestHandler<CreateLandCategoryCommand, Result>
 {
     public async Task<Result> Handle(CreateLandCategoryCommand request, CancellationToken cancellationToken)
-        => await lookupHandler.CreateAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.CreateAsync(new LookupNameDto { Name = request.Name }, cancellationToken);
 }

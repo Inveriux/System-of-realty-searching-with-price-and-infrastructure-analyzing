@@ -6,11 +6,11 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.WallMaterials;
 
-public sealed record CreateWallMaterialCommand(string TypeName) : IRequest<Result>;
+public sealed record CreateWallMaterialCommand(string Name) : IRequest<Result>;
 
-public sealed class CreateWallMaterialHandler(ILookupHandler<WallMaterial, LookupTypeNameDto> lookupHandler)
+public sealed class CreateWallMaterialHandler(ILookupHandler<WallMaterial, LookupNameDto> lookupHandler)
     : IRequestHandler<CreateWallMaterialCommand, Result>
 {
     public async Task<Result> Handle(CreateWallMaterialCommand request, CancellationToken cancellationToken)
-        => await lookupHandler.CreateAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.CreateAsync(new LookupNameDto { Name = request.Name }, cancellationToken);
 }

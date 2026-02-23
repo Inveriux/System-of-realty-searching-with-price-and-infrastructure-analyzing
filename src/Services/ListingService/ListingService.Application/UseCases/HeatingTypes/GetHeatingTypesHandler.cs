@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.HeatingTypes;
 
-public record GetHeatingTypesQuery() : IRequest<Result<PagedResult<LookupTypeNameDto>>>;
+public record GetHeatingTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetHeatingTypesHandler(ILookupHandler<HeatingType, LookupTypeNameDto> lookupHandler)
-    : IRequestHandler<GetHeatingTypesQuery, Result<PagedResult<LookupTypeNameDto>>>
+public class GetHeatingTypesHandler(ILookupHandler<HeatingType, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetHeatingTypesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupTypeNameDto>>> Handle(GetHeatingTypesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetHeatingTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

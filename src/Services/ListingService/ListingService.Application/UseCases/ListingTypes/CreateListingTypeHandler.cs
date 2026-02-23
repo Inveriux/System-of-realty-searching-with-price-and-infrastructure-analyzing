@@ -6,11 +6,11 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.ListingTypes;
 
-public sealed record CreateListingTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record CreateListingTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class CreateListingTypeHandler(ILookupHandler<ListingType, LookupTypeNameDto> lookupHandler)
+public sealed class CreateListingTypeHandler(ILookupHandler<ListingType, LookupNameDto> lookupHandler)
     : IRequestHandler<CreateListingTypeCommand, Result>
 {
     public async Task<Result> Handle(CreateListingTypeCommand request, CancellationToken cancellationToken)
-        => await lookupHandler.CreateAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.CreateAsync(new LookupNameDto { Name = request.Name }, cancellationToken);
 }

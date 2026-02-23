@@ -1,7 +1,7 @@
 using ListingService.Application.Contracts.Repositories;
 using BasicBuildingBlocks.Repositories;
-using BasicBuildingBlocks.Pages;
 using Microsoft.EntityFrameworkCore;
+using BasicBuildingBlocks.Pages;
 
 namespace ListingService.Infrastructure.Data.Repositories;
 
@@ -15,11 +15,13 @@ public class LookupRepository<TEntity>(ApplicationDbContext context) : BaseRepos
     public Task<TEntity?> GetByNameAsync(string name, CancellationToken cancellationToken)
         => context.Set<TEntity>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Equals(name), cancellationToken);
+            .FirstOrDefaultAsync(e => EF.Property<string>(e, "Name") == name, cancellationToken);
 
     public async Task<bool> DeleteByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var entity = await context.Set<TEntity>().FirstOrDefaultAsync(e => e.Equals(name), cancellationToken);
+        var entity = await context.Set<TEntity>()
+            .FirstOrDefaultAsync(e => EF.Property<string>(e, "Name") == name, cancellationToken);
+
         if (entity is null) 
             return false;
 

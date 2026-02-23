@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.ClassTypes;
 
-public sealed record DeleteClassTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteClassTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteClassTypeHandler(ILookupHandler<ClassType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteClassTypeHandler(ILookupHandler<ClassType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteClassTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteClassTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

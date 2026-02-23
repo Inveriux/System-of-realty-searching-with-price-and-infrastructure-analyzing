@@ -1,3 +1,4 @@
+using ListingService.Application.DTOs.Lookups.Abstractions;
 using BasicBuildingBlocks.Pages;
 
 namespace ListingService.Application.Contracts.Repositories;

@@ -1,12 +1,13 @@
+using ListingService.Application.DTOs.Lookups.Abstractions;
 using BasicBuildingBlocks.Pages;
 using FluentResults;
 
 namespace ListingService.Application.Common.Lookups.Abstractions;
 
-public interface ILookupHandler<Lookup, LookupDto> where Lookup : class 
-    where LookupDto : class
+public interface ILookupHandler<TLookup, TLookupDto> where TLookup : class 
+    where TLookupDto : ILookupDto
 {
-    Task<Result<PagedResult<LookupDto>>> GetAllAsync(CancellationToken cancellationToken);
-    Task<Result> CreateAsync(string name, CancellationToken cancellationToken);
+    Task<Result<PagedResult<TLookupDto>>> GetAllAsync(CancellationToken cancellationToken);
+    Task<Result> CreateAsync(TLookupDto lookupDto, CancellationToken cancellationToken);
     Task<Result> DeleteByNameAsync(string name, CancellationToken cancellationToken);
 }

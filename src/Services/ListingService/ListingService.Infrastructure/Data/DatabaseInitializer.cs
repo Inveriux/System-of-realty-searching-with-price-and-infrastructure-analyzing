@@ -7,7 +7,7 @@ namespace ListingService.Infrastructure.Data;
 
 public static class DatabaseInitialaizer
 {
-    public static void InitializeDatabase(this WebApplication application)
+    public static void InitializeTestDatabase(this WebApplication application)
     {
         var scope = application.Services.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseInitializer>();
@@ -15,7 +15,7 @@ public static class DatabaseInitialaizer
         initializer.Initialize();
     }
 
-    public static async Task InitializeDatabaseAsync(this WebApplication application)
+    public static async Task InitializeTestDatabaseAsync(this WebApplication application)
     {
         using var scope = application.Services.CreateAsyncScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseInitializer>();
@@ -54,6 +54,7 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
     {
         try
         {
+            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
         }
         catch (Exception ex)
@@ -66,6 +67,7 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
     {
         try
         {
+            await context.Database.EnsureDeletedAsync();
             await context.Database.EnsureCreatedAsync();
         }
         catch (Exception ex)
@@ -78,140 +80,140 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
 
     static readonly List<ListingType> listingTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000020001"), TypeName = "Sale" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000020002"), TypeName = "Rent" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000020001"), Name = "Sale" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000020002"), Name = "Rent" }
     ];
 
     static readonly List<BathroomType> bathroomTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030001"), TypeName = "Combined (shared)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030002"), TypeName = "Separate" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030003"), TypeName = "Two or more" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030004"), TypeName = "Bathroom + WC (separate rooms)" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030001"), Name = "Combined (shared)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030002"), Name = "Separate" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030003"), Name = "Two or more" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000030004"), Name = "Bathroom + WC (separate rooms)" }
     ];
 
     static readonly List<RenovationType> renovationTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040001"), TypeName = "No renovation / requires renovation" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040002"), TypeName = "Cosmetic" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040003"), TypeName = "Major / Capital" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040004"), TypeName = "Designer" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040005"), TypeName = "Shell & Core" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040006"), TypeName = "Finished / Turnkey" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040001"), Name = "No renovation / requires renovation" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040002"), Name = "Cosmetic" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040003"), Name = "Major / Capital" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040004"), Name = "Designer" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040005"), Name = "Shell & Core" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000040006"), Name = "Finished / Turnkey" }
     ];
 
     static readonly List<BuildingMaterial> buildingMaterials =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050001"), TypeName = "Brick" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050002"), TypeName = "Panel" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050003"), TypeName = "Monolith" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050004"), TypeName = "Monolith-Brick" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050005"), TypeName = "Wood" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050006"), TypeName = "Block (foam/gas block)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050007"), TypeName = "Metal frame" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050008"), TypeName = "Other" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050001"), Name = "Brick" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050002"), Name = "Panel" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050003"), Name = "Monolith" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050004"), Name = "Monolith-Brick" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050005"), Name = "Wood" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050006"), Name = "Block (foam/gas block)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050007"), Name = "Metal frame" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000050008"), Name = "Other" }
     ];
 
     static readonly List<WallMaterial> wallMaterials =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060001"), TypeName = "Brick" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060002"), TypeName = "Concrete" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060003"), TypeName = "Sandwich panels" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060004"), TypeName = "Metal" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060005"), TypeName = "Wood" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060006"), TypeName = "Block (foam/gas block)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060007"), TypeName = "Other" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060001"), Name = "Brick" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060002"), Name = "Concrete" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060003"), Name = "Sandwich panels" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060004"), Name = "Metal" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060005"), Name = "Wood" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060006"), Name = "Block (foam/gas block)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000060007"), Name = "Other" }
     ];
 
     static readonly List<HeatingType> heatingTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070001"), TypeName = "Central" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070002"), TypeName = "Autonomous (building)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070003"), TypeName = "Individual gas boiler" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070004"), TypeName = "Electric" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070005"), TypeName = "Solid fuel" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070006"), TypeName = "None" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070001"), Name = "Central" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070002"), Name = "Autonomous (building)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070003"), Name = "Individual gas boiler" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070004"), Name = "Electric" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070005"), Name = "Solid fuel" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000070006"), Name = "None" }
     ];
 
     static readonly List<WaterSupplyType> waterSupplyTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080001"), TypeName = "Central" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080002"), TypeName = "Well" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080003"), TypeName = "Borehole" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080004"), TypeName = "Delivered / tank" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080005"), TypeName = "None" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080001"), Name = "Central" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080002"), Name = "Well" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080003"), Name = "Borehole" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080004"), Name = "Delivered / tank" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000080005"), Name = "None" }
     ];
 
     static readonly List<SewerType> sewerTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090001"), TypeName = "Central" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090002"), TypeName = "Septic tank" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090003"), TypeName = "Cesspool" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090004"), TypeName = "None" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090001"), Name = "Central" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090002"), Name = "Septic tank" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090003"), Name = "Cesspool" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000090004"), Name = "None" }
     ];
 
     static readonly List<GasType> gasTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0001"), TypeName = "Central gas" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0002"), TypeName = "Gas holder / tank" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0003"), TypeName = "Bottled gas" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0004"), TypeName = "None" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0001"), Name = "Central gas" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0002"), Name = "Gas holder / tank" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0003"), Name = "Bottled gas" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000A0004"), Name = "None" }
     ];
 
     static readonly List<LandCategory> landCategories =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0001"), TypeName = "Residential (IЖС)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0002"), TypeName = "Personal subsidiary plot (ЛПХ)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0003"), TypeName = "Garden / dacha (СНТ)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0004"), TypeName = "Agricultural" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0005"), TypeName = "Industrial / commercial" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0006"), TypeName = "Forestry / protected" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0007"), TypeName = "Other" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0001"), Name = "Residential (IЖС)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0002"), Name = "Personal subsidiary plot (ЛПХ)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0003"), Name = "Garden / dacha (СНТ)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0004"), Name = "Agricultural" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0005"), Name = "Industrial / commercial" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0006"), Name = "Forestry / protected" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000B0007"), Name = "Other" }
     ];
 
     static readonly List<RoadAccessType> roadAccessTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0001"), TypeName = "Asphalt" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0002"), TypeName = "Gravel" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0003"), TypeName = "Dirt road" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0004"), TypeName = "No direct access / off-road" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0001"), Name = "Asphalt" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0002"), Name = "Gravel" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0003"), Name = "Dirt road" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000C0004"), Name = "No direct access / off-road" }
     ];
 
     static readonly List<ClassType> classTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0001"), TypeName = "A" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0002"), TypeName = "B" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0003"), TypeName = "C" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0004"), TypeName = "D" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0001"), Name = "A" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0002"), Name = "B" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0003"), Name = "C" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000D0004"), Name = "D" }
     ];
 
     static readonly List<LayoutType> layoutTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0001"), ClassName = "Open space" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0002"), ClassName = "Cabinet / rooms" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0003"), ClassName = "Mixed" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0004"), ClassName = "Coworking" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0001"), Name = "Open space" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0002"), Name = "Cabinet / rooms" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0003"), Name = "Mixed" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000E0004"), Name = "Coworking" }
     ];
 
     static readonly List<OfficeClass> officeClasses =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0001"), ClassName = "A" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0002"), ClassName = "B+" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0003"), ClassName = "B" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0004"), ClassName = "C" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0001"), Name = "A" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0002"), Name = "B+" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0003"), Name = "B" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-0000000F0004"), Name = "C" }
     ];
 
     static readonly List<BuildingType> buildingTypes =
     [
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010001"), TypeName = "Apartment Building (Multi-family)" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010002"), TypeName = "Detached House" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010003"), TypeName = "Townhouse" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010004"), TypeName = "Business Center" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010005"), TypeName = "Warehouse Complex" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010006"), TypeName = "Industrial Building" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010007"), TypeName = "Shopping Mall" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010008"), TypeName = "Mixed-use Building" },
-        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010009"), TypeName = "Other" }
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010001"), Name = "Apartment Building (Multi-family)" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010002"), Name = "Detached House" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010003"), Name = "Townhouse" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010004"), Name = "Business Center" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010005"), Name = "Warehouse Complex" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010006"), Name = "Industrial Building" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010007"), Name = "Shopping Mall" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010008"), Name = "Mixed-use Building" },
+        new() { Id = Guid.Parse("00000000-0000-0000-0000-000000010009"), Name = "Other" }
     ];
 
 #endregion

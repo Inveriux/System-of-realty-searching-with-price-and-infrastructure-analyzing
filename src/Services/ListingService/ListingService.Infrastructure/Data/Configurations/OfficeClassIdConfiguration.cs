@@ -18,7 +18,7 @@ internal class OfficeClassIdConfiguration : IEntityTypeConfiguration<OfficeClass
         builder.Property(x => x.Id)
             .IsRequired();
 
-        builder.Property(x => x.ClassName)
+        builder.Property(x => x.Name)
             .HasMaxLength(StringMaxLength)
             .IsRequired();
     }

@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.WallMaterials;
 
-public record GetWallMaterialsQuery() : IRequest<Result<PagedResult<LookupTypeNameDto>>>;
+public record GetWallMaterialsQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetWallMaterialsHandler(ILookupHandler<WallMaterial, LookupTypeNameDto> lookupHandler)
-    : IRequestHandler<GetWallMaterialsQuery, Result<PagedResult<LookupTypeNameDto>>>
+public class GetWallMaterialsHandler(ILookupHandler<WallMaterial, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetWallMaterialsQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupTypeNameDto>>> Handle(GetWallMaterialsQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetWallMaterialsQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

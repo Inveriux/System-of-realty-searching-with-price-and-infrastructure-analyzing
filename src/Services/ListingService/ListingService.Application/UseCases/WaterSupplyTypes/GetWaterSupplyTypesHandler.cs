@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.WaterSupplyTypes;
 
-public record GetWaterSupplyTypesQuery() : IRequest<Result<PagedResult<LookupTypeNameDto>>>;
+public record GetWaterSupplyTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetWaterSupplyTypesHandler(ILookupHandler<WaterSupplyType, LookupTypeNameDto> lookupHandler)
-    : IRequestHandler<GetWaterSupplyTypesQuery, Result<PagedResult<LookupTypeNameDto>>>
+public class GetWaterSupplyTypesHandler(ILookupHandler<WaterSupplyType, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetWaterSupplyTypesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupTypeNameDto>>> Handle(GetWaterSupplyTypesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetWaterSupplyTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

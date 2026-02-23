@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.RoadAccessTypes;
 
-public sealed record DeleteRoadAccessTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteRoadAccessTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteRoadAccessTypeHandler(ILookupHandler<RoadAccessType, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteRoadAccessTypeHandler(ILookupHandler<RoadAccessType, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteRoadAccessTypeCommand, Result>
 {
     public async Task<Result> Handle(DeleteRoadAccessTypeCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

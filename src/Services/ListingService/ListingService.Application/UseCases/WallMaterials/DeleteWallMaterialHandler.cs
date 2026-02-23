@@ -6,12 +6,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.WallMaterials;
 
-public sealed record DeleteWallMaterialCommand(string TypeName) : IRequest<Result>;
+public sealed record DeleteWallMaterialCommand(string Name) : IRequest<Result>;
 
-public sealed class DeleteWallMaterialHandler(ILookupHandler<WallMaterial, LookupTypeNameDto> lookupHandler)
+public sealed class DeleteWallMaterialHandler(ILookupHandler<WallMaterial, LookupNameDto> lookupHandler)
     : IRequestHandler<DeleteWallMaterialCommand, Result>
 {
     public async Task<Result> Handle(DeleteWallMaterialCommand request,
         CancellationToken cancellationToken)
-        => await lookupHandler.DeleteByNameAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.DeleteByNameAsync(request.Name, cancellationToken);
 }

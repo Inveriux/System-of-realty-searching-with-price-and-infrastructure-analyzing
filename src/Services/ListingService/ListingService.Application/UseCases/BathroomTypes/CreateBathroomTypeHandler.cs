@@ -7,11 +7,11 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.BathroomTypes;
 
-public sealed record CreateBathroomTypeCommand(string TypeName) : IRequest<Result>;
+public sealed record CreateBathroomTypeCommand(string Name) : IRequest<Result>;
 
-public sealed class CreateBathroomTypeHandler(ILookupHandler<BathroomType, LookupTypeNameDto> lookupHandler) 
+public sealed class CreateBathroomTypeHandler(ILookupHandler<BathroomType, LookupNameDto> lookupHandler) 
     : IRequestHandler<CreateBathroomTypeCommand, Result>
 {
     public async Task<Result> Handle(CreateBathroomTypeCommand request, CancellationToken cancellationToken)
-        => await lookupHandler.CreateAsync(request.TypeName, cancellationToken);
+        => await lookupHandler.CreateAsync(new LookupNameDto { Name = request.Name }, cancellationToken);
 }

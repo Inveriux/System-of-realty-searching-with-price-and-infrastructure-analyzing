@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.GasTypes;
 
-public record GetGasTypesQuery() : IRequest<Result<PagedResult<LookupTypeNameDto>>>;
+public record GetGasTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetGasTypesHandler(ILookupHandler<GasType, LookupTypeNameDto> lookupHandler)
-    : IRequestHandler<GetGasTypesQuery, Result<PagedResult<LookupTypeNameDto>>>
+public class GetGasTypesHandler(ILookupHandler<GasType, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetGasTypesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupTypeNameDto>>> Handle(GetGasTypesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetGasTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

@@ -7,12 +7,12 @@ using MediatR;
 
 namespace ListingService.Application.UseCases.ClassTypes;
 
-public record GetClassTypesQuery() : IRequest<Result<PagedResult<LookupTypeNameDto>>>;
+public record GetClassTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
 
-public class GetClassTypesHandler(ILookupHandler<ClassType, LookupTypeNameDto> lookupHandler)
-    : IRequestHandler<GetClassTypesQuery, Result<PagedResult<LookupTypeNameDto>>>
+public class GetClassTypesHandler(ILookupHandler<ClassType, LookupNameDto> lookupHandler)
+    : IRequestHandler<GetClassTypesQuery, Result<PagedResult<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupTypeNameDto>>> Handle(GetClassTypesQuery request,
+    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetClassTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }
