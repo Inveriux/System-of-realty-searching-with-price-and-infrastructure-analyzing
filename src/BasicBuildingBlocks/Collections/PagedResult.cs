@@ -1,8 +1,7 @@
-using AutoMapper;
 using BasicBuildingBlocks.Extensions.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-namespace BasicBuildingBlocks.Pages;
+namespace BasicBuildingBlocks.Collections;
 
 public sealed record PagedRequest(int PageNumber, int PageSize);
 

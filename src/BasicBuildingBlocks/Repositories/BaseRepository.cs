@@ -1,5 +1,5 @@
 using BasicBuildingBlocks.Extensions.Repositories;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 

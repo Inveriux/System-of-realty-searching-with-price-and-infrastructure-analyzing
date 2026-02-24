@@ -11,6 +11,8 @@ public class DeleteWallMaterialValidator : AbstractValidator<DeleteWallMaterialC
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .NotEmpty();
+            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .NotEmpty()
+            .WithMessage("Name of wall material shouldn't be empty.");
     }
 }

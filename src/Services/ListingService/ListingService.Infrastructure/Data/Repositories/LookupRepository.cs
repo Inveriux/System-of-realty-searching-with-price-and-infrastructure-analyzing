@@ -1,7 +1,7 @@
 using ListingService.Application.Contracts.Repositories;
 using BasicBuildingBlocks.Repositories;
 using Microsoft.EntityFrameworkCore;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 
 namespace ListingService.Infrastructure.Data.Repositories;
 

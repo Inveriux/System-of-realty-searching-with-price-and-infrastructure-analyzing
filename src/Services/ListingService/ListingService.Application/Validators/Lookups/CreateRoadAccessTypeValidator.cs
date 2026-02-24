@@ -11,6 +11,8 @@ public class CreateRoadAccessTypeValidator : AbstractValidator<CreateRoadAccessT
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .NotEmpty();
+            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .NotEmpty()
+            .WithMessage("Name of road access type shouldn't be empty.");
     }
 }

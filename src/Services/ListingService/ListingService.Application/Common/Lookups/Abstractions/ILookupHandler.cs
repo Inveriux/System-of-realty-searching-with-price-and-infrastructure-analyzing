@@ -1,5 +1,5 @@
 using ListingService.Application.DTOs.Lookups.Abstractions;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 using FluentResults;
 
 namespace ListingService.Application.Common.Lookups.Abstractions;

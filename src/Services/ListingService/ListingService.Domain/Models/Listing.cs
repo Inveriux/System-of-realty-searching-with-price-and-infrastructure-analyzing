@@ -1,7 +1,7 @@
-namespace ListingService.Domain.Models;
-
 using ListingService.Domain.Abstractions;
 using ListingService.Domain.Enums;
+
+namespace ListingService.Domain.Models;
 
 public class Listing : Entity<Guid>
 {

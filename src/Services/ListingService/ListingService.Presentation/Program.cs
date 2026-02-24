@@ -1,27 +1,28 @@
-using ListingService.Application.UseCases.BathroomTypes;
+using BasicBuildingBlocks.Endpoints.Extensions;
 using ListingService.Infrastructure.Data;
 using ListingService.Infrastructure;
+using BasicBuildingBlocks.Handlers;
 using ListingService.Application;
-using MediatR;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApplication();
 builder.AddInfrastructure();
 
+builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if(builder.Environment.IsDevelopment())
 {
     await app.InitializeTestDatabaseAsync();
 }
 
-app.MapGet("/bathroom_types", async (ISender sender, 
-    CancellationToken cancellationToken) => await sender.Send(new GetBathroomTypesQuery(), cancellationToken));
-
-app.MapPost("/bathroom_types/{name}", async (ISender sender, string name) =>
-{
-    await sender.Send(new CreateBathroomTypeCommand(name));
-});
+app.RegisterEndpoints(Assembly.GetExecutingAssembly());
+app.MapGet("/", () => "Listning Service is work.");
 
 app.Run();

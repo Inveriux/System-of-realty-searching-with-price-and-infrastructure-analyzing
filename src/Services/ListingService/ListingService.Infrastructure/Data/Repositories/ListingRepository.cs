@@ -2,7 +2,7 @@ using ListingService.Application.Contracts.Repositories;
 using BasicBuildingBlocks.Extensions.Repositories;
 using Microsoft.EntityFrameworkCore;
 using ListingService.Domain.Models;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 
 namespace ListingService.Infrastructure.Data.Repositories;
 

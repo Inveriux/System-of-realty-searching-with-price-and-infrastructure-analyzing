@@ -11,6 +11,8 @@ public class DeleteBuildingTypeValidator : AbstractValidator<DeleteBuildingTypeC
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .NotEmpty();
+            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .NotEmpty()
+            .WithMessage("Name of building type shouldn't be empty.");
     }
 }

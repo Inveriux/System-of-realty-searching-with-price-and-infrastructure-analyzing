@@ -1,5 +1,5 @@
 using ListingService.Domain.Models;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 
 namespace ListingService.Application.Contracts.Repositories;
 

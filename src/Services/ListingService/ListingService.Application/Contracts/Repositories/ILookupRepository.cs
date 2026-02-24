@@ -1,5 +1,5 @@
 using ListingService.Application.DTOs.Lookups.Abstractions;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 
 namespace ListingService.Application.Contracts.Repositories;
 

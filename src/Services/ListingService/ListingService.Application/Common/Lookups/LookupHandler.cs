@@ -1,7 +1,7 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.DTOs.Lookups.Abstractions;
 using Microsoft.EntityFrameworkCore;
-using BasicBuildingBlocks.Pages;
+using BasicBuildingBlocks.Collections;
 using FluentResults;
 using AutoMapper;
 
@@ -45,11 +45,18 @@ public class LookupHandler<Lookup, LookupDto>(IRepositoryManager repositoryManag
 
     public async Task<Result> DeleteByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var result = await repositoryManager.GetLookup<Lookup>()
+        await repositoryManager.GetLookup<Lookup>()
             .DeleteByNameAsync(name, cancellationToken);
 
-        return result
-            ? Result.Ok()
-            : Result.Fail($"{typeof(Lookup).Name} not found or could not be deleted.");
+        try
+        {
+            await repositoryManager.SaveChangesAsync(cancellationToken);
+            return Result.Ok();
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result.Fail($"{typeof(Lookup).Name} not found or could not be deleted.")
+                .WithError(ex.Message);
+        }
     }
 }

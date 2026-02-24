@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using FluentValidation;
 using MediatR;
+using FluentResults;
 
 namespace ListingService.Application;
 
