@@ -1,10 +1,10 @@
-using ListingService.Application.DTOs.Listing.Abstractions;
+using ListingService.Application.DTOs.Listings.Abstractions;
 using ListingService.Domain.Models;
 using AutoMapper;
 
-namespace ListingService.Application.DTOs.Listing;
+namespace ListingService.Application.DTOs.Listings;
 
-public class ApartmentDetailDto : IDetailListingDto
+public class ApartmentDetailsDto : IListingDetailsDto
 {
     public int? Rooms { get; set; }
     public int? Bedrooms { get; set; }
@@ -27,7 +27,7 @@ public class ApartmentDetailDto : IDetailListingDto
     {
         public Mapping()
         {
-            CreateMap<ApartmentDetails, ApartmentDetailDto>();
+            CreateMap<ApartmentDetails, ApartmentDetailsDto>();
         }
     }
 }

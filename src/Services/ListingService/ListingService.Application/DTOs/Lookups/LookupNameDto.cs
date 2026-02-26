@@ -7,7 +7,7 @@ namespace ListingService.Application.DTOs.Lookups;
 
 public class LookupNameDto : ILookupDto
 {
-    public required string Name { get; set; } 
+    public required string Name { get; init; } 
 
     private class Mapping : Profile
     {

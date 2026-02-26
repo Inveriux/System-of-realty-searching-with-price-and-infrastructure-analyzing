@@ -1,6 +1,8 @@
+using ListingService.Domain.Abstractions;
+
 namespace ListingService.Domain.Models;
 
-public class WarehouseDetails
+public class WarehouseDetails : IListingDetails
 {
     public decimal? PlotArea { get; set; }
     public decimal? CeilingHeight { get; set; }

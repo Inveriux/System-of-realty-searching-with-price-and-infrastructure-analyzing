@@ -2,5 +2,5 @@ namespace ListingService.Application.DTOs.Lookups.Abstractions;
 
 public interface ILookupDto
 {
-    string Name {get; set;}
+    string Name { get; init; }
 }

@@ -6,7 +6,7 @@ using MediatR;
 
 public class BuildingTypesEndpoints : IEndpointRegistrar
 {
-    public RouteGroupBuilder RegisterEndpoints(WebApplication application)
+    public RouteGroupBuilder MapEndpoints(WebApplication application)
     {
         var groupName = GetType().Name;
 

@@ -16,11 +16,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
 #region Listing details
 
-    public DbSet<ApartmentDetails> ListingApartmentDetails { get; set; }
-    public DbSet<HouseDetails> ListingHouseDetails { get; set; }
-    public DbSet<LandDetails> ListingLandDetails { get; set; }
-    public DbSet<OfficeDetails> ListingOfficeDetails { get; set; }
-    public DbSet<WarehouseDetails> ListingWarehouseDetails { get; set; }
+    public DbSet<ApartmentDetails> ApartmentDetails { get; set; }
+    public DbSet<HouseDetails> HouseDetails { get; set; }
+    public DbSet<LandDetails> LandDetails { get; set; }
+    public DbSet<OfficeDetails> OfficeDetails { get; set; }
+    public DbSet<WarehouseDetails> WarehouseDetails { get; set; }
 
 #endregion
 

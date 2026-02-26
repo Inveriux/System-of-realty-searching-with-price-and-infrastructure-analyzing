@@ -1,6 +1,8 @@
+using ListingService.Domain.Abstractions;
+
 namespace ListingService.Domain.Models;
 
-public class LandDetails
+public class LandDetails : IListingDetails
 {
     public decimal? PlotArea { get; set; }
     public string? AllowedUse { get; set; }
@@ -10,6 +12,7 @@ public class LandDetails
     public bool? HasSewer { get; set; }
     public bool? HasBuildings { get; set; }
 
+    public string ListingDetailsType { get; set; } = null!;
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
     public Guid LandCategoryId { get; set; }

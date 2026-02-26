@@ -1,6 +1,8 @@
+using ListingService.Domain.Abstractions;
+
 namespace ListingService.Domain.Models;
 
-public class ApartmentDetails
+public class ApartmentDetails : IListingDetails
 {
     public int? Rooms { get; set; }
     public int? Bedrooms { get; set; }
@@ -16,10 +18,10 @@ public class ApartmentDetails
 
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
-    public Guid BathroomTypeId { get; set; }
+    public Guid? BathroomTypeId { get; set; }
     public BathroomType? BathroomType { get; set; }
-    public Guid RenovationTypeId { get; set; }
+    public Guid? RenovationTypeId { get; set; }
     public RenovationType? RenovationType { get; set; }
-    public Guid BuildingMaterialId { get; set; }
+    public Guid? BuildingMaterialId { get; set; }
     public BuildingMaterial? BuildingMaterial { get; set; }
 }

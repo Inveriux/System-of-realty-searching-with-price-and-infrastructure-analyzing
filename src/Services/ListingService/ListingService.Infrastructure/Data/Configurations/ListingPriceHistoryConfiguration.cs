@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 using ListingService.Domain.Models;
 
 namespace ListingService.Infrastructure.Data.Configurations;
@@ -7,7 +7,7 @@ namespace ListingService.Infrastructure.Data.Configurations;
 internal class ListingPriceHistoryConfiguration : IEntityTypeConfiguration<ListingPriceHistory>
 {
     private const string TableName = "listing_price_history";
-    private const int StringMaxLength = 100;
+    private const int StringMaxLength = 5;
 
     public void Configure(EntityTypeBuilder<ListingPriceHistory> builder)
     {
@@ -29,7 +29,7 @@ internal class ListingPriceHistoryConfiguration : IEntityTypeConfiguration<Listi
             .HasMaxLength(StringMaxLength)
             .IsRequired();
 
-        builder.Property(x => x.PreviousPrice)
-            .IsRequired();
+        builder.HasIndex(x => x.ChangedAt);
+        builder.HasIndex(x => x.ListingId);
     }
 }

@@ -1,6 +1,8 @@
+using ListingService.Domain.Abstractions;
+
 namespace ListingService.Domain.Models;
 
-public class HouseDetails
+public class HouseDetails : IListingDetails
 {
     public int? Rooms { get; set; }
     public int? Bedrooms { get; set; }

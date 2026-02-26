@@ -23,15 +23,6 @@ internal class ApartmentDetailsConfiguration : IEntityTypeConfiguration<Apartmen
             .HasForeignKey<ApartmentDetails>(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(x => x.BathroomTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.RenovationTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.BuildingMaterialId)
-            .IsRequired();
-
         builder.HasOne(x => x.BathroomType)
             .WithMany()
             .HasForeignKey(x => x.BathroomTypeId);

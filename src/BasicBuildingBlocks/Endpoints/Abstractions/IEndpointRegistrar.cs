@@ -5,5 +5,5 @@ namespace BasicBuildingBlocks.Endpoints.Abstractions;
 
 public interface IEndpointRegistrar
 {
-    RouteGroupBuilder RegisterEndpoints(WebApplication application);
+    RouteGroupBuilder MapEndpoints(WebApplication application);
 }

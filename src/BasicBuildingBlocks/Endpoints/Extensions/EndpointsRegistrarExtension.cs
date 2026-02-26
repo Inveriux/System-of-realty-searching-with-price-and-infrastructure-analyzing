@@ -6,7 +6,7 @@ namespace BasicBuildingBlocks.Endpoints.Extensions;
 
 public static class EndpointsRegistrarExtension
 {
-    public static WebApplication RegisterEndpoints(this WebApplication application, Assembly assembly)
+    public static WebApplication MapEndpoints(this WebApplication application, Assembly assembly)
     {
         var endpointObjectType = typeof(IEndpointRegistrar);
 
@@ -21,15 +21,15 @@ public static class EndpointsRegistrarExtension
         {
             if(Activator.CreateInstance(endpointGroup) is IEndpointRegistrar instance)
             {
-                instance.RegisterEndpoints(application);
+                instance.MapEndpoints(application);
             }
         }
 
         return application;
     }
 
-    public static WebApplication RegisterEndpoints(this WebApplication application)
+    public static WebApplication MapEndpoints(this WebApplication application)
     {
-        return RegisterEndpoints(application, Assembly.GetExecutingAssembly());
+        return MapEndpoints(application, Assembly.GetExecutingAssembly());
     }
 }

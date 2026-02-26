@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 using ListingService.Domain.Models;
 
 namespace ListingService.Infrastructure.Data.Configurations;
@@ -14,9 +14,9 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.ToTable(TableName);
 
         builder.HasKey(x => x.Id);
-
         builder.Property(x => x.Id)
-            .IsRequired();
+            .IsRequired()
+            .ValueGeneratedNever();
 
         builder.Property(x => x.AgentId)
             .IsRequired();
@@ -69,5 +69,8 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .WithOne(x => x.Listing)
             .HasForeignKey(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Ignore(x => x.ListingDetails);
+
     }
 }

@@ -1,4 +1,3 @@
-using ListingService.Application.DTOs.Lookups.Abstractions;
 using BasicBuildingBlocks.Collections;
 
 namespace ListingService.Application.Contracts.Repositories;

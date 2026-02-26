@@ -64,5 +64,6 @@ internal class ListingHouseDetailsConfiguration : IEntityTypeConfiguration<House
         builder.HasOne(x => x.GasType)
             .WithMany()
             .HasForeignKey(x => x.GasTypeId);
+
     }
 }

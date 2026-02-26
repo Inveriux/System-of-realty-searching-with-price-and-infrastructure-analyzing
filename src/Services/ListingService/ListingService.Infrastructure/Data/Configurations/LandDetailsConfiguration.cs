@@ -38,5 +38,7 @@ internal class ListingLandDetailsConfiguration : IEntityTypeConfiguration<LandDe
         builder.HasOne(x => x.RoadAccessType)
             .WithMany()
             .HasForeignKey(x => x.RoadAccessTypeId);
+
+        builder.Ignore(x => x.ListingDetailsType);
     }
 }

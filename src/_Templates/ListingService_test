@@ -1,0 +1,167 @@
+POST /api/listings
+
+{
+  "listingDto": {
+    "agentId": "11111111-1111-1111-1111-111111111111",
+    "addressText": "Apartment test address",
+    "title": "2-room apartment for rent",
+    "description": "Test create apartment listing",
+    "priceAmount": 1200,
+    "priceCurrency": "USD",
+    "pricePeriod": "Month",
+    "areaTotal": 68.5,
+    "buildYear": 2018,
+    "publishedDate": "2026-02-26T10:00:00Z",
+    "addressId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "buildingTypeId": "00000000-0000-0000-0000-000000010001",
+    "listingTypeId": "00000000-0000-0000-0000-000000020002",
+    "status": "Active",
+    "listingDetailsType": "Apartment",
+    "listingDetails": {
+      "rooms": 2,
+      "bedrooms": 1,
+      "floorsTotal": 16,
+      "levels": 1,
+      "floor": 7,
+      "areaLiving": 32.4,
+      "areaKitchen": 11.2,
+      "hasBalcony": true,
+      "hasLoggia": false,
+      "hasElevator": true,
+      "ceilingHeight": 2.8,
+      "bathroomTypeId": "00000000-0000-0000-0000-000000030002",
+      "renovationTypeId": "00000000-0000-0000-0000-000000040004",
+      "buildingMaterialId": "00000000-0000-0000-0000-000000050003"
+    }
+  }
+}
+
+{
+  "listingDto": {
+    "agentId": "22222222-2222-2222-2222-222222222222",
+    "addressText": "House test address",
+    "title": "Detached house for sale",
+    "description": "Test create house listing",
+    "priceAmount": 245000,
+    "priceCurrency": "USD",
+    "areaTotal": 140.0,
+    "buildYear": 2012,
+    "publishedDate": "2026-02-26T10:05:00Z",
+    "addressId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "buildingTypeId": "00000000-0000-0000-0000-000000010002",
+    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "status": "Active",
+    "listingDetailsType": "House",
+    "listingDetails": {
+      "rooms": 5,
+      "bedrooms": 3,
+      "floors": 2,
+      "houseArea": 140.0,
+      "plotArea": 600.0,
+      "hasElectricity": true,
+      "hasGarage": true,
+      "hasBasement": false,
+      "hasFence": true,
+      "wallMaterialId": "00000000-0000-0000-0000-000000060001",
+      "heatingTypeId": "00000000-0000-0000-0000-000000070003",
+      "sewerTypeId": "00000000-0000-0000-0000-000000090002",
+      "gasTypeId": "00000000-0000-0000-0000-0000000A0001",
+      "roofMaterialId": "00000000-0000-0000-0000-000000060004",
+      "waterSupplyTypeId": "00000000-0000-0000-0000-000000080001"
+    }
+  }
+}
+
+{
+  "listingDto": {
+    "agentId": "33333333-3333-3333-3333-333333333333",
+    "addressText": "Office test address",
+    "title": "Office for rent in business center",
+    "description": "Test create office listing",
+    "priceAmount": 3500,
+    "priceCurrency": "USD",
+    "pricePeriod": "Month",
+    "areaTotal": 120.0,
+    "buildYear": 2020,
+    "publishedDate": "2026-02-26T10:10:00Z",
+    "addressId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    "buildingTypeId": "00000000-0000-0000-0000-000000010004",
+    "listingTypeId": "00000000-0000-0000-0000-000000020002",
+    "status": "Active",
+    "listingDetailsType": "Office",
+    "listingDetails": {
+      "plotArea": 0,
+      "floor": 9,
+      "floorsTotal": 18,
+      "levels": 1,
+      "parkingSpaces": 2,
+      "kitchenette": true,
+      "officeClassId": "00000000-0000-0000-0000-0000000F0002",
+      "layoutTypeId": "00000000-0000-0000-0000-0000000E0001",
+      "renovationTypeId": "00000000-0000-0000-0000-0000000E0003",
+      "parkingTypeId": "00000000-0000-0000-0000-0000000E0002"
+    }
+  }
+}
+
+{
+  "listingDto": {
+    "agentId": "44444444-4444-4444-4444-444444444444",
+    "addressText": "Warehouse test address",
+    "title": "Warehouse complex for sale",
+    "description": "Test create warehouse listing",
+    "priceAmount": 780000,
+    "priceCurrency": "USD",
+    "areaTotal": 2500.0,
+    "buildYear": 2016,
+    "publishedDate": "2026-02-26T10:15:00Z",
+    "addressId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+    "buildingTypeId": "00000000-0000-0000-0000-000000010005",
+    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "status": "Active",
+    "listingDetailsType": "Warehouse",
+    "listingDetails": {
+      "plotArea": 5200.0,
+      "ceilingHeight": 10.5,
+      "floorLoadTonsPerSquareMeter": 7.5,
+      "gateCount": 6,
+      "hasDockLevelers": true,
+      "dockCount": 4,
+      "hasRamps": true,
+      "powerKw": 350.0,
+      "hasOffice": true,
+      "officeArea": 180.0,
+      "classTypeId": "00000000-0000-0000-0000-0000000D0001",
+      "heatingTypeId": "00000000-0000-0000-0000-000000070001"
+    }
+  }
+}
+
+{
+  "listingDto": {
+    "agentId": "55555555-5555-5555-5555-555555555555",
+    "addressText": "Land plot test address",
+    "title": "Land plot for sale",
+    "description": "Test create land listing",
+    "priceAmount": 98000,
+    "priceCurrency": "USD",
+    "areaTotal": 1200.0,
+    "publishedDate": "2026-02-26T10:20:00Z",
+    "addressId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+    "buildingTypeId": "00000000-0000-0000-0000-000000010009",
+    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "status": "Active",
+    "listingDetailsType": "Land",
+    "listingDetails": {
+      "plotArea": 1200.0,
+      "allowedUse": "Private housing",
+      "hasElectricity": true,
+      "hasGas": false,
+      "hasWater": true,
+      "hasSewer": false,
+      "hasBuildings": false,
+      "landCategoryId": "00000000-0000-0000-0000-0000000B0001",
+      "roadAccessTypeId": "00000000-0000-0000-0000-0000000C0001"
+    }
+  }
+}
