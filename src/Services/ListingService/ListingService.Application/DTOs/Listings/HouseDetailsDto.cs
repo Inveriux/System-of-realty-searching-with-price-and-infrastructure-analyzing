@@ -1,4 +1,5 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
+using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Domain.Models;
 using AutoMapper;
 
@@ -29,6 +30,16 @@ public class HouseDetailsDto : IListingDetailsDto
         public Mapping()
         {
             CreateMap<HouseDetails, HouseDetailsDto>();
+            CreateMap<string?, WallMaterial?>()
+                .ConvertUsing<LookupByNameOrNullConverter<WallMaterial>>();
+            CreateMap<string?, HeatingType?>()
+                .ConvertUsing<LookupByNameOrNullConverter<HeatingType>>();
+            CreateMap<string?, SewerType?>()
+                .ConvertUsing<LookupByNameOrNullConverter<SewerType>>();
+            CreateMap<string?, GasType?>()
+                .ConvertUsing<LookupByNameOrNullConverter<GasType>>();
+            CreateMap<string?, WaterSupplyType?>()
+                .ConvertUsing<LookupByNameOrNullConverter<WaterSupplyType>>();
         }
     }
 }

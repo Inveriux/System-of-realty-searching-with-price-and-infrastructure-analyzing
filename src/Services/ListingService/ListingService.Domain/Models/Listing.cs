@@ -3,7 +3,7 @@ using ListingService.Domain.Enums;
 
 namespace ListingService.Domain.Models;
 
-public class Listing : Entity<Guid>
+public class Listing : AuditableEntity<Guid>
 {
     public static Listing Create() => new() {Id = Guid.NewGuid()};
 
@@ -21,10 +21,12 @@ public class Listing : Entity<Guid>
 
 
     public Guid AddressId { get; set; }
-    public Guid BuildingTypeId { get; set; }
+    public Guid? BuildingTypeId { get; set; }
     public BuildingType? BuildingType { get; set; }
     public Guid ListingTypeId { get; set; }
     public ListingType? ListingType { get; set; }
+    public Guid? MainMediaId { get; set; }
+    public ListingMedia? MainMedia { get; set; }
     public ICollection<ListingMedia>? Media { get; set; } 
     public ICollection<ListingPriceHistory>? PriceHistory { get; set; }
 

@@ -1,6 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using ListingService.Application.DTOs.Listings.Abstractions;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 public sealed class ListingDetailsDtoWriteConverter : JsonConverter<IListingDetailsDto>
 {
@@ -15,8 +15,6 @@ public sealed class ListingDetailsDtoWriteConverter : JsonConverter<IListingDeta
             return;
         }
 
-
-        System.Console.WriteLine(value.GetType());
         JsonSerializer.Serialize(writer, value, value.GetType(), options);
     }
 }

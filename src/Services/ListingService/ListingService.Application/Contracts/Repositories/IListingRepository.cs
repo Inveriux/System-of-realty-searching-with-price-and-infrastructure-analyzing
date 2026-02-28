@@ -1,4 +1,3 @@
-using ListingService.Domain.Abstractions;
 using BasicBuildingBlocks.Collections;
 using ListingService.Domain.Models;
 

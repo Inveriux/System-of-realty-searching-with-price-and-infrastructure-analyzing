@@ -1,18 +1,17 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using ListingService.Domain.Models;
-using BasicBuildingBlocks.Collections;
 using FluentResults;
 using MediatR;
 
 namespace ListingService.Application.UseCases.LayoutTypes;
 
-public record GetLayoutTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
+public record GetLayoutTypesQuery() : IRequest<Result<List<LookupNameDto>>>;
 
 public class GetLayoutTypesHandler(ILookupHandler<LayoutType, LookupNameDto> lookupHandler)
-    : IRequestHandler<GetLayoutTypesQuery, Result<PagedResult<LookupNameDto>>>
+    : IRequestHandler<GetLayoutTypesQuery, Result<List<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetLayoutTypesQuery request,
+    public async Task<Result<List<LookupNameDto>>> Handle(GetLayoutTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

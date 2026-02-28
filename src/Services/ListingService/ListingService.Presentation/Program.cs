@@ -22,11 +22,11 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 
 var app = builder.Build();
 
-//app.UseExceptionHandler();
+app.UseExceptionHandler();
 
 if(builder.Environment.IsDevelopment())
 {
-    await app.InitializeTestDatabaseAsync();
+    await app.InitializeTestDatabaseAsync(true);
 }
 
 app.MapEndpoints(Assembly.GetExecutingAssembly());

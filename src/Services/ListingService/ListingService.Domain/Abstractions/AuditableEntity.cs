@@ -1,6 +1,6 @@
 ﻿namespace ListingService.Domain.Abstractions;
 
-public class Entity<TKey> : IEntity<TKey>
+public class AuditableEntity<TKey> : IEntity<TKey>, IAuditableEntity
 {
     public required TKey Id { get; set; }
     public DateTime? Created { get; set; }

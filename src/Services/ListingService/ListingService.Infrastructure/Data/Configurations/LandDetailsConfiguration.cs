@@ -34,10 +34,12 @@ internal class ListingLandDetailsConfiguration : IEntityTypeConfiguration<LandDe
         builder.HasOne(x => x.LandCategory)
             .WithMany()
             .HasForeignKey(x => x.LandCategoryId);
+        builder.Navigation(x => x.LandCategory).AutoInclude();
 
         builder.HasOne(x => x.RoadAccessType)
             .WithMany()
             .HasForeignKey(x => x.RoadAccessTypeId);
+        builder.Navigation(x => x.RoadAccessType).AutoInclude();
 
         builder.Ignore(x => x.ListingDetailsType);
     }

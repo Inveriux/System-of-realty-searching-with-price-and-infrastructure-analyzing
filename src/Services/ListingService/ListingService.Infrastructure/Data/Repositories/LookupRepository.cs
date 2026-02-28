@@ -1,31 +1,42 @@
 using ListingService.Application.Contracts.Repositories;
+using ListingService.Domain.Abstractions;
 using BasicBuildingBlocks.Repositories;
-using Microsoft.EntityFrameworkCore;
 using BasicBuildingBlocks.Collections;
+using Microsoft.EntityFrameworkCore;
 
 namespace ListingService.Infrastructure.Data.Repositories;
 
-public class LookupRepository<TEntity>(ApplicationDbContext context) : BaseRepository<TEntity>(context),
-    ILookupRepository<TEntity>
-    where TEntity : class
+public class LookupRepository<TLookup>(ApplicationDbContext context) : BaseRepository<TLookup>(context),
+    ILookupRepository<TLookup>
+    where TLookup : class, ILookupEntity
 {
-    public Task<PagedResult<TEntity>> GetAllAsync<TKey>(CancellationToken cancellationToken)
-        => GetAllAsync<TKey>(new(0,0), null, false, false, cancellationToken);
+    public async Task<PagedResult<TLookup>> GetAllAsync<TKey>(PagedRequest pagedRequest,
+         CancellationToken cancellationToken)
+        => await GetAllAsync<TKey>(pagedRequest, null, false, false, cancellationToken);
+    
+    public async Task<List<TLookup>> GetAllAsync<TKey>(CancellationToken cancellationToken)
+        => await GetAllAsync<TKey>(null, false, false, cancellationToken);
 
-    public Task<TEntity?> GetByNameAsync(string name, CancellationToken cancellationToken)
-        => context.Set<TEntity>()
+    public PagedResult<TLookup> GetAll<TKey>(PagedRequest pagedRequest)
+        => GetAll<TKey>(pagedRequest, null, false, false);
+    
+    public List<TLookup> GetAll<TKey>()
+        => GetAll<TKey>(null, false, false);
+
+    public Task<TLookup?> GetByNameAsync(string name, CancellationToken cancellationToken)
+        => context.Set<TLookup>()
             .AsNoTracking()
             .FirstOrDefaultAsync(e => EF.Property<string>(e, "Name") == name, cancellationToken);
 
     public async Task<bool> DeleteByNameAsync(string name, CancellationToken cancellationToken)
     {
-        var entity = await context.Set<TEntity>()
+        var entity = await context.Set<TLookup>()
             .FirstOrDefaultAsync(e => EF.Property<string>(e, "Name") == name, cancellationToken);
 
         if (entity is null) 
             return false;
 
-        context.Set<TEntity>().Remove(entity);  
+        context.Set<TLookup>().Remove(entity);  
         return true;
     }
 }

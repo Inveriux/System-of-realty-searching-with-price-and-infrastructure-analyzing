@@ -30,4 +30,16 @@ public static class Extension
 
         return new PagedResult<T>(items, pageNumber, pageSize, count);
     }
+
+    public static PagedResult<T> ToPagedResult<T>(this IQueryable<T> query, 
+        int pageNumber,
+        int pageSize)
+    {
+        query = query.Paginate(pageNumber, pageSize);
+
+        var count =  query.LongCount();
+        var items = query.ToList();
+
+        return new PagedResult<T>(items, pageNumber, pageSize, count);
+    }
 }

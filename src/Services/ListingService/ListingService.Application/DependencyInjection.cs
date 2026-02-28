@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using FluentValidation;
 using MediatR;
-using FluentResults;
+using ListingService.Application.Common.Lookups.Converters;
 
 namespace ListingService.Application;
 
@@ -18,6 +18,9 @@ public static class DependencyInjection
         var confgiuration = hostApplicationBuilder.Configuration;
 
         services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
+        services.AddTransient(typeof(LookupByNameConverter<>));
+        services.AddTransient(typeof(LookupByNameOrNullConverter<>));
+
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());

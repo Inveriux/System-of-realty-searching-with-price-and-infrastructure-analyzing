@@ -1,4 +1,5 @@
 POST /api/listings
+Content-Type: application/json
 
 {
   "listingDto": {
@@ -8,13 +9,13 @@ POST /api/listings
     "description": "Test create apartment listing",
     "priceAmount": 1200,
     "priceCurrency": "USD",
-    "pricePeriod": "Month",
+    "pricePeriod": "Monthly",
     "areaTotal": 68.5,
     "buildYear": 2018,
-    "publishedDate": "2026-02-26T10:00:00Z",
+    "publishedDate": "2026-02-28T10:00:00Z",
     "addressId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-    "buildingTypeId": "00000000-0000-0000-0000-000000010001",
-    "listingTypeId": "00000000-0000-0000-0000-000000020002",
+    "buildingType": "Apartment building",
+    "listingType": "Rent",
     "status": "Active",
     "listingDetailsType": "Apartment",
     "listingDetails": {
@@ -29,12 +30,17 @@ POST /api/listings
       "hasLoggia": false,
       "hasElevator": true,
       "ceilingHeight": 2.8,
-      "bathroomTypeId": "00000000-0000-0000-0000-000000030002",
-      "renovationTypeId": "00000000-0000-0000-0000-000000040004",
-      "buildingMaterialId": "00000000-0000-0000-0000-000000050003"
+      "bathroomType": "Combined",
+      "renovationType": "Euro",
+      "buildingMaterial": "Brick"
     }
   }
 }
+
+###
+
+POST /api/listings
+Content-Type: application/json
 
 {
   "listingDto": {
@@ -44,12 +50,13 @@ POST /api/listings
     "description": "Test create house listing",
     "priceAmount": 245000,
     "priceCurrency": "USD",
+    "pricePeriod": "OneTime",
     "areaTotal": 140.0,
     "buildYear": 2012,
-    "publishedDate": "2026-02-26T10:05:00Z",
+    "publishedDate": "2026-02-28T10:05:00Z",
     "addressId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-    "buildingTypeId": "00000000-0000-0000-0000-000000010002",
-    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "buildingType": "Detached house",
+    "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "House",
     "listingDetails": {
@@ -62,15 +69,20 @@ POST /api/listings
       "hasGarage": true,
       "hasBasement": false,
       "hasFence": true,
-      "wallMaterialId": "00000000-0000-0000-0000-000000060001",
-      "heatingTypeId": "00000000-0000-0000-0000-000000070003",
-      "sewerTypeId": "00000000-0000-0000-0000-000000090002",
-      "gasTypeId": "00000000-0000-0000-0000-0000000A0001",
-      "roofMaterialId": "00000000-0000-0000-0000-000000060004",
-      "waterSupplyTypeId": "00000000-0000-0000-0000-000000080001"
+      "wallMaterial": "Block",
+      "heatingType": "Gas",
+      "sewerType": "Septic",
+      "gasType": "Main",
+      "roofMaterial": "Metal",
+      "waterSupplyType": "Well"
     }
   }
 }
+
+###
+
+POST /api/listings
+Content-Type: application/json
 
 {
   "listingDto": {
@@ -80,13 +92,13 @@ POST /api/listings
     "description": "Test create office listing",
     "priceAmount": 3500,
     "priceCurrency": "USD",
-    "pricePeriod": "Month",
+    "pricePeriod": "Monthly",
     "areaTotal": 120.0,
     "buildYear": 2020,
-    "publishedDate": "2026-02-26T10:10:00Z",
+    "publishedDate": "2026-02-28T10:10:00Z",
     "addressId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
-    "buildingTypeId": "00000000-0000-0000-0000-000000010004",
-    "listingTypeId": "00000000-0000-0000-0000-000000020002",
+    "buildingType": "Business center",
+    "listingType": "Rent",
     "status": "Active",
     "listingDetailsType": "Office",
     "listingDetails": {
@@ -96,13 +108,18 @@ POST /api/listings
       "levels": 1,
       "parkingSpaces": 2,
       "kitchenette": true,
-      "officeClassId": "00000000-0000-0000-0000-0000000F0002",
-      "layoutTypeId": "00000000-0000-0000-0000-0000000E0001",
-      "renovationTypeId": "00000000-0000-0000-0000-0000000E0003",
-      "parkingTypeId": "00000000-0000-0000-0000-0000000E0002"
+      "officeClass": "B+",
+      "layoutType": "OpenSpace",
+      "renovationType": "Office",
+      "parkingType": "Corridor"
     }
   }
 }
+
+###
+
+POST /api/listings
+Content-Type: application/json
 
 {
   "listingDto": {
@@ -112,12 +129,13 @@ POST /api/listings
     "description": "Test create warehouse listing",
     "priceAmount": 780000,
     "priceCurrency": "USD",
+    "pricePeriod": "OneTime",
     "areaTotal": 2500.0,
     "buildYear": 2016,
-    "publishedDate": "2026-02-26T10:15:00Z",
+    "publishedDate": "2026-02-28T10:15:00Z",
     "addressId": "dddddddd-dddd-dddd-dddd-dddddddddddd",
-    "buildingTypeId": "00000000-0000-0000-0000-000000010005",
-    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "buildingType": "Warehouse building",
+    "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "Warehouse",
     "listingDetails": {
@@ -131,11 +149,16 @@ POST /api/listings
       "powerKw": 350.0,
       "hasOffice": true,
       "officeArea": 180.0,
-      "classTypeId": "00000000-0000-0000-0000-0000000D0001",
-      "heatingTypeId": "00000000-0000-0000-0000-000000070001"
+      "classType": "A",
+      "heatingType": "Central"
     }
   }
 }
+
+###
+
+POST /api/listings
+Content-Type: application/json
 
 {
   "listingDto": {
@@ -145,11 +168,12 @@ POST /api/listings
     "description": "Test create land listing",
     "priceAmount": 98000,
     "priceCurrency": "USD",
+    "pricePeriod": "OneTime",
     "areaTotal": 1200.0,
-    "publishedDate": "2026-02-26T10:20:00Z",
+    "publishedDate": "2026-02-28T10:20:00Z",
     "addressId": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-    "buildingTypeId": "00000000-0000-0000-0000-000000010009",
-    "listingTypeId": "00000000-0000-0000-0000-000000020001",
+    "buildingType": "Land plot",
+    "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "Land",
     "listingDetails": {
@@ -160,8 +184,8 @@ POST /api/listings
       "hasWater": true,
       "hasSewer": false,
       "hasBuildings": false,
-      "landCategoryId": "00000000-0000-0000-0000-0000000B0001",
-      "roadAccessTypeId": "00000000-0000-0000-0000-0000000C0001"
+      "landCategory": "Residential",
+      "roadAccessType": "Asphalt"
     }
   }
 }

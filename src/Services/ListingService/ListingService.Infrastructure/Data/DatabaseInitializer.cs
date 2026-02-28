@@ -7,20 +7,22 @@ namespace ListingService.Infrastructure.Data;
 
 public static class DatabaseInitialaizer
 {
-    public static void InitializeTestDatabase(this WebApplication application)
+    public static void InitializeTestDatabase(this WebApplication application,
+        bool ensureDelete = false)
     {
         var scope = application.Services.CreateScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseInitializer>();
 
-        initializer.Initialize();
+        initializer.Initialize(ensureDelete);
     }
 
-    public static async Task InitializeTestDatabaseAsync(this WebApplication application)
+    public static async Task InitializeTestDatabaseAsync(this WebApplication application,
+        bool ensureDelete = false)
     {
         using var scope = application.Services.CreateAsyncScope();
         var initializer = scope.ServiceProvider.GetRequiredService<ApplicationDatabaseInitializer>();
 
-        await initializer.InitializeAsync();
+        await initializer.InitializeAsync(ensureDelete);
     }
 
     public static DbContextOptionsBuilder UseSeedingAsync(this DbContextOptionsBuilder builder, IServiceProvider provider)
@@ -50,11 +52,14 @@ public static class DatabaseInitialaizer
 
 public class ApplicationDatabaseInitializer(ApplicationDbContext context)
 {
-    public void Initialize()
+    public void Initialize(bool ensureDelete = false)
     {
         try
         {
-            context.Database.EnsureDeleted();
+            if (ensureDelete)
+            {
+                context.Database.EnsureDeleted();
+            }
             context.Database.EnsureCreated();
         }
         catch (Exception ex)
@@ -63,11 +68,14 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
         }
     }
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(bool ensureDelete = false)
     {
         try
         {
-            await context.Database.EnsureDeletedAsync();
+            if (ensureDelete)
+            {
+                await context.Database.EnsureDeletedAsync();
+            }
             await context.Database.EnsureCreatedAsync();
         }
         catch (Exception ex)

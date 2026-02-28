@@ -44,26 +44,32 @@ internal class ListingHouseDetailsConfiguration : IEntityTypeConfiguration<House
         builder.HasOne(x => x.WallMaterial)
             .WithMany()
             .HasForeignKey(x => x.WallMaterialId);
+        builder.Navigation(x => x.WallMaterial).AutoInclude();
 
         builder.HasOne(x => x.RoofMaterial)
             .WithMany()
             .HasForeignKey(x => x.RoofMaterialId);
+        builder.Navigation(x => x.RoofMaterial).AutoInclude();
 
         builder.HasOne(x => x.HeatingType)
             .WithMany()
             .HasForeignKey(x => x.HeatingTypeId);
+        builder.Navigation(x => x.HeatingType).AutoInclude();
 
         builder.HasOne(x => x.WaterSupplyType)
             .WithMany()
             .HasForeignKey(x => x.WaterSupplyTypeId);
+        builder.Navigation(x => x.WaterSupplyType).AutoInclude();
 
         builder.HasOne(x => x.SewerType)
             .WithMany()
             .HasForeignKey(x => x.SewerTypeId);
+        builder.Navigation(x => x.SewerType).AutoInclude();
 
         builder.HasOne(x => x.GasType)
             .WithMany()
             .HasForeignKey(x => x.GasTypeId);
+        builder.Navigation(x => x.GasType).AutoInclude();
 
     }
 }

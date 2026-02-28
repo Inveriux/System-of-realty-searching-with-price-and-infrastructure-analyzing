@@ -1,6 +1,8 @@
 using ListingService.Application.Contracts.Repositories;
 using ListingService.Infrastructure.Data.Repositories;
+using ListingService.Application.Contracts.Cache;
 using Microsoft.Extensions.DependencyInjection;
+using ListingService.Infrastructure.Cache;
 using Microsoft.Extensions.Configuration;
 using ListingService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -25,5 +27,8 @@ public static class DependencyInjection
         services.AddScoped<IRepositoryManager, RepositoryManager>();
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped(typeof(ILookupRepository<>), typeof(LookupRepository<>));
+
+        services.AddMemoryCache();
+        services.AddScoped<ILookupCache, LookupCache>();
     }
 }

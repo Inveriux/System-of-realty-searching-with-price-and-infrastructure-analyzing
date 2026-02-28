@@ -1,18 +1,17 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using ListingService.Domain.Models;
-using BasicBuildingBlocks.Collections;
 using FluentResults;
 using MediatR;
 
 namespace ListingService.Application.UseCases.OfficeClasses;
 
-public record GetOfficeClassesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
+public record GetOfficeClassesQuery() : IRequest<Result<List<LookupNameDto>>>;
 
 public class GetOfficeClassesHandler(ILookupHandler<OfficeClass, LookupNameDto> lookupHandler)
-    : IRequestHandler<GetOfficeClassesQuery, Result<PagedResult<LookupNameDto>>>
+    : IRequestHandler<GetOfficeClassesQuery, Result<List<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetOfficeClassesQuery request,
+    public async Task<Result<List<LookupNameDto>>> Handle(GetOfficeClassesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

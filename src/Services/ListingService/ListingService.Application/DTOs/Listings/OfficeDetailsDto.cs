@@ -1,4 +1,5 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
+using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Domain.Models;
 using AutoMapper;
 
@@ -24,6 +25,10 @@ public class OfficeDetailsDto : IListingDetailsDto
         public Mapping()
         {
             CreateMap<OfficeDetails, OfficeDetailsDto>();
+            CreateMap<string?, OfficeClass?>()
+                .ConvertUsing<LookupByNameOrNullConverter<OfficeClass>>();
+            CreateMap<string?, LayoutType?>()
+                .ConvertUsing<LookupByNameOrNullConverter<LayoutType>>();
         }
     }
 }

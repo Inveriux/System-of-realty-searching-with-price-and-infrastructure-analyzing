@@ -1,18 +1,17 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.DTOs.Lookups;
-using BasicBuildingBlocks.Collections;
 using ListingService.Domain.Models;
 using FluentResults;
 using MediatR;
 
 namespace ListingService.Application.UseCases.WaterSupplyTypes;
 
-public record GetWaterSupplyTypesQuery() : IRequest<Result<PagedResult<LookupNameDto>>>;
+public record GetWaterSupplyTypesQuery() : IRequest<Result<List<LookupNameDto>>>;
 
 public class GetWaterSupplyTypesHandler(ILookupHandler<WaterSupplyType, LookupNameDto> lookupHandler)
-    : IRequestHandler<GetWaterSupplyTypesQuery, Result<PagedResult<LookupNameDto>>>
+    : IRequestHandler<GetWaterSupplyTypesQuery, Result<List<LookupNameDto>>>
 {
-    public async Task<Result<PagedResult<LookupNameDto>>> Handle(GetWaterSupplyTypesQuery request,
+    public async Task<Result<List<LookupNameDto>>> Handle(GetWaterSupplyTypesQuery request,
         CancellationToken cancellationToken)
         => await lookupHandler.GetAllAsync(cancellationToken);
 }

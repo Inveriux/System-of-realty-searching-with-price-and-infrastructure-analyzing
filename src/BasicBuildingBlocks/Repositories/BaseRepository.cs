@@ -5,8 +5,7 @@ using System.Linq.Expressions;
 
 namespace BasicBuildingBlocks.Repositories;
 
-public class BaseRepository<TEntity>(DbContext context) 
-    where TEntity : class
+public class BaseRepository<TEntity>(DbContext context) where TEntity : class
 {
     protected readonly DbContext _context = context;
     
@@ -26,6 +25,38 @@ public class BaseRepository<TEntity>(DbContext context)
         return await q.ToPagedResultAsync(pageRequest.PageNumber, pageRequest.PageSize, ct);
     }
 
+    public async Task<List<TEntity>> GetAllAsync<TKey>(
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await GetAllAsync(new(0, 0), orderBy, isDescending, isTracking, cancellationToken);
+        return [.. result.Items];
+    }
+
+    public PagedResult<TEntity> GetAll<TKey>(
+        PagedRequest pageRequest,
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false)
+    {
+        var q = _context.Set<TEntity>().IsTracking(isTracking);
+
+        orderBy ??= e => EF.Property<TKey>(e, "Id"); 
+        q = isDescending ? q.OrderByDescending(orderBy) : q.OrderBy(orderBy);
+
+        return q.ToPagedResult(pageRequest.PageNumber, pageRequest.PageSize);
+    }
+
+    public List<TEntity> GetAll<TKey>(
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false)
+    {
+        var result = GetAll(new(0, 0), orderBy, isDescending, isTracking);
+        return [.. result.Items];
+    }
 
     public async Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
         => await _context.Set<TEntity>().FindAsync([id], cancellationToken);

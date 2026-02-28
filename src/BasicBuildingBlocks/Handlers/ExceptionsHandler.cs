@@ -35,6 +35,6 @@ public class ExceptionHandler : IExceptionHandler
         {
             Title = "Undefinded fauilure",
             Status = StatusCodes.Status500InternalServerError,
-            Detail = exception.Message
+            Detail = exception.Message + "\n" + exception.InnerException?.Message
         };
 }

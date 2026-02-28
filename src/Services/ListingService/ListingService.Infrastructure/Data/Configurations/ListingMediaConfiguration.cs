@@ -27,16 +27,7 @@ internal class ListingMediaConfiguration : IEntityTypeConfiguration<ListingMedia
         builder.Property(x => x.Id)
             .IsRequired();
 
-        builder.Property(x => x.ListingId)
-            .IsRequired();
-
-        builder.Property(x => x.MediaType)
-            .HasMaxLength(StringMaxLength);
-
         builder.Property(x => x.Url)
-            .HasMaxLength(StringMaxLength);
-
-        builder.Property(x => x.PreviewUrl)
             .HasMaxLength(StringMaxLength);
     }
 }

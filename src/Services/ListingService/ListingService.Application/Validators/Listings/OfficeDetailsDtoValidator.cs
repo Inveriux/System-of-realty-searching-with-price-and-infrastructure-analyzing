@@ -1,0 +1,25 @@
+using ListingService.Application.Validators.Listings.Extensions;
+using ListingService.Application.Contracts.Cache;
+using ListingService.Application.DTOs.Listings;
+using ListingService.Domain.Models;
+using FluentValidation;
+
+namespace ListingService.Application.Validators.Listings;
+
+public class OfficeDetailsDtoValidator : AbstractValidator<OfficeDetailsDto>
+{
+    public OfficeDetailsDtoValidator(ILookupCache lookupCache)
+    {
+        RuleFor(x => x.OfficeClass)
+            .MustExistInLookupRequired<OfficeDetailsDto, OfficeClass>(lookupCache, nameof(OfficeClass));
+
+        RuleFor(x => x.LayoutType)
+            .MustExistInLookupRequired<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
+
+        RuleFor(x => x.RenovationType)
+            .MustExistInLookupRequired<OfficeDetailsDto, RenovationType>(lookupCache, nameof(RenovationType));
+
+        RuleFor(x => x.ParkingType)
+            .MustExistInLookupRequired<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
+    }
+}

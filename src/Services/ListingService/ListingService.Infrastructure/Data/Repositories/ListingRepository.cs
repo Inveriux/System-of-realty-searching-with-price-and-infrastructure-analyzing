@@ -1,10 +1,10 @@
 using ListingService.Application.Contracts.Repositories;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using BasicBuildingBlocks.Extensions.Repositories;
 using ListingService.Domain.Abstractions;
 using BasicBuildingBlocks.Collections;
 using Microsoft.EntityFrameworkCore;
 using ListingService.Domain.Models;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace ListingService.Infrastructure.Data.Repositories;
 
@@ -18,6 +18,9 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
     {
         return await context.Listings
             .IsTracking(isTracking)
+            .Include(x => x.ListingType)
+            .Include(x => x.Media)
+            .Include(x => x.BuildingType)
             .ToPagedResultAsync(pageRequest.PageNumber, pageRequest.PageSize, cancellationToken);
     }
 
@@ -27,6 +30,8 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
     {
         return await context.Listings
             .IsTracking(isTracking)
+            .Include(x => x.ListingType)
+            .Include(x => x.BuildingType)
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
@@ -38,7 +43,10 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
         var listing = await context.Listings
             .IsTracking(isTracking)
             .Include(x => x.Media)
+            .Include(x => x.MainMedia)
             .Include(x => x.PriceHistory)
+            .Include(x => x.ListingType)
+            .Include(x => x.BuildingType)
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
 
         if (listing is null)
@@ -92,10 +100,11 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
         if (!CheckDetailsType(listing.ListingDetailsType, details))
             throw new ArgumentException("Details type mismatch.");
 
+        listing.MainMedia = listing.Media?.FirstOrDefault(m => m.IsMainMedia);
         var listingEntity = await context.AddAsync(listing, cancellationToken);
         details.ListingId = listingEntity.Entity.Id;
         
-        var detailsResult = await SaveDetails(listing.ListingDetailsType, details);
+        await SaveDetails(listing.ListingDetailsType, details);
         await SavePriceHistoryAsync(listing, cancellationToken);
     }
 

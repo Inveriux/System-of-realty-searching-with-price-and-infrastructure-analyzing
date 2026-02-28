@@ -39,7 +39,7 @@ public class AuditInterceptor : ISaveChangesInterceptor
 
         foreach (var entry in entries)
         {
-            if (entry.Entity is IEntity entity)
+            if (entry.Entity is IAuditableEntity entity)
             {
                 var now = DateTime.UtcNow;
 

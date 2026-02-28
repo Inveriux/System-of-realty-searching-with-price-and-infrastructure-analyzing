@@ -37,17 +37,21 @@ internal class ListingOfficeDetailsConfiguration : IEntityTypeConfiguration<Offi
         builder.HasOne(x => x.OfficeClass)
             .WithMany()
             .HasForeignKey(x => x.OfficeClassId);
+        builder.Navigation(x => x.OfficeClass).AutoInclude();
 
         builder.HasOne(x => x.LayoutType)
             .WithMany()
             .HasForeignKey(x => x.LayoutTypeId);
+        builder.Navigation(x => x.LayoutType).AutoInclude();
 
         builder.HasOne(x => x.RenovationType)
             .WithMany()
             .HasForeignKey(x => x.RenovationTypeId);
+        builder.Navigation(x => x.RenovationType).AutoInclude();
 
         builder.HasOne(x => x.ParkingType)
             .WithMany()
             .HasForeignKey(x => x.ParkingTypeId);
+        builder.Navigation(x => x.ParkingType).AutoInclude();
     }
 }

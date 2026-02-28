@@ -31,9 +31,11 @@ internal class WarehouseDetailsConfiguration : IEntityTypeConfiguration<Warehous
         builder.HasOne(x => x.ClassType)
             .WithMany()
             .HasForeignKey(x => x.ClassTypeId);
+        builder.Navigation(x => x.ClassType).AutoInclude();
 
         builder.HasOne(x => x.HeatingType)
             .WithMany()
             .HasForeignKey(x => x.HeatingTypeId);
+        builder.Navigation(x => x.HeatingType).AutoInclude();
     }
 }

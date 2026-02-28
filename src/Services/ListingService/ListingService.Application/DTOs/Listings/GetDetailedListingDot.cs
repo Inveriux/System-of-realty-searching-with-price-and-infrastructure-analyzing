@@ -1,7 +1,7 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
+using ListingService.Domain.Abstractions;
 using ListingService.Domain.Models;
 using AutoMapper;
-using ListingService.Domain.Abstractions;
 
 namespace ListingService.Application.DTOs.Listings;
 
@@ -38,6 +38,12 @@ public class GetDetailedListingDto
                 .Include<LandDetails, LandDetailsDto>()
                 .Include<WarehouseDetails, WarehouseDetailsDto>()
                 .Include<OfficeDetails, OfficeDetailsDto>();    
+
+            CreateMap<ILookupEntity, string>()
+                .ConvertUsing(src => src.Name);
+            
+            CreateMap<ILookupEntity?, string?>()
+                .ConvertUsing(src => src == null ? null : src.Name);
         }
     }
 }
