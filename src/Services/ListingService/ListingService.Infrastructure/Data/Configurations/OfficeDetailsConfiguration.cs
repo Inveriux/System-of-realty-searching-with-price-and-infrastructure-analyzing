@@ -22,18 +22,6 @@ internal class ListingOfficeDetailsConfiguration : IEntityTypeConfiguration<Offi
             .HasForeignKey<OfficeDetails>(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(x => x.OfficeClassId)
-            .IsRequired();
-
-        builder.Property(x => x.LayoutTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.RenovationTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.ParkingTypeId)
-            .IsRequired();
-
         builder.HasOne(x => x.OfficeClass)
             .WithMany()
             .HasForeignKey(x => x.OfficeClassId);

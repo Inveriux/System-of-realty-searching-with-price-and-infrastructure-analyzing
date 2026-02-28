@@ -1,4 +1,5 @@
 using ListingService.Application.Common.Lookups.Abstractions;
+using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Application.Common.Lookups;
 using Microsoft.Extensions.DependencyInjection;
 using BasicBuildingBlocks.Behaviors;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using FluentValidation;
 using MediatR;
-using ListingService.Application.Common.Lookups.Converters;
 
 namespace ListingService.Application;
 

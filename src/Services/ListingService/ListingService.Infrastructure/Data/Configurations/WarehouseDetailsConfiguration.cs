@@ -22,12 +22,6 @@ internal class WarehouseDetailsConfiguration : IEntityTypeConfiguration<Warehous
             .HasForeignKey<WarehouseDetails>(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(x => x.ClassTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.HeatingTypeId)
-            .IsRequired();
-
         builder.HasOne(x => x.ClassType)
             .WithMany()
             .HasForeignKey(x => x.ClassTypeId);

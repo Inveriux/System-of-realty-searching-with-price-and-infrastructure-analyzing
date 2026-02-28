@@ -21,8 +21,9 @@ public class GetDetailedListingDto
     public DateTimeOffset? PublishedDate { get; set; }
     public string? BuildingType { get; set; }
     public required string ListingType { get; init; }
-    public ICollection<ListingMedia>? Media { get; set; } 
-    public ICollection<ListingPriceHistory>? PriceHistory { get; set; }
+    public string? MainMedia { get; set; }
+    public ICollection<ListingMediaDto>? Media { get; set; } 
+    public ICollection<ListingPriceHistoryDto>? PriceHistory { get; set; }
     public required IListingDetailsDto ListingDetails { get; set; }
 
 
@@ -30,7 +31,13 @@ public class GetDetailedListingDto
     {
         public Mapping()
         {
-            CreateMap<Listing, GetDetailedListingDto>();
+            CreateMap<Listing, GetDetailedListingDto>()
+                .ForMember(x => x.MainMedia, y => y.MapFrom(s =>
+                    s.Media == null
+                        ? null
+                        : s.Media.Where(m => m.IsMainMedia)
+                                .Select(m => m.Url)
+                                .FirstOrDefault()));
 
             CreateMap<IListingDetails, IListingDetailsDto>()
                 .Include<ApartmentDetails, ApartmentDetailsDto>()
@@ -44,6 +51,9 @@ public class GetDetailedListingDto
             
             CreateMap<ILookupEntity?, string?>()
                 .ConvertUsing(src => src == null ? null : src.Name);
+
+            CreateMap<ListingMedia, ListingMediaDto>();
+            CreateMap<ListingPriceHistory, ListingPriceHistoryDto>();
         }
     }
 }

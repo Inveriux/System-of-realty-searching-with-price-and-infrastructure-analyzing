@@ -1,5 +1,4 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
-using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Domain.Abstractions;
 using ListingService.Domain.Models;
 using AutoMapper;
@@ -23,6 +22,7 @@ public class CreateListingDto
     public required string ListingType { get; set; }
     public string? Status { get; set; }
     public required string ListingDetailsType { get; init; }
+    public List<string>? MediaUrls { get; set; }
 
     public required IListingDetailsDto ListingDetails { get; init; }
 
@@ -33,81 +33,54 @@ public class CreateListingDto
         {
             CreateMap<CreateListingDto, Listing>()
                 .ConstructUsing(_ => Listing.Create())
-                .AfterMap((_, dest) =>
-                {
-                    dest.BuildingTypeId = dest.BuildingType?.Id;
-                    dest.BuildingType = null; 
-                    dest.ListingTypeId = dest.ListingType?.Id
-                        ?? throw new AutoMapperMappingException("ListingType is required.");
-                    dest.ListingType = null;
-                });
-            CreateMap<ApartmentDetailsDto, ApartmentDetails>()
-                .AfterMap((_, dest) =>
-                {
-                    dest.BathroomTypeId = dest.BathroomType?.Id;
-                    dest.BathroomType = null;
-                    dest.RenovationTypeId = dest.RenovationType?.Id;
-                    dest.RenovationType = null;
-                    dest.BuildingMaterialId = dest.BuildingMaterial?.Id;
-                    dest.BuildingMaterial = null;
-                });
-            CreateMap<HouseDetailsDto, HouseDetails>()
-                .AfterMap((_, dest) =>
-                {
-                    dest.WallMaterialId = dest.WallMaterial?.Id
-                        ?? throw new AutoMapperMappingException("WallMaterial is required.");
-                    dest.HeatingTypeId = dest.HeatingType?.Id
-                        ?? throw new AutoMapperMappingException("HeatingType is required.");
-                    dest.SewerTypeId = dest.SewerType?.Id
-                        ?? throw new AutoMapperMappingException("SewerType is required.");
-                    dest.GasTypeId = dest.GasType?.Id
-                        ?? throw new AutoMapperMappingException("GasType is required.");
-                    dest.RoofMaterialId = dest.RoofMaterial?.Id
-                        ?? throw new AutoMapperMappingException("RoofMaterial is required.");
-                    dest.WaterSupplyTypeId = dest.WaterSupplyType?.Id
-                        ?? throw new AutoMapperMappingException("WaterSupplyType is required.");
-                });
-            CreateMap<WarehouseDetailsDto, WarehouseDetails>()
-                .AfterMap((_, dest) =>
-                {
-                    dest.ClassTypeId = dest.ClassType?.Id
-                        ?? throw new AutoMapperMappingException("ClassType is required.");
-                    dest.HeatingTypeId = dest.HeatingType?.Id
-                        ?? throw new AutoMapperMappingException("HeatingType is required.");
-                });
-            CreateMap<OfficeDetailsDto, OfficeDetails>()
-                .AfterMap((_, dest) =>
-                {
-                    dest.OfficeClassId = dest.OfficeClass?.Id
-                        ?? throw new AutoMapperMappingException("OfficeClass is required.");
-                    dest.LayoutTypeId = dest.LayoutType?.Id
-                        ?? throw new AutoMapperMappingException("LayoutType is required.");
-                    dest.RenovationTypeId = dest.RenovationType?.Id
-                        ?? throw new AutoMapperMappingException("RenovationType is required.");
-                    dest.ParkingTypeId = dest.ParkingType?.Id
-                        ?? throw new AutoMapperMappingException("ParkingType is required.");
-                });
-            CreateMap<LandDetailsDto, LandDetails>()
-                .AfterMap((_, dest) =>
-                {
-                    dest.LandCategoryId = dest.LandCategory?.Id
-                        ?? throw new AutoMapperMappingException("LandCategory is required.");
-                    dest.RoadAccessTypeId = dest.RoadAccessType?.Id
-                        ?? throw new AutoMapperMappingException("RoadAccessType is required.");
-                });
+                .ForMember(x => x.BuildingType, y => y.Ignore())
+                .ForMember(x => x.ListingType, y => y.Ignore())
+                .ForMember(x => x.Media, opt => opt.MapFrom(s => s.MediaUrls))
+                .AfterMap((src, dest) => dest.Media?
+                                        .FirstOrDefault(m => src.MediaUrls?.FirstOrDefault() == m.Url)?.IsMainMedia = true);
+                    
 
+            CreateMap<string, ListingMedia>()
+                .ConstructUsing(url => new ListingMedia { Url = url });
+
+            CreateMap<ApartmentDetailsDto, ApartmentDetails>()
+                .ForMember(x => x.Listing, y => y.Ignore())
+                .ForMember(x => x.BathroomType, y => y.Ignore())
+                .ForMember(x => x.RenovationType, y => y.Ignore())
+                .ForMember(x => x.BuildingMaterial, y => y.Ignore());
+
+            CreateMap<HouseDetailsDto, HouseDetails>()
+                .ForMember(x => x.Listing, y => y.Ignore())
+                .ForMember(x => x.WallMaterial, y => y.Ignore())
+                .ForMember(x => x.HeatingType, y => y.Ignore())
+                .ForMember(x => x.SewerType, y => y.Ignore())
+                .ForMember(x => x.GasType, y => y.Ignore())
+                .ForMember(x => x.RoofMaterial, y => y.Ignore())
+                .ForMember(x => x.WaterSupplyType, y => y.Ignore());
+
+            CreateMap<WarehouseDetailsDto, WarehouseDetails>()
+                .ForMember(x => x.Listing, y => y.Ignore())
+                .ForMember(x => x.ClassType, y => y.Ignore())
+                .ForMember(x => x.HeatingType, y => y.Ignore());
+
+            CreateMap<OfficeDetailsDto, OfficeDetails>()
+                .ForMember(x => x.Listing, y => y.Ignore())
+                .ForMember(x => x.OfficeClass, y => y.Ignore())
+                .ForMember(x => x.LayoutType, y => y.Ignore())
+                .ForMember(x => x.RenovationType, y => y.Ignore())
+                .ForMember(x => x.ParkingType, y => y.Ignore());
+
+            CreateMap<LandDetailsDto, LandDetails>()
+                .ForMember(x => x.Listing, y => y.Ignore())
+                .ForMember(x => x.LandCategory, y => y.Ignore())
+                .ForMember(x => x.RoadAccessType, y => y.Ignore());
+            
             CreateMap<IListingDetailsDto, IListingDetails>()
                 .Include<ApartmentDetailsDto, ApartmentDetails>()
                 .Include<HouseDetailsDto, HouseDetails>()
                 .Include<LandDetailsDto, LandDetails>()
                 .Include<WarehouseDetailsDto, WarehouseDetails>()
                 .Include<OfficeDetailsDto, OfficeDetails>();
-            
-            CreateMap<string?, BuildingType?>()
-                .ConvertUsing<LookupByNameOrNullConverter<BuildingType>>();
-
-            CreateMap<string, ListingType>()
-                .ConvertUsing<LookupByNameConverter<ListingType>>();
         }
     }
 }

@@ -11,21 +11,21 @@ public class HouseDetailsDtoValidator : AbstractValidator<HouseDetailsDto>
     public HouseDetailsDtoValidator(ILookupCache lookupCache)
     {
         RuleFor(x => x.WallMaterial)
-            .MustExistInLookupRequired<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
+            .MustExistInLookup<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
 
         RuleFor(x => x.RoofMaterial)
-            .MustExistInLookupRequired<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
+            .MustExistInLookup<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
 
         RuleFor(x => x.HeatingType)
-            .MustExistInLookupRequired<HouseDetailsDto, HeatingType>(lookupCache, nameof(HeatingType));
+            .MustExistInLookup<HouseDetailsDto, HeatingType>(lookupCache, nameof(HeatingType));
 
         RuleFor(x => x.WaterSupplyType)
-            .MustExistInLookupRequired<HouseDetailsDto, WaterSupplyType>(lookupCache, nameof(WaterSupplyType));
+            .MustExistInLookup<HouseDetailsDto, WaterSupplyType>(lookupCache, nameof(WaterSupplyType));
 
         RuleFor(x => x.SewerType)
-            .MustExistInLookupRequired<HouseDetailsDto, SewerType>(lookupCache, nameof(SewerType));
+            .MustExistInLookup<HouseDetailsDto, SewerType>(lookupCache, nameof(SewerType));
 
         RuleFor(x => x.GasType)
-            .MustExistInLookupRequired<HouseDetailsDto, GasType>(lookupCache, nameof(GasType));
+            .MustExistInLookup<HouseDetailsDto, GasType>(lookupCache, nameof(GasType));
     }
 }

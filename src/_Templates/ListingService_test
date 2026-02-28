@@ -18,6 +18,11 @@ Content-Type: application/json
     "listingType": "Rent",
     "status": "Active",
     "listingDetailsType": "Apartment",
+    "mediaUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg",
+      "https://picsum.photos/id/1018/1200/800"
+    ],
     "listingDetails": {
       "rooms": 2,
       "bedrooms": 1,
@@ -59,6 +64,10 @@ Content-Type: application/json
     "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "House",
+    "mediaUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg"
+    ],
     "listingDetails": {
       "rooms": 5,
       "bedrooms": 3,
@@ -101,6 +110,10 @@ Content-Type: application/json
     "listingType": "Rent",
     "status": "Active",
     "listingDetailsType": "Office",
+    "mediaUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
+      "https://picsum.photos/id/1018/1200/800"
+    ],
     "listingDetails": {
       "plotArea": 0,
       "floor": 9,
@@ -138,6 +151,10 @@ Content-Type: application/json
     "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "Warehouse",
+    "mediaUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg",
+      "https://picsum.photos/id/1018/1200/800"
+    ],
     "listingDetails": {
       "plotArea": 5200.0,
       "ceilingHeight": 10.5,
@@ -176,6 +193,10 @@ Content-Type: application/json
     "listingType": "Sale",
     "status": "Active",
     "listingDetailsType": "Land",
+    "mediaUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/3/3f/Fronalpstock_big.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg"
+    ],
     "listingDetails": {
       "plotArea": 1200.0,
       "allowedUse": "Private housing",

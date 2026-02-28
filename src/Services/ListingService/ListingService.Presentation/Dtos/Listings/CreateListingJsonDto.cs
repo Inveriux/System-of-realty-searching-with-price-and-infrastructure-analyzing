@@ -19,6 +19,7 @@ public sealed class CreateListingJsonDto
     public required string BuildingType { get; set; }
     public required string ListingType { get; set; }
     public string? Status { get; set; }
+    public List<string>? MediaUrls { get; set; }
     public required string ListingDetailsType { get; init; }
 
 
@@ -40,6 +41,7 @@ public sealed class CreateListingJsonDto
             ListingType = ListingType,
             Status = Status,
             ListingDetailsType = ListingDetailsType,
-            ListingDetails = listingDetails
+            ListingDetails = listingDetails,
+            MediaUrls = MediaUrls
         };
 }

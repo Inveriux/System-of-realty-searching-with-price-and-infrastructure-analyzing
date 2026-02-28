@@ -11,9 +11,9 @@ public class WarehouseDetailsDtoValidator : AbstractValidator<WarehouseDetailsDt
     public WarehouseDetailsDtoValidator(ILookupCache lookupCache)
     {
         RuleFor(x => x.ClassType)
-            .MustExistInLookupRequired<WarehouseDetailsDto, ClassType>(lookupCache, nameof(ClassType));
+            .MustExistInLookup<WarehouseDetailsDto, ClassType>(lookupCache, nameof(ClassType));
 
         RuleFor(x => x.HeatingType)
-            .MustExistInLookupRequired<WarehouseDetailsDto, HeatingType>(lookupCache, nameof(HeatingType));
+            .MustExistInLookup<WarehouseDetailsDto, HeatingType>(lookupCache, nameof(HeatingType));
     }
 }

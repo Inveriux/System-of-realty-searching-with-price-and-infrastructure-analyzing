@@ -15,8 +15,8 @@ public class LandDetails : IListingDetails
     public string ListingDetailsType { get; set; } = null!;
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
-    public Guid LandCategoryId { get; set; }
+    public Guid? LandCategoryId { get; set; }
     public LandCategory? LandCategory { get; set; }
-    public Guid RoadAccessTypeId { get; set; }
+    public Guid? RoadAccessTypeId { get; set; }
     public RoadAccessType? RoadAccessType { get; set; }
 }

@@ -43,7 +43,6 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
         var listing = await context.Listings
             .IsTracking(isTracking)
             .Include(x => x.Media)
-            .Include(x => x.MainMedia)
             .Include(x => x.PriceHistory)
             .Include(x => x.ListingType)
             .Include(x => x.BuildingType)
@@ -100,7 +99,6 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
         if (!CheckDetailsType(listing.ListingDetailsType, details))
             throw new ArgumentException("Details type mismatch.");
 
-        listing.MainMedia = listing.Media?.FirstOrDefault(m => m.IsMainMedia);
         var listingEntity = await context.AddAsync(listing, cancellationToken);
         details.ListingId = listingEntity.Entity.Id;
         
@@ -190,7 +188,7 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
 
     private async Task SavePriceHistoryAsync(Listing listing, CancellationToken cancellationToken)
     {
-        if(listing.PriceHistory is null)
+        if(listing.PriceAmount is null)
             return;
 
         var priceHistory = new ListingPriceHistory()

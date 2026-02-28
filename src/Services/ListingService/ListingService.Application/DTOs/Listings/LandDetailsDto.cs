@@ -1,5 +1,4 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
-using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Domain.Models;
 using AutoMapper;
 
@@ -14,7 +13,6 @@ public class LandDetailsDto : IListingDetailsDto
     public bool? HasWater { get; set; }
     public bool? HasSewer { get; set; }
     public bool? HasBuildings { get; set; }
-    public string? Listing { get; set; }
     public string? LandCategory { get; set; }
     public string? RoadAccessType { get; set; }
 
@@ -24,10 +22,6 @@ public class LandDetailsDto : IListingDetailsDto
         public Mapping()
         {
             CreateMap<LandDetails, LandDetailsDto>();
-            CreateMap<string?, LandCategory?>()
-                .ConvertUsing<LookupByNameOrNullConverter<LandCategory>>();
-            CreateMap<string?, RoadAccessType?>()
-                .ConvertUsing<LookupByNameOrNullConverter<RoadAccessType>>();
         }
     }
 }

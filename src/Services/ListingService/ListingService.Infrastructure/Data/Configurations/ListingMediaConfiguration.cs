@@ -7,7 +7,6 @@ namespace ListingService.Infrastructure.Data.Configurations;
 internal class ListingMediaConfiguration : IEntityTypeConfiguration<ListingMedia>
 {
     private const string TableName = "listing_media";
-    private const int StringMaxLength = 100;
 
     public void Configure(EntityTypeBuilder<ListingMedia> builder)
     {
@@ -28,6 +27,6 @@ internal class ListingMediaConfiguration : IEntityTypeConfiguration<ListingMedia
             .IsRequired();
 
         builder.Property(x => x.Url)
-            .HasMaxLength(StringMaxLength);
+            .IsRequired();
     }
 }

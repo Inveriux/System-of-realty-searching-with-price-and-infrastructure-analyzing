@@ -17,8 +17,8 @@ public class WarehouseDetails : IListingDetails
 
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
-    public Guid ClassTypeId { get; set; }
+    public Guid? ClassTypeId { get; set; }
     public ClassType? ClassType { get; set; }
-    public Guid HeatingTypeId { get; set; }
+    public Guid? HeatingTypeId { get; set; }
     public HeatingType? HeatingType { get; set; }
 }

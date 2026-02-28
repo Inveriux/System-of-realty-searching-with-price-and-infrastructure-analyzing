@@ -11,9 +11,9 @@ public class LandDetailsDtoValidator : AbstractValidator<LandDetailsDto>
     public LandDetailsDtoValidator(ILookupCache lookupCache)
     {
         RuleFor(x => x.LandCategory)
-            .MustExistInLookupRequired<LandDetailsDto, LandCategory>(lookupCache, nameof(LandCategory));
+            .MustExistInLookup<LandDetailsDto, LandCategory>(lookupCache, nameof(LandCategory));
 
         RuleFor(x => x.RoadAccessType)
-            .MustExistInLookupRequired<LandDetailsDto, RoadAccessType>(lookupCache, nameof(RoadAccessType));
+            .MustExistInLookup<LandDetailsDto, RoadAccessType>(lookupCache, nameof(RoadAccessType));
     }
 }

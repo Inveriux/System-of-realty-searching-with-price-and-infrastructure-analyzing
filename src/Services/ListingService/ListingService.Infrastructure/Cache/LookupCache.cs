@@ -27,40 +27,40 @@ public class LookupCache : ILookupCache
 
         _asyncLoaders = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["bathroomtype"] = (LoadAsync<BathroomType>),
-            ["buildingmaterial"] = (LoadAsync<BuildingMaterial>),
-            ["buildingtype"] = (LoadAsync<BuildingType>),
-            ["classtype"] = (LoadAsync<ClassType>),
-            ["gastype"] = (LoadAsync<GasType>),
-            ["heatingtype"] = (LoadAsync<HeatingType>),
-            ["landcategory"] = (LoadAsync<LandCategory>),
-            ["layouttype"] = (LoadAsync<LayoutType>),
-            ["listingtype"] = (LoadAsync<ListingType>),
-            ["officeclass"] = (LoadAsync<OfficeClass>),
-            ["renovationtype"] = (LoadAsync<RenovationType>),
-            ["roadaccesstype"] = (LoadAsync<RoadAccessType>),
-            ["sewertype"] = (LoadAsync<SewerType>),
-            ["wallmaterial"] = (LoadAsync<WallMaterial>),
-            ["watersupplytype"] = (LoadAsync<WaterSupplyType>)
+            [nameof(BathroomType)] = (LoadAsync<BathroomType>),
+            [nameof(BuildingMaterial)] = (LoadAsync<BuildingMaterial>),
+            [nameof(BuildingType)] = (LoadAsync<BuildingType>),
+            [nameof(ClassType)] = (LoadAsync<ClassType>),
+            [nameof(GasType)] = (LoadAsync<GasType>),
+            [nameof(HeatingType)] = (LoadAsync<HeatingType>),
+            [nameof(LandCategory)] = (LoadAsync<LandCategory>),
+            [nameof(LayoutType)] = (LoadAsync<LayoutType>),
+            [nameof(ListingType)] = (LoadAsync<ListingType>),
+            [nameof(OfficeClass)] = (LoadAsync<OfficeClass>),
+            [nameof(RenovationType)] = (LoadAsync<RenovationType>),
+            [nameof(RoadAccessType)] = (LoadAsync<RoadAccessType>),
+            [nameof(SewerType)] = (LoadAsync<SewerType>),
+            [nameof(WallMaterial)] = (LoadAsync<WallMaterial>),
+            [nameof(WaterSupplyType)] = (LoadAsync<WaterSupplyType>)
         };
 
         _loaders = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["bathroomtype"] = (Load<BathroomType>),
-            ["buildingmaterial"] = (Load<BuildingMaterial>),
-            ["buildingtype"] = (Load<BuildingType>),
-            ["classtype"] = (Load<ClassType>),
-            ["gastype"] = (Load<GasType>),
-            ["heatingtype"] = (Load<HeatingType>),
-            ["landcategory"] = (Load<LandCategory>),
-            ["layouttype"] = (Load<LayoutType>),
-            ["listingtype"] = (Load<ListingType>),
-            ["officeclass"] = (Load<OfficeClass>),
-            ["renovationtype"] = (Load<RenovationType>),
-            ["roadaccesstype"] = (Load<RoadAccessType>),
-            ["sewertype"] = (Load<SewerType>),
-            ["wallmaterial"] = (Load<WallMaterial>),
-            ["watersupplytype"] = (Load<WaterSupplyType>)
+            [nameof(BathroomType)] = (Load<BathroomType>),
+            [nameof(BuildingMaterial)] = (Load<BuildingMaterial>),
+            [nameof(BuildingType)] = (Load<BuildingType>),
+            [nameof(ClassType)] = (Load<ClassType>),
+            [nameof(GasType)] = (Load<GasType>),
+            [nameof(HeatingType)] = (Load<HeatingType>),
+            [nameof(LandCategory)] = (Load<LandCategory>),
+            [nameof(LayoutType)] = (Load<LayoutType>),
+            [nameof(ListingType)] = (Load<ListingType>),
+            [nameof(OfficeClass)] = (Load<OfficeClass>),
+            [nameof(RenovationType)] = (Load<RenovationType>),
+            [nameof(RoadAccessType)] = (Load<RoadAccessType>),
+            [nameof(SewerType)] = (Load<SewerType>),
+            [nameof(WallMaterial)] = (Load<WallMaterial>),
+            [nameof(WaterSupplyType)] = (Load<WaterSupplyType>)
         };
     }
 

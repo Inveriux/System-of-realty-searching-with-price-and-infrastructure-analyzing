@@ -16,19 +16,23 @@ public class GetListingDto
     public string? PricePeriod { get; set; }
     public required decimal AreaTotal { get; init; }//TODO implement
     public int? BuildYear { get; set; }
+    public string? MainMedia { get; set; }
     public DateTimeOffset? PublishedDate { get; set; }
     public string? BuildingType { get; set; }
     public required string ListingType { get; init; }
-    // public ICollection<ListingMedia>? Media { get; set; } 
-    // public ICollection<ListingPriceHistory>? PriceHistory { get; set; }
-    //public IDetailListingDto? Detail { get; set; }
 
 
     private class Mapping : Profile
     {
         public Mapping()
         {
-            CreateMap<Listing, GetListingDto>();
+            CreateMap<Listing, GetListingDto>()
+                .ForMember(x => x.MainMedia, y => y.MapFrom(s =>
+                    s.Media == null
+                        ? null
+                        : s.Media.Where(m => m.IsMainMedia)
+                                .Select(m => m.Url)
+                                .FirstOrDefault()));
         }
     }
 }

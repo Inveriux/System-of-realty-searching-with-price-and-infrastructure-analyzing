@@ -11,15 +11,15 @@ public class OfficeDetailsDtoValidator : AbstractValidator<OfficeDetailsDto>
     public OfficeDetailsDtoValidator(ILookupCache lookupCache)
     {
         RuleFor(x => x.OfficeClass)
-            .MustExistInLookupRequired<OfficeDetailsDto, OfficeClass>(lookupCache, nameof(OfficeClass));
+            .MustExistInLookup<OfficeDetailsDto, OfficeClass>(lookupCache, nameof(OfficeClass));
 
         RuleFor(x => x.LayoutType)
-            .MustExistInLookupRequired<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
+            .MustExistInLookup<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
 
         RuleFor(x => x.RenovationType)
-            .MustExistInLookupRequired<OfficeDetailsDto, RenovationType>(lookupCache, nameof(RenovationType));
+            .MustExistInLookup<OfficeDetailsDto, RenovationType>(lookupCache, nameof(RenovationType));
 
         RuleFor(x => x.ParkingType)
-            .MustExistInLookupRequired<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
+            .MustExistInLookup<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
     }
 }

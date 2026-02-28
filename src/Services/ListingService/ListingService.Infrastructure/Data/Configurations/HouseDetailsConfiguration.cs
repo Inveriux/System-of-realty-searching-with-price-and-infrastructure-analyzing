@@ -23,24 +23,6 @@ internal class ListingHouseDetailsConfiguration : IEntityTypeConfiguration<House
             .HasForeignKey<HouseDetails>(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(x => x.WallMaterialId)
-            .IsRequired();
-
-        builder.Property(x => x.RoofMaterialId)
-            .IsRequired();
-
-        builder.Property(x => x.HeatingTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.WaterSupplyTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.SewerTypeId)
-            .IsRequired();
-
-        builder.Property(x => x.GasTypeId)
-            .IsRequired();
-
         builder.HasOne(x => x.WallMaterial)
             .WithMany()
             .HasForeignKey(x => x.WallMaterialId);

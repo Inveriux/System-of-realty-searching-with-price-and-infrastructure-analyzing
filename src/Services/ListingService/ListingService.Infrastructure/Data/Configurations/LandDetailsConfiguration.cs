@@ -23,13 +23,8 @@ internal class ListingLandDetailsConfiguration : IEntityTypeConfiguration<LandDe
             .HasForeignKey<LandDetails>(x => x.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(x => x.LandCategoryId)
-            .IsRequired();
-
         builder.Property(x => x.AllowedUse)
             .HasMaxLength(StringMaxLength);
-        builder.Property(x => x.RoadAccessTypeId)
-            .IsRequired();
 
         builder.HasOne(x => x.LandCategory)
             .WithMany()

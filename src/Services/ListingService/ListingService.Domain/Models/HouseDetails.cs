@@ -16,16 +16,16 @@ public class HouseDetails : IListingDetails
 
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
-    public Guid WallMaterialId { get; set; }
+    public Guid? WallMaterialId { get; set; }
     public WallMaterial? WallMaterial { get; set; }
-    public Guid HeatingTypeId { get; set; }
+    public Guid? HeatingTypeId { get; set; }
     public HeatingType? HeatingType { get; set; }
-    public Guid SewerTypeId { get; set; }
+    public Guid? SewerTypeId { get; set; }
     public SewerType? SewerType { get; set; }
-    public Guid GasTypeId { get; set; }
+    public Guid? GasTypeId { get; set; }
     public GasType? GasType { get; set; }
-    public Guid RoofMaterialId { get; set; }
+    public Guid? RoofMaterialId { get; set; }
     public WallMaterial? RoofMaterial { get; set; }
-    public Guid WaterSupplyTypeId { get; set; }
+    public Guid? WaterSupplyTypeId { get; set; }
     public WaterSupplyType? WaterSupplyType { get; set; }
 }

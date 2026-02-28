@@ -24,9 +24,7 @@ public class Listing : AuditableEntity<Guid>
     public Guid? BuildingTypeId { get; set; }
     public BuildingType? BuildingType { get; set; }
     public Guid ListingTypeId { get; set; }
-    public ListingType? ListingType { get; set; }
-    public Guid? MainMediaId { get; set; }
-    public ListingMedia? MainMedia { get; set; }
+    public ListingType ListingType { get; set; } = null!;
     public ICollection<ListingMedia>? Media { get; set; } 
     public ICollection<ListingPriceHistory>? PriceHistory { get; set; }
 

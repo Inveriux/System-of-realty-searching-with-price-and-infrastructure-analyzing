@@ -1,5 +1,4 @@
 using ListingService.Application.DTOs.Listings.Abstractions;
-using ListingService.Application.Common.Lookups.Converters;
 using ListingService.Domain.Models;
 using AutoMapper;
 
@@ -13,7 +12,6 @@ public class OfficeDetailsDto : IListingDetailsDto
     public int? Levels { get; set; }
     public int? ParkingSpaces { get; set; }
     public bool? Kitchenette { get; set; }
-    public string? Listing { get; set; }
     public string? OfficeClass { get; set; }
     public string? LayoutType { get; set; }
     public string? RenovationType { get; set; }
@@ -25,10 +23,6 @@ public class OfficeDetailsDto : IListingDetailsDto
         public Mapping()
         {
             CreateMap<OfficeDetails, OfficeDetailsDto>();
-            CreateMap<string?, OfficeClass?>()
-                .ConvertUsing<LookupByNameOrNullConverter<OfficeClass>>();
-            CreateMap<string?, LayoutType?>()
-                .ConvertUsing<LookupByNameOrNullConverter<LayoutType>>();
         }
     }
 }
