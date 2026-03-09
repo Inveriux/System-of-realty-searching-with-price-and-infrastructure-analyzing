@@ -1,0 +1,72 @@
+using BasicBuildingBlocks.Extensions.Repositories;
+using BasicBuildingBlocks.Collections;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+
+namespace BasicBuildingBlocks.Repositories;
+
+public class BaseRepository<TEntity>(DbContext context) where TEntity : class
+{
+    public async Task<PagedResult<TEntity>> GetAllAsync<TKey>(
+        PagedRequest pageRequest,
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false,
+        CancellationToken ct = default)
+    {
+        var q = context.Set<TEntity>().IsTracking(isTracking);
+
+        orderBy ??= e => EF.Property<TKey>(e, "Id"); 
+        q = isDescending ? q.OrderByDescending(orderBy) : q.OrderBy(orderBy);
+
+        return await q.ToPagedResultAsync(pageRequest.PageNumber, pageRequest.PageSize, ct);
+    }
+
+    public async Task<List<TEntity>> GetAllAsync<TKey>(
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await GetAllAsync(new(0, 0), orderBy, isDescending, isTracking, cancellationToken);
+        return [.. result.Items];
+    }
+
+    public PagedResult<TEntity> GetAll<TKey>(
+        PagedRequest pageRequest,
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false)
+    {
+        var q = context.Set<TEntity>().IsTracking(isTracking);
+
+        orderBy ??= e => EF.Property<TKey>(e, "Id"); 
+        q = isDescending ? q.OrderByDescending(orderBy) : q.OrderBy(orderBy);
+
+        return q.ToPagedResult(pageRequest.PageNumber, pageRequest.PageSize);
+    }
+
+    public List<TEntity> GetAll<TKey>(
+        Expression<Func<TEntity, TKey>>? orderBy = null,
+        bool isDescending = false,
+        bool isTracking = false)
+    {
+        var result = GetAll(new(0, 0), orderBy, isDescending, isTracking);
+        return [.. result.Items];
+    }
+
+    public async Task<TEntity?> GetByIdAsync(object id, CancellationToken cancellationToken = default)
+        => await context.Set<TEntity>().FindAsync([id], cancellationToken);
+
+    public async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+        => (await context.Set<TEntity>().AddAsync(entity, cancellationToken)).Entity;
+
+    public TEntity Update(TEntity entity) => context.Set<TEntity>().Update(entity).Entity;
+
+    public void Delete(TEntity entity) => context.Set<TEntity>().Remove(entity);
+
+    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default) 
+        => await context.SaveChangesAsync(cancellationToken) > 0;
+
+    public bool SaveChanges() => context.SaveChanges() > 0;
+}

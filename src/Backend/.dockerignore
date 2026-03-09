@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.git/
+
+**/.gitignore
+**/Directory.Build.props
+**/*.code-workspace
+
+

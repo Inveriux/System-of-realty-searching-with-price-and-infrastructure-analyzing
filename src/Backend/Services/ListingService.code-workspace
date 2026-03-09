@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "ListingService"
+		},
+		{
+			"path": "../BasicBuildingBlocks"
+		}
+	],
+	"settings": {
+		"explorer.fileNesting.expand": false
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
+	}
+}

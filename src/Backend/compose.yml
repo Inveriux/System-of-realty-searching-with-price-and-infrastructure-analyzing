@@ -1,0 +1,29 @@
+name: diploma.backend
+
+services:
+  postgres:
+    image: listingservice-db:local
+    environment: 
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: listingservice-db
+    volumes:
+      - db-data:/var/lib/postgresql/18.2/data
+
+  listingserivce:
+    image: diploma.listingservice:0.5
+    hostname: listingservice
+    depends_on:
+      - postgres
+    ports:
+      - "5001:80"
+      - "5002:443"
+    environment:
+      ASPNETCORE_HTTPS_PORTS: 5002
+      ASPNETCORE_Kestrel__Certificates__Default__Path: "/https/tls.pfx"
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "1234"
+    volumes:
+      - ./certs:/https:ro
+
+volumes:
+  db-data:
