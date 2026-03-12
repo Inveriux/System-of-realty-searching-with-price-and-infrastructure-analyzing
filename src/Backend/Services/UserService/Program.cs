@@ -1,11 +1,14 @@
 using UserService.Services.JwtProviders.Abstractions;
+using UserService.Services.AdminSeeder.Abstractions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using UserService.Data.Repositiroes.Abstractions;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using BasicBuildingBlocks.Services.Abstractions;
 using BasicBuildingBlocks.Endpoints.Extensions;
-using BasicBuildingBlocks.Service.Abstractions;
+using Microsoft.AspNetCore.Authorization;
 using UserService.Services.JwtProviders;
+using UserService.Services.AdminSeeder;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
@@ -14,9 +17,10 @@ using Microsoft.EntityFrameworkCore;
 using BasicBuildingBlocks.Behaviors;
 using Microsoft.Extensions.Options;
 using BasicBuildingBlocks.Handlers;
-using BasicBuildingBlocks.Service;
+using BasicBuildingBlocks.Services;
 using UserService.Models.Enums;
 using System.Security.Claims;
+using UserService.Handlers;
 using UserService.Models;
 using System.Reflection;
 using FluentValidation;
@@ -52,9 +56,6 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequireLowercase = false;
 
     options.User.RequireUniqueEmail = true;
-
-    options.User.AllowedUserNameCharacters = 
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ ";
 });
 
 builder.Services
@@ -98,9 +99,10 @@ var service = builder.Services
             ValidIssuer = settings.Value.Authority,
             ValidateAudience = true,
             ValidAudience = settings.Value.Audience,
-            ValidateLifetime = false,
+            ValidateLifetime = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Value.Key)),
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero
         };
 
         options.Events = new JwtBearerEvents
@@ -168,6 +170,7 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddScoped<IRefreshTokenProvider, RefreshTokenProvider>();
 builder.Services.AddSingleton<IDomainJwtProvider, DomainJwtProvider>((services) =>
 {
     var settings = services.GetRequiredService<IOptions<JwtSettingsOptions>>().Value;;
@@ -178,6 +181,10 @@ builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
 
 #endregion 
 
+#region Authorization
+
+builder.Services.AddScoped<IAuthorizationHandler, OwnerOrAdminAccessAuthorizationHandler>();
+
 builder.Services.AddAuthorization(cfg =>
 {
     cfg.AddPolicy(PolicyNames.User, policy => 
@@ -186,14 +193,29 @@ builder.Services.AddAuthorization(cfg =>
             policy.RequireClaim(ClaimTypes.Name);
             policy.RequireRole(PolicyNames.User);
         });
-
     cfg.AddPolicy(PolicyNames.Admin, policy => 
         { 
             policy.RequireClaim(ClaimTypes.Email);
             policy.RequireClaim(ClaimTypes.Name);
             policy.RequireRole(PolicyNames.Admin);
         });
+    cfg.AddPolicy(PolicyNames.Agent, policy => 
+        { 
+            policy.RequireClaim(ClaimTypes.Email);
+            policy.RequireClaim(ClaimTypes.Name);
+            policy.RequireRole(PolicyNames.Agent);
+        });
+    cfg.AddPolicy(PolicyNames.OwnerOrAdminAccess, policy =>
+        {
+            policy.RequireClaim(ClaimTypes.Email);
+            policy.RequireClaim(ClaimTypes.Name);
+            policy.RequireRole(UserRoles.Admin, UserRoles.User, UserRoles.Agent);
+        });
 }).AddAuthorizationBuilder();
+
+builder.Services.AddScoped<IAdminSeeder, AdminSeeder>();
+
+#endregion
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -209,7 +231,7 @@ if(app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseExceptionHandler(_ => {});
+//app.UseExceptionHandler(_ => {});
 
 app.UseHttpsRedirection();
 app.MapEndpoints(Assembly.GetExecutingAssembly());

@@ -12,6 +12,7 @@ public class UserRepository(ApplicationDbContext context,
     public async Task<User?> GetByIdAsync(Guid id, bool IsTracking = false)
     {
         return await userManager.Users
+            .Include(u => u.GoogleAuthentication)
             .IsTracking(IsTracking)
             .FirstOrDefaultAsync(u => u.Id == id);
     }
@@ -21,6 +22,14 @@ public class UserRepository(ApplicationDbContext context,
         return await userManager.Users
             .IsTracking(IsTracking)
             .FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    public async Task<User?> GetByRefreshTokenAsync(string refreshTokenHash)
+    {
+        return await userManager.Users
+            .Include(u => u.GoogleAuthentication)
+            .Include(u => u.RefreshToken)
+            .FirstOrDefaultAsync(u => u.RefreshToken.TokenHash == refreshTokenHash);
     }
 
     public async Task CreateUserAsync(User user, string password, string role)

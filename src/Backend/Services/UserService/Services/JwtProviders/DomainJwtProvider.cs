@@ -9,6 +9,8 @@ namespace UserService.Services.JwtProviders;
 public sealed class DomainJwtProvider(string issuer, string audience, string secret)
     : IDomainJwtProvider
 {
+    private const int ExpirationMinutes = 30;
+
     private readonly SymmetricSecurityKey _key = new(Encoding.UTF8.GetBytes(secret));
 
     public string GenerateToken(Guid userId, IEnumerable<Claim>? extraClaims = null)
@@ -29,7 +31,7 @@ public sealed class DomainJwtProvider(string issuer, string audience, string sec
             audience: audience,
             claims: claims,
             notBefore: DateTime.UtcNow,
-            expires: DateTime.UtcNow.AddMinutes(60),
+            expires: DateTime.UtcNow.AddMinutes(ExpirationMinutes),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);

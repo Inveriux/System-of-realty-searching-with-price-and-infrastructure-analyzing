@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using BasicBuildingBlocks.BusinessResults;
 using FluentValidation;
 
 namespace BasicBuildingBlocks.Handlers;
@@ -17,24 +17,31 @@ public class ExceptionHandler : IExceptionHandler
             _ => HandleUndefindedExcetipn(exception)
         };
 
+        httpContext.Response.StatusCode = result.Status ?? StatusCodes.Status500InternalServerError;
         await httpContext.Response.WriteAsJsonAsync(result);
         return true;
     }
 
-    public ProblemDetails HandleValidationException(ValidationException exception)
+    public ApiProblemDetails HandleValidationException(ValidationException exception)
         => new()
         {
-            Title = exception.Message,
+            Title = "Validation failed",
             Status = StatusCodes.Status400BadRequest,
-            Detail = string.Join(",", exception.Errors.ToDictionary(e => e.PropertyName, 
-                                                                    e => e.ErrorMessage))
+            Detail = exception.Message,
+            Errors = exception.Errors
+                .Select(e => new ApiErrorItem(e.ErrorMessage, null, e.PropertyName))
+                .ToList()
         };
 
-    public ProblemDetails HandleUndefindedExcetipn(Exception exception)
+    public ApiProblemDetails HandleUndefindedExcetipn(Exception exception)
         => new()
         {
             Title = "Undefinded fauilure",
             Status = StatusCodes.Status500InternalServerError,
-            Detail = exception.Message + "\n" + exception.InnerException?.Message
+            Detail = "Unexpected server error.",
+            Errors =
+            [
+                new ApiErrorItem(exception.Message + "\n" + exception.InnerException?.Message)
+            ]
         };
 }

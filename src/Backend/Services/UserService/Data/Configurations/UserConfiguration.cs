@@ -27,5 +27,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne(u => u.GoogleAuthentication)
             .WithOne(g => g.User)
             .HasForeignKey<GoogleAuthentication>(g => g.Id);
+        
+        builder.HasOne(x => x.RefreshToken)
+            .WithOne(x => x.User)
+            .HasForeignKey<RefreshToken>(x => x.Id)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

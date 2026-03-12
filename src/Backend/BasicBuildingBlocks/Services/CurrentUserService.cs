@@ -1,8 +1,8 @@
-using BasicBuildingBlocks.Service.Abstractions;
+using BasicBuildingBlocks.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
-namespace BasicBuildingBlocks.Service;
+namespace BasicBuildingBlocks.Services;
 
 public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICurrentUserProvider
 {

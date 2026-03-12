@@ -1,11 +1,13 @@
-using BasicBuildingBlocks.Results;
+using BasicBuildingBlocks.BusinessResults;
 using FluentValidation;
 using MediatR;
 
 namespace BasicBuildingBlocks.Behaviors;
 
 public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators) 
-    : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull where TResponse : IResult
+    : IPipelineBehavior<TRequest, TResponse> 
+    where TRequest : notnull 
+    where TResponse : IResult, IResultFactory<TResponse>
 {
     public async Task<TResponse> Handle(TRequest request, 
         RequestHandlerDelegate<TResponse> next, 
@@ -21,6 +23,16 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
         if(!errors.Any())
             return await next();
 
-        throw new ValidationException("Validation failure", errors);
+        return TResponse.Fail(ResultStatusCode.Validation, "Validation failed.", 
+            errors.Select(e => new ResultError(e.ErrorMessage, null, NormalizePropertyName(e.PropertyName))));
+    }
+
+    private static string? NormalizePropertyName(string? propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(propertyName))
+            return propertyName;
+
+        var segments = propertyName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length > 0 ? segments[^1] : propertyName;
     }
 }

@@ -1,5 +1,5 @@
 using UserService.Data.Repositiroes.Abstractions;
-using BasicBuildingBlocks.Results;
+using BasicBuildingBlocks.BusinessResults;
 using UserService.Models.Enums;
 using UserService.Models;
 using UserService.DTOs;

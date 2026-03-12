@@ -2,4 +2,5 @@ namespace UserService.DTOs;
 
 public record SignInUserResponseDto(
     bool Success, 
-    string AccessToken);
+    string Token,
+    string RefreshToken);

@@ -1,4 +1,4 @@
-namespace BasicBuildingBlocks.Service.Abstractions;
+namespace BasicBuildingBlocks.Services.Abstractions;
 
 public interface ICurrentUserProvider
 {

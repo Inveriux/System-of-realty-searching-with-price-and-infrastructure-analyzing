@@ -18,6 +18,6 @@ public class User : IdentityUser<Guid>
 
     public string Name { get; set; } = null!;
     public string? AccountImageUrl { get; set; }
-    public string? RefreshToken { get; set; }
     public GoogleAuthentication? GoogleAuthentication { get; set; }
+    public RefreshToken RefreshToken { get; set; } = null!;
 }

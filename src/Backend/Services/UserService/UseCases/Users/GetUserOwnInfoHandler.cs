@@ -1,0 +1,31 @@
+using UserService.Data.Repositiroes.Abstractions;
+using BasicBuildingBlocks.Services.Abstractions;
+using BasicBuildingBlocks.BusinessResults;
+using UserService.Models;
+using UserService.DTOs;
+using AutoMapper;
+using MediatR;
+
+namespace UserService.UseCases.Users;
+
+public record GetUserOwnInfoQuery : IRequest<Result<GetUserDto>>;
+
+public class GetUserOwnInfoHandler(IUserRepository userRepository, 
+    ICurrentUserProvider currentUserProvider,
+    IMapper mapper) : IRequestHandler<GetUserOwnInfoQuery, Result<GetUserDto>>
+{
+    public async Task<Result<GetUserDto>> Handle(GetUserOwnInfoQuery request, 
+        CancellationToken cancellationToken = default)
+    {
+        var userId = currentUserProvider.GetUserId();
+
+        var user = await userRepository.GetByIdAsync(userId, false);
+        
+        if (user is null)
+            return Result.Fail<GetUserDto>("User not found.")
+                .WithError($"User with {userId} id not found.", propertyName: nameof(User));
+
+        var userDto = mapper.Map<GetUserDto>(user);
+        return Result.Ok(userDto);
+    }
+}

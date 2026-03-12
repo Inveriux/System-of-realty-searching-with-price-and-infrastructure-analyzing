@@ -1,5 +1,6 @@
 using UserService.Data.Repositiroes.Abstractions;
-using BasicBuildingBlocks.Results;
+using BasicBuildingBlocks.BusinessResults;
+using UserService.Models;
 using UserService.DTOs;
 using MediatR;
 
@@ -17,7 +18,7 @@ public class ChangePasswordCommandHandler(IUserRepository userRepository)
         var user = await userRepository.GetByEmailAsync(dto.Email, false);
         if (user is null)
             return Result.Fail<bool>("User not found.")
-                .WithError($"User with {dto.Email} email not found.");
+                .WithError($"User with {dto.Email} email not found.", propertyName: nameof(User));
 
         return Result.Ok(true);
     }

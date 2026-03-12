@@ -1,5 +1,6 @@
 using UserService.Data.Repositiroes.Abstractions;
-using BasicBuildingBlocks.Results;
+using BasicBuildingBlocks.BusinessResults;
+using UserService.Models;
 using UserService.DTOs;
 using AutoMapper;
 using MediatR;
@@ -19,7 +20,7 @@ public class GetUserByIdHandler(IUserRepository userRepository,
         
         if (user is null)
             return Result.Fail<GetUserDto>("User not found.")
-                .WithError($"User with {request.Id} id not found.");
+                .WithError($"User with {request.Id} id not found.", propertyName: nameof(User));
 
         var userDto = mapper.Map<GetUserDto>(user);
         return Result.Ok(userDto);

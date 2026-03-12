@@ -1,7 +1,7 @@
 using UserService.Data.Repositiroes.Abstractions;
-using BasicBuildingBlocks.Service.Abstractions;
+using BasicBuildingBlocks.Services.Abstractions;
+using BasicBuildingBlocks.BusinessResults;
 using Microsoft.AspNetCore.Identity;
-using BasicBuildingBlocks.Results;
 using UserService.Models.Enums;
 using UserService.Models;
 using MediatR;
@@ -21,7 +21,7 @@ public class SignUpByGoogleHandler(IUserRepository userRepository,
         var existingUser = await userManager.FindByEmailAsync(currentUserProvider.GetEmail());
         if (existingUser is not null)
             return Result.Fail<bool>("Email is already in use.")
-                .WithError($"User with {currentUserProvider.GetEmail()} email already exists.");
+                .WithError($"User with {currentUserProvider.GetEmail()} email already exists.", propertyName: nameof(User));
 
         var user = User.Create(currentUserProvider.GetUserName(), 
             currentUserProvider.GetEmail(), 

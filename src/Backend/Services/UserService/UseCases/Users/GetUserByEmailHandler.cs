@@ -1,6 +1,6 @@
 using UserService.Data.Repositiroes.Abstractions;
+using BasicBuildingBlocks.BusinessResults;
 using Microsoft.AspNetCore.Identity;
-using BasicBuildingBlocks.Results;
 using UserService.Models;
 using UserService.DTOs;
 using AutoMapper;
@@ -20,7 +20,8 @@ public class GetUserByEmailHandler(IUserRepository userRepository,
         var user = await userManager.FindByEmailAsync(request.Email);
 
         if(user is null)
-            return Result.Fail<GetUserDto>("User not found.");
+            return Result.Fail<GetUserDto>("User not found.")
+                .WithError($"User with {request.Email} email not found.", propertyName: nameof(User));
 
         var userDto = mapper.Map<GetUserDto>(user);
         var userRole = await userRepository.GetUserRoleAsync(user);

@@ -1,5 +1,7 @@
+using UserService.Services.AdminSeeder.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using UserService.Models.Enums;
 
 namespace UserService.Data;
 
@@ -28,6 +30,7 @@ public static class DatabaseInitialaizer
         builder.UseAsyncSeeding(async (context, _, ct) =>
         {
             var initializer = provider.GetRequiredService<ApplicationDatabaseInitializer>();
+            var adminSeeder = provider.GetRequiredService<IAdminSeeder>();
         
             await initializer.SeedAsync();
         });
@@ -40,6 +43,7 @@ public static class DatabaseInitialaizer
         builder.UseSeeding((context, _) =>
         {
             var initializer = provider.GetRequiredService<ApplicationDatabaseInitializer>();
+            var adminSeeder = provider.GetRequiredService<IAdminSeeder>();
 
             initializer.Seed();
         });
@@ -48,7 +52,7 @@ public static class DatabaseInitialaizer
     }
 }
 
-public class ApplicationDatabaseInitializer(ApplicationDbContext context)
+public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdminSeeder adminSeeder)
 {
     public void Initialize(bool ensureDelete = false)
     {
@@ -82,7 +86,7 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
         }
     }
 
-    private readonly static List<IdentityRole<Guid>> UserRoles = [
+    private readonly static List<IdentityRole<Guid>> UserRolesSeed = [
         new IdentityRole<Guid> { Id = Guid.NewGuid(), Name = "Admin", NormalizedName = "ADMIN" },
         new IdentityRole<Guid> { Id = Guid.NewGuid(), Name = "User", NormalizedName = "USER" },
         new IdentityRole<Guid> { Id = Guid.NewGuid(), Name = "Agent", NormalizedName = "MODERATOR" },  
@@ -94,7 +98,13 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
         {
             if (!context.Roles.Any())
             {
-                context.Roles.AddRange(UserRoles);
+                context.Roles.AddRange(UserRolesSeed);
+                context.SaveChanges();
+            }
+
+            if(!context.UserRoles.Where(ur => ur.RoleId == context.Roles.First(r => r.Name == UserRoles.Admin).Id).Any())
+            {
+                adminSeeder.SeedAdmin("roman", "roman@gmail.com", "12345678");
                 context.SaveChanges();
             }
         }
@@ -111,7 +121,13 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context)
         {
             if (!context.Roles.Any())
             {
-                await context.Roles.AddRangeAsync(UserRoles);
+                await context.Roles.AddRangeAsync(UserRolesSeed);
+                await context.SaveChangesAsync();
+            }
+
+            if(!context.UserRoles.Where(ur => ur.RoleId == context.Roles.First(r => r.Name == UserRoles.Admin).Id).Any())
+            {
+                await adminSeeder.SeedAdminAsync("roman", "roman@gmail.com", "12345678");
                 await context.SaveChangesAsync();
             }
         }

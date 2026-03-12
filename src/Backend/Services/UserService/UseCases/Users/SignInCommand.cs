@@ -1,7 +1,9 @@
 using UserService.Services.JwtProviders.Abstractions;
 using UserService.Data.Repositiroes.Abstractions;
-using BasicBuildingBlocks.Results;
+using BasicBuildingBlocks.BusinessResults;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using UserService.Models;
 using UserService.DTOs;
 using MediatR;
 
@@ -10,16 +12,23 @@ namespace UserService.UseCases.Users;
 public record SignInCommand(SignInUserDto SignInUserDto) : IRequest<Result<SignInUserResponseDto>>;
 
 public class SignInHandler(IUserRepository userRepository,
-    IDomainJwtProvider domainJwtProvider) 
+    UserManager<User> userManager,
+    IDomainJwtProvider domainJwtProvider,
+    IRefreshTokenProvider refreshTokenProvider) 
     : IRequestHandler<SignInCommand, Result<SignInUserResponseDto>>
 {
     public async Task<Result<SignInUserResponseDto>> Handle(SignInCommand request, CancellationToken cancellationToken = default)
     {
         var dto = request.SignInUserDto;
-        var user = await userRepository.GetByEmailAsync(dto.Email, false);
+        var user = await userRepository.GetByEmailAsync(dto.Email, true);
         if (user is null)
             return Result.Fail<SignInUserResponseDto>("Invalid email.")
-                .WithError($"User with {dto.Email} email not found."); 
+                .WithError($"User with {dto.Email} email not found.", propertyName: nameof(User)); 
+
+        var isPasswordValid = await userManager.CheckPasswordAsync(user, dto.Password);
+        if (!isPasswordValid)
+            return Result.Fail<SignInUserResponseDto>("Invalid password.")
+                .WithError("Incorrect password.", propertyName: nameof(User));
 
         var email = dto.Email;
         var userRole = await userRepository.GetUserRoleAsync(user)
@@ -36,6 +45,16 @@ public class SignInHandler(IUserRepository userRepository,
             new Claim(ClaimTypes.Name, name)
         ]);
 
-        return Result.Ok(new SignInUserResponseDto(true, token));
+        var refreshToken = refreshTokenProvider.GenerateRefreshToken();
+        var hash = refreshTokenProvider.HashToken(refreshToken);
+        user.RefreshToken = new()
+        {
+            TokenHash = hash,
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
+        };
+
+        await userRepository.SaveChangesAsync();
+
+        return Result.Ok(new SignInUserResponseDto(true, token, refreshToken));
     }
 }
