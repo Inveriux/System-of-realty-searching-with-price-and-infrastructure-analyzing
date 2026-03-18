@@ -1,7 +1,6 @@
 using ListingService.Application.Common.Lookups.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using ListingService.Domain.Models;
-using FluentResults;
 using MediatR;
 
 namespace ListingService.Application.UseCases.BuildingMaterials;

@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class OfficeClassesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class OfficeClassesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/office_classes");
+        var group = application.MapGroup("/api/office_classes")
+            .WithTags("Office Classes");
 
-        group.MapGet("/", GetAllOfficeClasses);
-        group.MapPost("/", CreateOfficeClass);
-        group.MapDelete("/{name}", DeleteOfficeClass);
+        group.MapGet("/", GetAllOfficeClasses)
+            .WithName("GetOfficeClasses")
+            .WithSummary("Gets all office classes.");
+        group.MapPost("/", CreateOfficeClass)
+            .WithName("CreateOfficeClass")
+            .WithSummary("Creates an office class.");
+        group.MapDelete("/{name}", DeleteOfficeClass)
+            .WithName("DeleteOfficeClass")
+            .WithSummary("Deletes an office class by name.");
 
         return group;
     }

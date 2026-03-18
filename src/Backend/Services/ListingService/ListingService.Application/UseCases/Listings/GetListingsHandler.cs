@@ -1,6 +1,5 @@
 using ListingService.Application.DTOs.Listings;
 using BasicBuildingBlocks.Collections;
-using FluentResults;
 using AutoMapper;
 using MediatR;
 

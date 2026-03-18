@@ -1,5 +1,4 @@
 using ListingService.Application.DTOs.Listings;
-using FluentResults;
 using AutoMapper;
 using MediatR;
 
@@ -17,6 +16,14 @@ public class GetDetailedListingByIdHandler(IRepositoryManager repositoryManager,
         var listing = await repositoryManager.Listing.GetDetailedByIdAsync(request.Id, 
             false, 
             cancellationToken);
+
+        if (listing is null)
+        {
+            return Result.NotFound<GetDetailedListingDto>(
+                "Listing not found.",
+                [new ResultError("Listing not found.", 0, nameof(request.Id))]);
+        }
+
         return Result.Ok(mapper.Map<GetDetailedListingDto>(listing));
     }
 }

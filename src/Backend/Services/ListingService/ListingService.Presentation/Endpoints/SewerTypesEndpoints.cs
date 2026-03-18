@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class SewerTypesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class SewerTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/sewer_types");
+        var group = application.MapGroup("/api/sewer_types")
+            .WithTags("Sewer Types");
 
-        group.MapGet("/", GetAllSewerTypes);
-        group.MapPost("/", CreateSewerType);
-        group.MapDelete("/{name}", DeleteSewerType);
+        group.MapGet("/", GetAllSewerTypes)
+            .WithName("GetSewerTypes")
+            .WithSummary("Gets all sewer types.");
+        group.MapPost("/", CreateSewerType)
+            .WithName("CreateSewerType")
+            .WithSummary("Creates a sewer type.");
+        group.MapDelete("/{name}", DeleteSewerType)
+            .WithName("DeleteSewerType")
+            .WithSummary("Deletes a sewer type by name.");
 
         return group;
     }

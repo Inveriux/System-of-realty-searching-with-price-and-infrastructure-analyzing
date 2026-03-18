@@ -6,7 +6,7 @@ namespace ListingService.Application.DTOs.Listings;
 public class GetListingDto
 {
     public Guid Id { get; set; }
-    // public Guid AgentId { get; set; }
+    public Guid AgentId { get; set; }
     public string? AddressText { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
@@ -20,6 +20,10 @@ public class GetListingDto
     public DateTimeOffset? PublishedDate { get; set; }
     public string? BuildingType { get; set; }
     public required string ListingType { get; init; }
+    public DateTime? Created { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime? LastModified { get; set; }
+    public string? LastModifiedBy { get; set; }
 
 
     private class Mapping : Profile

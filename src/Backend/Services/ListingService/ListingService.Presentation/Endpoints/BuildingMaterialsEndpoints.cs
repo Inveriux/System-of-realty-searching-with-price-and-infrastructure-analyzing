@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class BuildingMaterialsEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class BuildingMaterialsEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/building_materials");
+        var group = application.MapGroup("/api/building_materials")
+            .WithTags("Building Materials");
 
-        group.MapGet("/", GetAllBuildingMaterials);
-        group.MapPost("/", CreateBuildingMaterial);
-        group.MapDelete("/{name}", DeleteBuildingMaterial);
+        group.MapGet("/", GetAllBuildingMaterials)
+            .WithName("GetBuildingMaterials")
+            .WithSummary("Gets all building materials.");
+        group.MapPost("/", CreateBuildingMaterial)
+            .WithName("CreateBuildingMaterial")
+            .WithSummary("Creates a building material.");
+        group.MapDelete("/{name}", DeleteBuildingMaterial)
+            .WithName("DeleteBuildingMaterial")
+            .WithSummary("Deletes a building material by name.");
 
         return group;
     }

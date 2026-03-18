@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class HeatingTypesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class HeatingTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/heating_types");
+        var group = application.MapGroup("/api/heating_types")
+            .WithTags("Heating Types");
 
-        group.MapGet("/", GetAllHeatingTypes);
-        group.MapPost("/", CreateHeatingType);
-        group.MapDelete("/{name}", DeleteHeatingType);
+        group.MapGet("/", GetAllHeatingTypes)
+            .WithName("GetHeatingTypes")
+            .WithSummary("Gets all heating types.");
+        group.MapPost("/", CreateHeatingType)
+            .WithName("CreateHeatingType")
+            .WithSummary("Creates a heating type.");
+        group.MapDelete("/{name}", DeleteHeatingType)
+            .WithName("DeleteHeatingType")
+            .WithSummary("Deletes a heating type by name.");
 
         return group;
     }

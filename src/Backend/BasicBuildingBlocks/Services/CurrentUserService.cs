@@ -1,4 +1,5 @@
 using BasicBuildingBlocks.Services.Abstractions;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -10,7 +11,7 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
 
     public Guid GetUserId()
     {
-        var value = GetRequiredClaim(ClaimTypes.NameIdentifier);
+        var value = GetRequiredClaim(ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub);
 
         if (!Guid.TryParse(value, out var userId))
             throw new UnauthorizedAccessException("User id claim is invalid.");
@@ -22,17 +23,21 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
 
     public string GetEmail() => GetRequiredClaim(ClaimTypes.Email);
 
-    public string GetGoogleId() => GetRequiredClaim(ClaimTypes.NameIdentifier);
+    public string GetGoogleId() => GetRequiredClaim(ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub);
 
     public string? GetImageUrl() =>
         httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == "image_url")?.Value;
 
-    private string GetRequiredClaim(string claimType)
+    private string GetRequiredClaim(params string[] claimTypes)
     {
         if (httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated != true)
             throw new UnauthorizedAccessException("User is not authenticated.");
 
-        return httpContextAccessor.HttpContext?.User.Claims.FirstOrDefault(c => c.Type == claimType)?.Value
-            ?? throw new UnauthorizedAccessException($"Required claim '{claimType}' was not found.");
+        var value = httpContextAccessor.HttpContext?.User.Claims
+            .FirstOrDefault(c => claimTypes.Contains(c.Type))?.Value;
+
+        return value
+            ?? throw new UnauthorizedAccessException(
+                $"Required claim was not found. Expected one of: {string.Join(", ", claimTypes)}");
     }
 }

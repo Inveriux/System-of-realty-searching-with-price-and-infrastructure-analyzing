@@ -8,7 +8,7 @@ namespace ListingService.Application.DTOs.Listings;
 public class GetDetailedListingDto
 {
     public Guid Id { get; set; }
-    // public Guid AgentId { get; set; }
+    public Guid AgentId { get; set; }
     public string? AddressText { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
@@ -25,6 +25,10 @@ public class GetDetailedListingDto
     public ICollection<ListingMediaDto>? Media { get; set; } 
     public ICollection<ListingPriceHistoryDto>? PriceHistory { get; set; }
     public required IListingDetailsDto ListingDetails { get; set; }
+    public DateTime? Created { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime? LastModified { get; set; }
+    public string? LastModifiedBy { get; set; }
 
 
     private class Mapping : Profile

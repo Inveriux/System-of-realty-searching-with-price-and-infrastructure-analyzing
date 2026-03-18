@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: listing-service-pv
+spec:
+  capacity:
+    storage: 250Mi
+  volumeMode: Filesystem
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/diploma/listing-service-data

@@ -10,8 +10,11 @@ RUN dotnet publish ${BASE_PROJECT_PATH} -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
-ENV ASPNETCORE_URLS="http://+:80;https://+:443"
-EXPOSE 80 443
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8080 443
 
 COPY --from=build /app ./
 ENTRYPOINT [ "dotnet", "ListingService.Presentation.dll" ]

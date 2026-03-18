@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class BuildingTypesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class BuildingTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/building_types");
+        var group = application.MapGroup("/api/building_types")
+            .WithTags("Building Types");
 
-        group.MapGet("/", GetAllBuildingTypes);
-        group.MapPost("/", CreateBuildingType);
-        group.MapDelete("/{name}", DeleteBuildingType);
+        group.MapGet("/", GetAllBuildingTypes)
+            .WithName("GetBuildingTypes")
+            .WithSummary("Gets all building types.");
+        group.MapPost("/", CreateBuildingType)
+            .WithName("CreateBuildingType")
+            .WithSummary("Creates a building type.");
+        group.MapDelete("/{name}", DeleteBuildingType)
+            .WithName("DeleteBuildingType")
+            .WithSummary("Deletes a building type by name.");
 
         return group;
     }

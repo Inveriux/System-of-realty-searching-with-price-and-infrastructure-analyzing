@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class RenovationTypesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class RenovationTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/renovation_types");
+        var group = application.MapGroup("/api/renovation_types")
+            .WithTags("Renovation Types");
 
-        group.MapGet("/", GetAllRenovationTypes);
-        group.MapPost("/", CreateRenovationType);
-        group.MapDelete("/{name}", DeleteRenovationType);
+        group.MapGet("/", GetAllRenovationTypes)
+            .WithName("GetRenovationTypes")
+            .WithSummary("Gets all renovation types.");
+        group.MapPost("/", CreateRenovationType)
+            .WithName("CreateRenovationType")
+            .WithSummary("Creates a renovation type.");
+        group.MapDelete("/{name}", DeleteRenovationType)
+            .WithName("DeleteRenovationType")
+            .WithSummary("Deletes a renovation type by name.");
 
         return group;
     }

@@ -1,6 +1,6 @@
+using BasicBuildingBlocks.Authorization;
 using BasicBuildingBlocks.Services.Abstractions;
 using Microsoft.AspNetCore.Authorization;
-using UserService.Handlers;
 using UserService.Models.Enums;
 
 namespace UserService.Filters;

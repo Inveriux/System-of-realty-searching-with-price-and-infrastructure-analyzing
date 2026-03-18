@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using BasicBuildingBlocks.Services.Abstractions;
 using BasicBuildingBlocks.Endpoints.Extensions;
 using Microsoft.AspNetCore.Authorization;
+using BasicBuildingBlocks.Authorization;
 using UserService.Services.JwtProviders;
 using UserService.Services.AdminSeeder;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,9 +19,9 @@ using BasicBuildingBlocks.Behaviors;
 using Microsoft.Extensions.Options;
 using BasicBuildingBlocks.Handlers;
 using BasicBuildingBlocks.Services;
+using UserService.Authorization;
 using UserService.Models.Enums;
 using System.Security.Claims;
-using UserService.Handlers;
 using UserService.Models;
 using System.Reflection;
 using FluentValidation;
@@ -58,6 +59,8 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.RequireUniqueEmail = true;
 });
 
+#region Authentication
+
 builder.Services
     .AddAuthentication(options =>
     {
@@ -67,8 +70,6 @@ builder.Services
     .AddJwtBearer()
     .AddCookie(IdentityConstants.ExternalScheme)
     .AddGoogle();
-
-#region Authentication
 
 builder.Services.AddHttpContextAccessor();
 
@@ -183,7 +184,8 @@ builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
 
 #region Authorization
 
-builder.Services.AddScoped<IAuthorizationHandler, OwnerOrAdminAccessAuthorizationHandler>();
+builder.Services.AddScoped<IOwnerResourceAccessor<string>, UserEmailOwnerResourceAccessor>();
+builder.Services.AddScoped<IAuthorizationHandler, OwnerOrAdminAccessAuthorizationHandler<string>>();
 
 builder.Services.AddAuthorization(cfg =>
 {
@@ -220,6 +222,7 @@ builder.Services.AddScoped<IAdminSeeder, AdminSeeder>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<ApplicationDatabaseInitializer>();
 
@@ -228,12 +231,19 @@ var app = builder.Build();
 if(app.Environment.IsDevelopment())
     await app.InitializeTestDatabaseAsync(false);
 
+if(app.Environment.IsProduction())
+{
+    var isDeletedata = app.Configuration.GetValue<bool>("DeleteDataAtStartup");
+    await app.InitializeTestDatabaseAsync(isDeletedata);
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 //app.UseExceptionHandler(_ => {});
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
+app.MapOpenApi();
 app.MapEndpoints(Assembly.GetExecutingAssembly());
 app.MapGet("/", () => "User sevice is work!");
 

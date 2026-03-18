@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: 
+  name: user-service-pvc
+  namespace: diploma
+spec:
+  storageClassName: ""
+  resources:
+    requests: 
+      storage: 250Mi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce

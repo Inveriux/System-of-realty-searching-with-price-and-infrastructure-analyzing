@@ -1,7 +1,5 @@
 using ListingService.Application.DTOs.Lookups.Abstractions;
 using ListingService.Domain.Abstractions;
-using FluentResults;
-
 namespace ListingService.Application.Common.Lookups.Abstractions;
 
 public interface ILookupHandler<TLookup, TLookupDto> 

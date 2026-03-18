@@ -42,8 +42,22 @@ public class SignInByGoogleHandler(ICurrentUserProvider currentUserProvider,
 
         var refreshToken = refreshTokenProvider.GenerateRefreshToken();
         var hash = refreshTokenProvider.HashToken(refreshToken);
-        user.RefreshToken.TokenHash = hash;
-        user.RefreshToken.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7);
+        if (user.RefreshToken is null)
+        {
+            user.RefreshToken = new()
+            {
+                Id = user.Id,
+                TokenHash = hash,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
+            };
+        }
+        else
+        {
+            user.RefreshToken.TokenHash = hash;
+            user.RefreshToken.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7);
+        }
+
+        await userRepository.SaveChangesAsync();
 
         return Result.Ok(new SignInUserResponseDto(true, token, refreshToken));
     }

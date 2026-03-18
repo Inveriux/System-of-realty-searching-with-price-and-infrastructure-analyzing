@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using ListingService.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using BasicBuildingBlocks.Services.Abstractions;
 
 namespace ListingService.Infrastructure.Data.Interceptors;
 
-public class AuditInterceptor : ISaveChangesInterceptor
+public class AuditInterceptor(ICurrentUserProvider currentUserProvider) : ISaveChangesInterceptor
 {
     public ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData evnetData, 
         InterceptionResult<int> result, 
@@ -46,9 +47,12 @@ public class AuditInterceptor : ISaveChangesInterceptor
                 if (entry.State == EntityState.Added)
                 {
                     entity.Created = now;
+                    entity.CreatedBy = currentUserProvider.GetEmail();
                 }
 
                 entity.LastModified = now;
+                entity.LastModifiedBy = currentUserProvider.GetEmail();
+
             }
         }
     }

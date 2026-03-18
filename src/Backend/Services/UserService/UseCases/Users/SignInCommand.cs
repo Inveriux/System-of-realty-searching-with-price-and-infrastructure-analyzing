@@ -47,11 +47,20 @@ public class SignInHandler(IUserRepository userRepository,
 
         var refreshToken = refreshTokenProvider.GenerateRefreshToken();
         var hash = refreshTokenProvider.HashToken(refreshToken);
-        user.RefreshToken = new()
+        if (user.RefreshToken is null)
         {
-            TokenHash = hash,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
-        };
+            user.RefreshToken = new()
+            {
+                Id = user.Id,
+                TokenHash = hash,
+                ExpiresAt = DateTimeOffset.UtcNow.AddDays(7)
+            };
+        }
+        else
+        {
+            user.RefreshToken.TokenHash = hash;
+            user.RefreshToken.ExpiresAt = DateTimeOffset.UtcNow.AddDays(7);
+        }
 
         await userRepository.SaveChangesAsync();
 

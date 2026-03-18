@@ -1,4 +1,5 @@
 using ListingService.Application.UseCases.RoadAccessTypes;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +11,18 @@ public class RoadAccessTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/road_access_types");
+        var group = application.MapGroup("/api/road_access_types")
+            .WithTags("Road Access Types");
 
-        group.MapGet("/", GetAllRoadAccessTypes);
-        group.MapPost("/", CreateRoadAccessType);
-        group.MapDelete("/{name}", DeleteRoadAccessType);
+        group.MapGet("/", GetAllRoadAccessTypes)
+            .WithName("GetRoadAccessTypes")
+            .WithSummary("Gets all road access types.");
+        group.MapPost("/", CreateRoadAccessType)
+            .WithName("CreateRoadAccessType")
+            .WithSummary("Creates a road access type.");
+        group.MapDelete("/{name}", DeleteRoadAccessType)
+            .WithName("DeleteRoadAccessType")
+            .WithSummary("Deletes a road access type by name.");
 
         return group;
     }

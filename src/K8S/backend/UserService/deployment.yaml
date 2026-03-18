@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-deployment
+  namespace: diploma
+  labels:
+    app: user-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service-deployment
+  template:
+    metadata:
+      labels: 
+        app: user-service-deployment
+    spec:
+      containers:
+        - name: user-service
+          image: diploma.userservice:0.7
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+            - secretRef:
+                name: user-service-secret
+      initContainers: 
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-service 5432; do echo waiting for postgres; sleep 2; done;']
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  name: user-service-svc
+  namespace: diploma
+spec:
+  selector: 
+    app: user-service-deployment
+  ports: 
+    - protocol: TCP
+      port: 8080
+        

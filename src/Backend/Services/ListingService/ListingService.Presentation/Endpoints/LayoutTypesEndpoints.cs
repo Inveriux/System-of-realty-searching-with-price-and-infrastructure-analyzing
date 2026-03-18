@@ -1,4 +1,5 @@
 using ListingService.Application.UseCases.LayoutTypes;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +11,18 @@ public class LayoutTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/layout_types");
+        var group = application.MapGroup("/api/layout_types")
+            .WithTags("Layout Types");
 
-        group.MapGet("/", GetAllLayoutTypes);
-        group.MapPost("/", CreateLayoutType);
-        group.MapDelete("/{name}", DeleteLayoutType);
+        group.MapGet("/", GetAllLayoutTypes)
+            .WithName("GetLayoutTypes")
+            .WithSummary("Gets all layout types.");
+        group.MapPost("/", CreateLayoutType)
+            .WithName("CreateLayoutType")
+            .WithSummary("Creates a layout type.");
+        group.MapDelete("/{name}", DeleteLayoutType)
+            .WithName("DeleteLayoutType")
+            .WithSummary("Deletes a layout type by name.");
 
         return group;
     }

@@ -208,7 +208,14 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
     }
 
     public Task DeleteAsync(Guid id, CancellationToken cancellationToken)
+        => DeleteInternalAsync(id, cancellationToken);
+
+    private async Task DeleteInternalAsync(Guid id, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var listing = await context.Listings
+            .FirstOrDefaultAsync(l => l.Id == id, cancellationToken)
+            ?? throw new ArgumentException($"There is no listing with id: {id}");
+
+        context.Listings.Remove(listing);
     }
 }

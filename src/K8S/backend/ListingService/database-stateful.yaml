@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: listing-service-db
+  namespace: diploma
+  labels:
+    app: listing-service-db
+spec:
+  serviceName: listing-service-db-svc
+  selector:
+    matchLabels:
+      app: listing-service-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: listing-service-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:18
+        ports:
+        - containerPort: 5432
+          name: postgres
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql
+        env:
+        - name: POSTGRES_DB
+          value: listing-service-db
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: "2357"
+        readinessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - pg_isready -U postgres -d listing-service-db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: listing-service-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listing-service-db-svc
+  namespace: diploma
+spec:
+  selector:
+    app: listing-service-db
+  ports:
+    - port: 5432
+  clusterIP: None

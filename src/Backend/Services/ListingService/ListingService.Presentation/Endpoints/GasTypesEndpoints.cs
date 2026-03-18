@@ -3,6 +3,7 @@ using BasicBuildingBlocks.Endpoints.Abstractions;
 using ListingService.Application.DTOs.Lookups;
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
+using BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public class GasTypesEndpoints : IEndpointRegistrar
 {
@@ -10,11 +11,18 @@ public class GasTypesEndpoints : IEndpointRegistrar
     {
         var groupName = GetType().Name;
 
-        var group = application.MapGroup("/api/gas_types");
+        var group = application.MapGroup("/api/gas_types")
+            .WithTags("Gas Types");
 
-        group.MapGet("/", GetAllGasTypes);
-        group.MapPost("/", CreateGasType);
-        group.MapDelete("/{name}", DeleteGasType);
+        group.MapGet("/", GetAllGasTypes)
+            .WithName("GetGasTypes")
+            .WithSummary("Gets all gas types.");
+        group.MapPost("/", CreateGasType)
+            .WithName("CreateGasType")
+            .WithSummary("Creates a gas type.");
+        group.MapDelete("/{name}", DeleteGasType)
+            .WithName("DeleteGasType")
+            .WithSummary("Deletes a gas type by name.");
 
         return group;
     }

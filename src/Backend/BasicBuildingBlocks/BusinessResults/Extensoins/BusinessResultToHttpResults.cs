@@ -4,7 +4,7 @@ namespace BasicBuildingBlocks.BusinessResults.Extensoins;
 
 public static class BusinessResultToHttpResults
 {
-    public static Microsoft.AspNetCore.Http.IResult ToHttpResults(this Result result)
+    public static Microsoft.AspNetCore.Http.IResult ToHttpResult(this Result result)
     {
         if(result.IsSuccess)
             return Results.Ok();
