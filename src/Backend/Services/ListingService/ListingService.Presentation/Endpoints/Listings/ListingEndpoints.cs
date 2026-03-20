@@ -1,17 +1,30 @@
+using ListingService.Presentation.Services.Abstractions;
 using BasicBuildingBlocks.BusinessResults.Extensoins;
 using ListingService.Application.UseCases.Listings;
-using ListingService.Domain.Enums;
-using ListingService.Presentation.Filters;
+using ListingService.Presentation.Converters.Json;
 using BasicBuildingBlocks.Endpoints.Abstractions;
+using ListingService.Presentation.Dtos.Listings;
+using ListingService.Application.DTOs.Listings;
+using ListingService.Presentation.Filters;
+using ListingService.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using MediatR;
 
 namespace ListingService.Presentation.Endpoints.Listings;
 
 public class ListingsEndpoints : IEndpointRegistrar
 {
+    private static readonly JsonSerializerOptions ListingJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public RouteGroupBuilder MapEndpoints(WebApplication application)
     {
+        ListingJsonOptions.Converters.Add(new CreateListingDtoJsonConverter());
+
         var group = application.MapGroup("api/listings")
             .WithTags("Listings");
 
@@ -32,6 +45,20 @@ public class ListingsEndpoints : IEndpointRegistrar
             .WithName("CreateListing")
             .WithSummary("Creates a new listing.")
             .WithDescription("Accepts the common listing payload and a polymorphic listingDetails object selected by listingDetailsType.");
+        group.MapPost("/with-images", CreateListingWithImagesAsync)
+            .RequireAuthorization()
+            .WithName("CreateListingWithImages")
+            .WithSummary("Creates a new listing and uploads its photos through ImageService.")
+            .WithDescription("Accepts multipart/form-data with `listing` JSON and up to 10 files in `images`.")
+            .DisableAntiforgery();
+        group.MapPost("/{id}/images", UploadListingImageAsync)
+            .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
+            .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
+            .WithName("UploadListingImage")
+            .WithSummary("Uploads a single photo to an existing listing.")
+            .WithDescription("Allows only the listing owner or an admin to append one photo via ImageService.")
+            .Accepts<UploadListingImageRequest>("multipart/form-data")
+            .DisableAntiforgery();
         group.MapDelete("/{id}", DeleteAsync)
             .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
             .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
@@ -72,6 +99,107 @@ public class ListingsEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(listing, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> CreateListingWithImagesAsync(
+        ISender sender,
+        IImageServiceClient imageServiceClient,
+        ILogger<ListingsEndpoints> logger,
+        HttpRequest request,
+        CancellationToken cancellationToken)
+    {
+        var form = await request.ReadFormAsync(cancellationToken);
+        var listing = form["listing"].FirstOrDefault();
+        var images = form.Files.GetFiles("images");
+
+        if (string.IsNullOrWhiteSpace(listing))
+            return Results.BadRequest("`listing` json payload is required.");
+
+        CreateListingDto? listingDto;
+        try
+        {
+            listingDto = JsonSerializer.Deserialize<CreateListingDto>(listing, ListingJsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            return Results.BadRequest($"Invalid listing json payload: {ex.Message}");
+        }
+
+        if (listingDto is null)
+            return Results.BadRequest("Failed to deserialize listing payload.");
+
+        var imagesCount = images.Count;
+        logger.LogInformation(
+            "CreateListingWithImages started. Bound images count: {ImagesCount}. Title: {Title}. ListingType: {ListingType}. DetailsType: {DetailsType}",
+            imagesCount,
+            listingDto.Title,
+            listingDto.ListingType,
+            listingDto.ListingDetailsType);
+
+        if (images.Count > 0)
+        {
+            logger.LogInformation(
+                "Bound image file names: {FileNames}",
+                string.Join(", ", images.Select(static image => image.FileName)));
+
+            var uploadResult = await imageServiceClient.UploadManyAsync(images, cancellationToken);
+
+            logger.LogInformation(
+                "ImageService upload finished. Success: {IsSuccess}. Returned item count: {ReturnedCount}. Message: {Message}",
+                uploadResult.IsSuccess,
+                uploadResult.Data?.Count ?? 0,
+                uploadResult.Message);
+
+            if (!uploadResult.IsSuccess || uploadResult.Data is null)
+                return uploadResult.ToHttpResult();
+
+            listingDto.MediaUrls = uploadResult.Data
+                .Select(static image => image.Url)
+                .Where(static url => !string.IsNullOrWhiteSpace(url))
+                .ToList();
+
+            logger.LogInformation(
+                "Mapped ImageService urls. MediaUrls count: {MediaUrlsCount}. Urls: {Urls}",
+                listingDto.MediaUrls.Count,
+                string.Join(", ", listingDto.MediaUrls));
+        }
+        else
+        {
+            logger.LogWarning("CreateListingWithImages called with no bound images.");
+        }
+
+        logger.LogInformation(
+            "Sending CreateListingCommand with MediaUrls count: {MediaUrlsCount}",
+            listingDto.MediaUrls?.Count ?? 0);
+
+        var result = await sender.Send(new CreateListingCommand(listingDto), cancellationToken);
+        logger.LogInformation(
+            "CreateListingCommand finished. Success: {IsSuccess}. Message: {Message}",
+            result.IsSuccess,
+            result.Message);
+
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> UploadListingImageAsync(
+        ISender sender,
+        IImageServiceClient imageServiceClient,
+        [FromRoute] Guid id,
+        [FromForm] UploadListingImageRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Image is null)
+            return Results.BadRequest("Image file is required.");
+
+        var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
+        if (!uploadResult.IsSuccess || uploadResult.Data is null)
+            return uploadResult.ToHttpResult();
+
+        var result = await sender.Send(
+            new AddListingMediaUrlsCommand(id, [uploadResult.Data.Url]),
+            cancellationToken);
+
         return result.ToHttpResult();
     }
 

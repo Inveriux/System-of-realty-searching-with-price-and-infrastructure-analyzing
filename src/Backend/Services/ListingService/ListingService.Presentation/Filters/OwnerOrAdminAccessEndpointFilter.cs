@@ -6,7 +6,7 @@ using ListingService.Domain.Enums;
 
 namespace ListingService.Presentation.Filters;
 
-public class OwnerOrAdminAccessEndpointFilter(ICurrentUserProvider currentUserProvider)
+public class OwnerOrAdminAccessEndpointFilter
     : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context,

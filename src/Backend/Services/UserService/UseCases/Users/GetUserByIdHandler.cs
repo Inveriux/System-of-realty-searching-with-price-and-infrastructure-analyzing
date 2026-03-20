@@ -23,6 +23,10 @@ public class GetUserByIdHandler(IUserRepository userRepository,
                 .WithError($"User with {request.Id} id not found.", propertyName: nameof(User));
 
         var userDto = mapper.Map<GetUserDto>(user);
+        var userRole = await userRepository.GetUserRoleAsync(user);
+        userDto.Role = userRole
+            ?? throw new Exception("User role not found.");
+
         return Result.Ok(userDto);
     }
 }

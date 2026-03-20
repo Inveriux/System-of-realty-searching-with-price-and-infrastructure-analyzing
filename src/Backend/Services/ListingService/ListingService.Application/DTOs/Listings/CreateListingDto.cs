@@ -2,6 +2,7 @@ using ListingService.Application.DTOs.Listings.Abstractions;
 using ListingService.Domain.Abstractions;
 using ListingService.Domain.Models;
 using AutoMapper;
+using System.Text.Json.Serialization;
 
 namespace ListingService.Application.DTOs.Listings;
 
@@ -22,6 +23,7 @@ public class CreateListingDto
     public required string ListingType { get; set; }
     public string? Status { get; set; }
     public required string ListingDetailsType { get; init; }
+    [JsonIgnore]
     public List<string>? MediaUrls { get; set; }
 
     public required IListingDetailsDto ListingDetails { get; init; }
@@ -36,12 +38,29 @@ public class CreateListingDto
                 .ForMember(x => x.BuildingType, y => y.Ignore())
                 .ForMember(x => x.ListingType, y => y.Ignore())
                 .ForMember(x => x.Media, opt => opt.MapFrom(s => s.MediaUrls))
-                .AfterMap((src, dest) => dest.Media?
-                                        .FirstOrDefault(m => src.MediaUrls?.FirstOrDefault() == m.Url)?.IsMainMedia = true);
+                .AfterMap((src, dest) =>
+                {
+                    if (dest.Media is null || dest.Media.Count == 0)
+                        return;
+
+                    var mainMediaUrl = src.MediaUrls?
+                        .FirstOrDefault(url => !string.IsNullOrWhiteSpace(url));
+
+                    if (string.IsNullOrWhiteSpace(mainMediaUrl))
+                        return;
+
+                    var mainMedia = dest.Media.FirstOrDefault(m => m.Url == mainMediaUrl);
+                    if (mainMedia is not null)
+                        mainMedia.IsMainMedia = true;
+                });
                     
 
             CreateMap<string, ListingMedia>()
-                .ConstructUsing(url => new ListingMedia { Url = url });
+                .ConstructUsing(url => new ListingMedia
+                {
+                    Id = Guid.NewGuid(),
+                    Url = url
+                });
 
             CreateMap<ApartmentDetailsDto, ApartmentDetails>()
                 .ForMember(x => x.Listing, y => y.Ignore())

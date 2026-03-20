@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using BasicBuildingBlocks.Authorization;
 using UserService.Services.JwtProviders;
 using UserService.Services.AdminSeeder;
+using UserService.Services.Images.Abstractions;
+using UserService.Services.Images;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Identity;
@@ -86,6 +88,12 @@ var googleAuthSettings = builder.Services
     .BindConfiguration(GoogleAuthOptions.SectionName)
     // .Validate(o => o.ClientId is not null)
     // .Validate(o => o.ClientSecret is not null)
+    .ValidateOnStart();
+
+builder.Services
+    .AddOptions<ImageServiceOptions>()
+    .BindConfiguration(ImageServiceOptions.SectionName)
+    .Validate(o => !string.IsNullOrWhiteSpace(o.BaseUrl), "Image service base url is required.")
     .ValidateOnStart();
 
 var service = builder.Services
@@ -172,6 +180,7 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddScoped<IRefreshTokenProvider, RefreshTokenProvider>();
+builder.Services.AddHttpClient<IImageServiceClient, ImageServiceClient>();
 builder.Services.AddSingleton<IDomainJwtProvider, DomainJwtProvider>((services) =>
 {
     var settings = services.GetRequiredService<IOptions<JwtSettingsOptions>>().Value;;
@@ -223,6 +232,15 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
 builder.Services.AddOpenApi();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebCors", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddScoped<ApplicationDatabaseInitializer>();
 
@@ -237,6 +255,7 @@ if(app.Environment.IsProduction())
     await app.InitializeTestDatabaseAsync(isDeletedata);
 }
 
+app.UseCors("WebCors");
 app.UseAuthentication();
 app.UseAuthorization();
 

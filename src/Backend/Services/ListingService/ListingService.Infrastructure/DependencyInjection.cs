@@ -1,11 +1,11 @@
 using ListingService.Application.Contracts.Repositories;
 using ListingService.Infrastructure.Data.Repositories;
+using ListingService.Infrastructure.Data.Interceptors;
 using ListingService.Application.Contracts.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using ListingService.Infrastructure.Cache;
 using Microsoft.Extensions.Configuration;
 using ListingService.Infrastructure.Data;
-using ListingService.Infrastructure.Data.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 

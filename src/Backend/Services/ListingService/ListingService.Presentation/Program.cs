@@ -14,6 +14,8 @@ using ListingService.Domain.Enums;
 using ListingService.Application;
 using ListingService.Presentation.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using ListingService.Presentation.Services.Abstractions;
+using ListingService.Presentation.Services;
 using System.Security.Claims;
 using System.Reflection;
 using System.Text;
@@ -26,6 +28,12 @@ builder.AddInfrastructure();
 builder.Services.AddExceptionHandler<ExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services
+    .AddOptions<ImageServiceOptions>()
+    .BindConfiguration(ImageServiceOptions.SectionName)
+    .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Image service base url is required.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<IImageServiceClient, ImageServiceClient>();
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
@@ -155,8 +163,19 @@ builder.Services.AddScoped<IOwnerResourceAccessor<Guid>, ListingOwnerResourceAcc
 builder.Services.AddScoped<IAuthorizationHandler, OwnerOrAdminAccessAuthorizationHandler<Guid>>();
 builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebCors", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
+app.UseCors("WebCors");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -164,12 +183,8 @@ app.UseExceptionHandler();
 
 if(builder.Environment.IsDevelopment())
 {
-    app.UseCors("DevCors");
     await app.InitializeTestDatabaseAsync(false);
 }
-
-if(app.Environment.IsDevelopment())
-    await app.InitializeTestDatabaseAsync(false);
 
 if(app.Environment.IsProduction())
 {

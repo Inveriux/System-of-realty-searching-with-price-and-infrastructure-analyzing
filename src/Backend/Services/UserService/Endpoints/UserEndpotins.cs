@@ -6,14 +6,21 @@ using Microsoft.AspNetCore.Identity;
 using UserService.UseCases.Users;
 using Microsoft.AspNetCore.Mvc;
 using UserService.Models.Enums;
+using UserService.Services.Images.Abstractions;
 using UserService.Filters;
 using UserService.DTOs;
 using MediatR;
+using System.Text.Json;
 
 namespace UserService.Endpoints;
 
 public class UserEndpoints : IEndpointRegistrar
 {
+    private static readonly JsonSerializerOptions UserJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public RouteGroupBuilder MapEndpoints(WebApplication application)
     {
         var group = application.MapGroup("/api/users")
@@ -37,6 +44,12 @@ public class UserEndpoints : IEndpointRegistrar
             .WithName("SignUp")
             .WithSummary("Registers a new local user.")
             .WithDescription("Creates a user with email and password authentication.");
+        group.MapPost("/signup-with-avatar", SignUpWithAvatarAsync)
+            .WithName("SignUpWithAvatar")
+            .WithSummary("Registers a new local user with avatar upload.")
+            .WithDescription("Accepts multipart/form-data with `user` JSON and one avatar file in `image`.")
+            .Accepts<SignUpWithAvatarRequest>("multipart/form-data")
+            .DisableAntiforgery();
         group.MapPost("/signin", SignInAsync)
             .WithName("SignIn")
             .WithSummary("Signs in a local user.")
@@ -66,6 +79,14 @@ public class UserEndpoints : IEndpointRegistrar
             .WithDescription("Requires authentication and validates the current password before applying the new password.")
             .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
             .RequireAuthorization();
+        group.MapPost("/avatar/{email}", UploadAvatarAsync)
+            .WithName("UploadUserAvatar")
+            .WithSummary("Uploads a single avatar image for a user.")
+            .WithDescription("Allows only the user owner or an admin to upload one avatar through ImageService.")
+            .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
+            .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
+            .Accepts<UploadAvatarRequest>("multipart/form-data")
+            .DisableAntiforgery();
 
         return group;
     }
@@ -76,6 +97,41 @@ public class UserEndpoints : IEndpointRegistrar
         SignUpUserDto dto,
         CancellationToken cancellationToken)
     {
+        var result = await sender.Send(new SignUpCommand(dto), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> SignUpWithAvatarAsync(
+        ISender sender,
+        IImageServiceClient imageServiceClient,
+        [FromForm] SignUpWithAvatarRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.User))
+            return Results.BadRequest("`user` json payload is required.");
+
+        SignUpUserDto? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<SignUpUserDto>(request.User, UserJsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            return Results.BadRequest($"Invalid user json payload: {ex.Message}");
+        }
+
+        if (dto is null)
+            return Results.BadRequest("Failed to deserialize user payload.");
+
+        if (request.Image is not null)
+        {
+            var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
+            if (!uploadResult.IsSuccess || uploadResult.Data is null)
+                return uploadResult.ToHttpResult();
+
+            dto = dto with { AccountImageUrl = uploadResult.Data.Url };
+        }
+
         var result = await sender.Send(new SignUpCommand(dto), cancellationToken);
         return result.ToHttpResult();
     }
@@ -150,6 +206,27 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new ChangePasswordCommand(dto), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> UploadAvatarAsync(
+        ISender sender,
+        IImageServiceClient imageServiceClient,
+        [FromRoute] string email,
+        [FromForm] UploadAvatarRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Image is null)
+            return Results.BadRequest("Image file is required.");
+
+        var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
+        if (!uploadResult.IsSuccess || uploadResult.Data is null)
+            return uploadResult.ToHttpResult();
+
+        var result = await sender.Send(
+            new UploadUserAvatarCommand(email, uploadResult.Data.Url),
+            cancellationToken);
+
         return result.ToHttpResult();
     }
 }
