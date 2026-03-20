@@ -1,0 +1,16 @@
+{
+  "name": "@diploma/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+      "@diploma/contracts": "workspace:*",
+      "@diploma/validation": "workspace:*",
+      "zod": "^3.0.0"
+  },
+  "exports": {
+    "./users": "./src/users.ts",
+    "./listings": "./src/listings.ts",
+    "./http": "./src/http.ts"
+  }
+}

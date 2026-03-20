@@ -20,8 +20,10 @@ public class OwnerOrAdminAccessEndpointFilter
             .RequestServices
             .GetRequiredService<IRepositoryManager>();
 
-        var listingId = context.HttpContext.GetRouteValue("id") as string;
-        if (!Guid.TryParse(listingId, out var parsedListingId))
+        var routeValue = context.HttpContext.GetRouteValue("listingId")
+            ?? context.HttpContext.GetRouteValue("id");
+
+        if (!Guid.TryParse(routeValue?.ToString(), out var parsedListingId))
             return Results.BadRequest("Listing id is invalid.");
 
         var listing = await repositoryManager.Listing.GetByIdAsync(parsedListingId, false, context.HttpContext.RequestAborted);

@@ -14,6 +14,7 @@ using ListingService.Domain.Enums;
 using ListingService.Application;
 using ListingService.Presentation.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using ListingService.Application.Contracts.Services;
 using ListingService.Presentation.Services.Abstractions;
 using ListingService.Presentation.Services;
 using System.Security.Claims;
@@ -33,7 +34,27 @@ builder.Services
     .BindConfiguration(ImageServiceOptions.SectionName)
     .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Image service base url is required.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<InfrastructureServiceOptions>()
+    .BindConfiguration(InfrastructureServiceOptions.SectionName)
+    .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Infrastructure service base url is required.")
+    .ValidateOnStart();
+builder.Services
+    .AddOptions<SearchServiceOptions>()
+    .BindConfiguration(SearchServiceOptions.SectionName)
+    .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Search service base url is required.")
+    .ValidateOnStart();
 builder.Services.AddHttpClient<IImageServiceClient, ImageServiceClient>();
+builder.Services.AddHttpClient<ListingService.Application.Contracts.Services.IInfrastructureServiceClient, InfrastructureServiceClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<InfrastructureServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddHttpClient<ListingService.Application.Contracts.Services.ISearchServiceClient, SearchServiceClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<SearchServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+});
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {

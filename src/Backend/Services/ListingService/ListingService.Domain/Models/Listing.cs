@@ -9,6 +9,9 @@ public class Listing : AuditableEntity<Guid>
 
     public Guid AgentId { get; set; }
     public string AddressText { get; set; } = string.Empty;
+    public Guid? LocationId { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = string.Empty;
     //TODO check price properties

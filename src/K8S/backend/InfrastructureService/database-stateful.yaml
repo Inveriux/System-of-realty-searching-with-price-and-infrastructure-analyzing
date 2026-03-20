@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: infrastructure-service-db
+  namespace: diploma
+  labels:
+    app: infrastructure-service-db
+spec:
+  serviceName: infrastructure-service-db-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infrastructure-service-db
+  template:
+    metadata:
+      labels:
+        app: infrastructure-service-db
+    spec:
+      containers:
+        - name: postgres
+          image: diploma.infrastructureservice-db:1.0
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: infrastructure-service-db-secret
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: infrastructure-service-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infrastructure-service-db-svc
+  namespace: diploma
+spec:
+  selector:
+    app: infrastructure-service-db
+  ports:
+    - port: 5432
+  clusterIP: None

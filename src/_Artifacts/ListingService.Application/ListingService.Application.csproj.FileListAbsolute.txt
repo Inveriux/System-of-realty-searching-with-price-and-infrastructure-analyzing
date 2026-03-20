@@ -1,0 +1,12 @@
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.GeneratedMSBuildEditorConfig.editorconfig
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.AssemblyInfoInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.AssemblyInfo.cs
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.csproj.CoreCompileInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.sourcelink.json
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/refint/ListingService.Application.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.pdb
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.deps.json
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ref/ListingService.Application.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingService.Application.csproj.AssemblyReference.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Application/ListingS.6517FF92.Up2Date

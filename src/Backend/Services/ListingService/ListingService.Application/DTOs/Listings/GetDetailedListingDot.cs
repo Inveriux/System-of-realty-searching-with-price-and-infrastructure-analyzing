@@ -10,6 +10,9 @@ public class GetDetailedListingDto
     public Guid Id { get; set; }
     public Guid AgentId { get; set; }
     public string? AddressText { get; set; }
+    public Guid? LocationId { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
     //TODO check price properties

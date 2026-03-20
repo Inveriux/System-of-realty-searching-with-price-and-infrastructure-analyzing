@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: infrastructure-service-pv
+spec:
+  capacity:
+    storage: 500Mi
+  volumeMode: Filesystem
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/diploma/infrastructure-service-data

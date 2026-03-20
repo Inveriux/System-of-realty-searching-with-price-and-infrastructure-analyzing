@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: infrastructure-service-config
+  namespace: diploma
+data:
+  SERVICE_NAME: INFRASTRUCTURE_SERVICE
+  ASPNETCORE_URLS: http://+:8080
+  Yandex__GeocoderBaseUrl: https://geocode-maps.yandex.ru/
+  Yandex__OrganizationSearchBaseUrl: https://search-maps.yandex.ru/
+  Yandex__Language: ru_RU
+  Yandex__DefaultSearchRadiusMeters: "1500"

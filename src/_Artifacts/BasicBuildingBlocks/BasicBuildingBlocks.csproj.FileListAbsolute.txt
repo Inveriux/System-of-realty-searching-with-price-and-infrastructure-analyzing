@@ -1,0 +1,11 @@
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.csproj.AssemblyReference.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.GeneratedMSBuildEditorConfig.editorconfig
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.AssemblyInfoInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.AssemblyInfo.cs
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.csproj.CoreCompileInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.sourcelink.json
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/refint/BasicBuildingBlocks.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.pdb
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/BasicBuildingBlocks.deps.json
+/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/ref/BasicBuildingBlocks.dll

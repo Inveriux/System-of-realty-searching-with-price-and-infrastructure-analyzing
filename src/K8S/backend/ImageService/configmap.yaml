@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-service-config
+  namespace: diploma
+data:
+  SERVICE_NAME: IMAGE_SERVICE
+  ENV_ASPNETCORE_URLS: http://+:8080
+  ImageBb__Endpoint: https://api.imgbb.com/1/upload
+  ImageBb__ApiKey: 497e3bb7c14b3b90409c6292522ecb78
+  ImageBb__MaxFileSizeInBytes: "10485760"
+  ImageBb__MaxFilesPerRequest: "10"

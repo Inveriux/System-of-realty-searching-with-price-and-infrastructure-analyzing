@@ -22,16 +22,12 @@ spec:
         ports:
         - containerPort: 5432
           name: postgres
+        envFrom:
+        - secretRef:
+            name: listing-db-secret
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql
-        env:
-        - name: POSTGRES_DB
-          value: listing-service-db
-        - name: POSTGRES_USER
-          value: postgres
-        - name: POSTGRES_PASSWORD
-          value: "2357"
         readinessProbe:
           exec:
             command:

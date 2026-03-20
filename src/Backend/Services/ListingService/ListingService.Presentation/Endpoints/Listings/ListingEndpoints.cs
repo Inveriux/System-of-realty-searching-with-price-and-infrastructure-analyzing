@@ -59,12 +59,12 @@ public class ListingsEndpoints : IEndpointRegistrar
             .WithDescription("Allows only the listing owner or an admin to append one photo via ImageService.")
             .Accepts<UploadListingImageRequest>("multipart/form-data")
             .DisableAntiforgery();
-        group.MapDelete("/{id}", DeleteAsync)
+        group.MapDelete("/{listingId:guid}", DeleteAsync)
             .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
             .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
             .WithName("DeleteListing")
             .WithSummary("Deletes a listing.")
-            .WithDescription("Allows deletion only for the listing owner or an admin.");
+            .WithDescription("Deletes a listing by id. Allowed only for the listing owner or an admin.");
 
         return group;
     }
@@ -204,10 +204,10 @@ public class ListingsEndpoints : IEndpointRegistrar
     }
 
     public async Task<IResult> DeleteAsync(ISender sender,
-        [FromRoute] Guid id,
+        [FromRoute] Guid listingId,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new DeleteListingCommand(id), cancellationToken);
+        var result = await sender.Send(new DeleteListingCommand(listingId), cancellationToken);
         return result.ToHttpResult();
     }
 }

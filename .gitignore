@@ -1,6 +1,29 @@
-_Artifacts/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Node
+node_modules/
+.pnpm-store/
+.next/
+dist/
+.turbo/
+
+# .NET
 bin/
 obj/
+TestResults/
+
+# Editors
 .vscode/
+.idea/
+
+# Logs and archives
+*.log
+*.zip
+
+# Local configs and certs
 *.Development.json
 Directory.Build.props
+/src/Backend/certs/

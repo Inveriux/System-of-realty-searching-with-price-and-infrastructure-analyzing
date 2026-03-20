@@ -1,0 +1,25 @@
+namespace ListingService.Application.Contracts.Services;
+
+public interface ISearchServiceClient
+{
+    Task<bool> IndexListingAsync(SearchListingIndexRequest request, CancellationToken cancellationToken);
+    Task<bool> DeleteListingAsync(Guid listingId, CancellationToken cancellationToken);
+}
+
+public sealed class SearchListingIndexRequest
+{
+    public Guid ListingId { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public string? AddressText { get; init; }
+    public Guid? LocationId { get; init; }
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
+    public string? ListingType { get; init; }
+    public string? BuildingType { get; init; }
+    public decimal? PriceAmount { get; init; }
+    public string? PriceCurrency { get; init; }
+    public decimal AreaTotal { get; init; }
+    public string? MainMediaUrl { get; init; }
+    public DateTimeOffset? PublishedDate { get; init; }
+}

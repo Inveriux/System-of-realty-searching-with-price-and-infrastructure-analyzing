@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infrastructure-service
+  namespace: diploma
+  labels:
+    app: infrastructure-service
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: infrastructure-service
+  template:
+    metadata:
+      labels:
+        app: infrastructure-service
+    spec:
+      containers:
+        - name: infrastructure-service
+          image: diploma.infrastructureservice:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: infrastructure-service-config
+            - secretRef:
+                name: infrastructure-service-secret
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z infrastructure-service-db-svc 5432; do echo waiting for postgres; sleep 2; done;']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: infrastructure-service-svc
+  namespace: diploma
+spec:
+  selector:
+    app: infrastructure-service
+  ports:
+    - protocol: TCP
+      port: 8080

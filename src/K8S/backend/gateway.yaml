@@ -38,17 +38,73 @@ spec:
     - listing-service.com
     - diploma.com
   rules:
-    # - matches:
-    #   - path: 
-    #       type: PathPrefix
-    #       value: /
-    #   backendRefs:
-    #     - name: listing-service-svc
-    #       port: 8080
     - matches:
       - path:
           type: PathPrefix
-          value: /
+          value: /api/images
+      backendRefs:
+        - name: image-service-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /api/listings
+      backendRefs:
+        - name: listing-service-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /api/listing_types
+      - path:
+          type: PathPrefix
+          value: /api/building_types
+      - path:
+          type: PathPrefix
+          value: /api/bathroom_types
+      - path:
+          type: PathPrefix
+          value: /api/renovation_types
+      - path:
+          type: PathPrefix
+          value: /api/building_materials
+      - path:
+          type: PathPrefix
+          value: /api/class_types
+      - path:
+          type: PathPrefix
+          value: /api/gas_types
+      - path:
+          type: PathPrefix
+          value: /api/heating_types
+      - path:
+          type: PathPrefix
+          value: /api/land_categories
+      - path:
+          type: PathPrefix
+          value: /api/layout_types
+      - path:
+          type: PathPrefix
+          value: /api/office_classes
+      - path:
+          type: PathPrefix
+          value: /api/road_access_types
+      - path:
+          type: PathPrefix
+          value: /api/sewer_types
+      - path:
+          type: PathPrefix
+          value: /api/wall_materials
+      - path:
+          type: PathPrefix
+          value: /api/water_supply_types
+      backendRefs:
+        - name: listing-service-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /api/users
       backendRefs:
         - name: user-service-svc
           port: 8080

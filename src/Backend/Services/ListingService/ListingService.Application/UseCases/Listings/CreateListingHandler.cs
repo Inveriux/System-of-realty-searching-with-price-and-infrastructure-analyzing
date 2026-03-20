@@ -1,10 +1,12 @@
 using ListingService.Application.Contracts.Cache;
+using ListingService.Application.Contracts.Services;
 using ListingService.Application.DTOs.Listings;
 using ListingService.Domain.Abstractions;
 using ListingService.Domain.Models;
 using BasicBuildingBlocks.Services.Abstractions;
 using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace ListingService.Application.UseCases.Listings;
 
@@ -13,7 +15,10 @@ public record CreateListingCommand(CreateListingDto ListingDto) : IRequest<Resul
 public class CreateListingHandler(IRepositoryManager manager, 
     ILookupCache cache, 
     IMapper mapper,
-    ICurrentUserProvider currentUserProvider)
+    ICurrentUserProvider currentUserProvider,
+    IInfrastructureServiceClient infrastructureServiceClient,
+    ISearchServiceClient searchServiceClient,
+    ILogger<CreateListingHandler> logger)
     : IRequestHandler<CreateListingCommand, Result>
 {
     public async Task<Result> Handle(CreateListingCommand request, 
@@ -21,6 +26,18 @@ public class CreateListingHandler(IRepositoryManager manager,
     {   
         var listing = mapper.Map<Listing>(request.ListingDto);
         listing.AgentId = currentUserProvider.GetUserId();
+
+        if (!listing.LocationId.HasValue && !string.IsNullOrWhiteSpace(listing.AddressText))
+        {
+            var resolvedLocation = await infrastructureServiceClient.ResolveLocationAsync(listing.AddressText, cancellationToken);
+            if (resolvedLocation is not null)
+            {
+                listing.LocationId = resolvedLocation.LocationId;
+                listing.Latitude = resolvedLocation.Latitude;
+                listing.Longitude = resolvedLocation.Longitude;
+            }
+        }
+
         var resolveLookupIdsResult = await ResolveLookupIds(listing, request.ListingDto, cancellationToken);
 
         if (!resolveLookupIdsResult.IsSuccess)
@@ -29,6 +46,44 @@ public class CreateListingHandler(IRepositoryManager manager,
         await manager.Listing.AddAsync(listing, cancellationToken);
 
         await manager.SaveChangesAsync(cancellationToken);
+
+        if (listing.LocationId.HasValue)
+        {
+            var refreshed = await infrastructureServiceClient.RefreshInfrastructureAsync(listing.LocationId.Value, cancellationToken);
+            if (!refreshed)
+            {
+                logger.LogWarning(
+                    "Listing {ListingId} was created, but infrastructure refresh failed for location {LocationId}.",
+                    listing.Id,
+                    listing.LocationId.Value);
+            }
+        }
+
+        var indexed = await searchServiceClient.IndexListingAsync(new SearchListingIndexRequest
+        {
+            ListingId = listing.Id,
+            Title = listing.Title,
+            Description = listing.Description,
+            AddressText = listing.AddressText,
+            LocationId = listing.LocationId,
+            Latitude = listing.Latitude,
+            Longitude = listing.Longitude,
+            ListingType = request.ListingDto.ListingType,
+            BuildingType = request.ListingDto.BuildingType,
+            PriceAmount = listing.PriceAmount,
+            PriceCurrency = listing.PriceCurrency,
+            AreaTotal = listing.AreaTotal,
+            MainMediaUrl = request.ListingDto.MediaUrls?.FirstOrDefault(static url => !string.IsNullOrWhiteSpace(url)),
+            PublishedDate = listing.PublishedDate
+        }, cancellationToken);
+
+        if (!indexed)
+        {
+            logger.LogWarning(
+                "Listing {ListingId} was created, but search indexing failed.",
+                listing.Id);
+        }
+
         return Result.Ok();
     }
 

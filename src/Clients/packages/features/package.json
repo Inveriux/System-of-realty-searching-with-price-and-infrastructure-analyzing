@@ -1,0 +1,12 @@
+{
+  "name": "@diploma/features",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "dependencies": {
+      "@diploma/api": "workspace:*",
+      "zod": "^3.0.0",
+      "@tanstack/react-query": "^5.0.0"
+  }
+}

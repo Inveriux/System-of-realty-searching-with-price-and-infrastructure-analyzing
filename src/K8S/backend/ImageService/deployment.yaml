@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-service-deployment
+  namespace: diploma
+  labels:
+    app: image-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: image-service-deployment
+  template:
+    metadata:
+      labels:
+        app: image-service-deployment
+    spec:
+      containers:
+        - name: image-service
+          image: diploma.imageservice:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: image-service-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-service-svc
+  namespace: diploma
+spec:
+  selector:
+    app: image-service-deployment
+  ports:
+    - protocol: TCP
+      port: 8080

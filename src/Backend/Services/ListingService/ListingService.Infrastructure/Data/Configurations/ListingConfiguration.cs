@@ -34,6 +34,12 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .HasMaxLength(StringMaxLength)
             .IsRequired();
 
+        builder.Property(x => x.Latitude)
+            .HasPrecision(10, 6);
+
+        builder.Property(x => x.Longitude)
+            .HasPrecision(10, 6);
+
         builder.Property(x => x.Title)
             .HasMaxLength(StringMaxLength)
             .IsRequired();
@@ -51,6 +57,8 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.Property(x => x.AreaTotal)
             .IsRequired();
         builder.Ignore(x => x.Status);
+
+        builder.HasIndex(x => x.LocationId);
 
         builder.HasOne(x => x.BuildingType)
             .WithMany()

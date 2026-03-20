@@ -4,6 +4,9 @@ metadata:
   name: listing-service-config
   namespace: diploma
 data:
-    SERVICE_NAME: LISTING_SERVICE
-    DELETE_DATA_ON_STARTUP: "true"
-    ENV_ASPNETCORE_URLS: http://+:8080
+  SERVICE_NAME: LISTING_SERVICE
+  DeleteDataAtStartup: "true"
+  ASPNETCORE_URLS: http://+:8080
+  ImageService__BaseUrl: http://image-service-svc:8080
+  InfrastructureService__BaseUrl: http://infrastructure-service-svc:8080
+  SearchService__BaseUrl: http://search-service-svc:8080

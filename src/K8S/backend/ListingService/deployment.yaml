@@ -7,6 +7,7 @@ metadata:
     app: listing-service
 spec:
   replicas: 1
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: listing-service-deployment
@@ -17,7 +18,8 @@ spec:
     spec:
       containers:
         - name: listing-service
-          image: diploma.listingservice:0.5
+          image: diploma.listingservice:1.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:
@@ -28,7 +30,7 @@ spec:
       initContainers: 
         - name: wait-for-postgres
           image: busybox:1.36
-          command: ['sh', '-c', 'until nc -z postgres-service 5432; do echo waiting for postgres; sleep 2; done;']
+          command: ['sh', '-c', 'until nc -z listing-service-db-svc 5432; do echo waiting for postgres; sleep 2; done;']
 ---
 apiVersion: v1
 kind: Service

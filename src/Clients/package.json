@@ -1,0 +1,21 @@
+{
+  "name": "diploma",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev:web": "pnpm --filter @diploma/web dev",
+    "dev:mobile": "pnpm --filter @diploma/mobile start",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "zod": "^4.3.6"
+  }
+}

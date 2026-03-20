@@ -1,0 +1,12 @@
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.AssemblyInfoInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.AssemblyInfo.cs
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.csproj.CoreCompileInputs.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.sourcelink.json
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/refint/ListingService.Infrastructure.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.pdb
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.deps.json
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ref/ListingService.Infrastructure.dll
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingService.Infrastructure.csproj.AssemblyReference.cache
+/home/Admin/Projects/Diploma/src/_Artifacts/ListingService.Infrastructure/ListingS.27448544.Up2Date

@@ -7,6 +7,9 @@ public sealed class CreateListingJsonDto
 {
     public Guid AgentId { get; set; }
     public required string AddressText { get; init; } 
+    public Guid? LocationId { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
     public decimal? PriceAmount { get; set; }
@@ -27,6 +30,9 @@ public sealed class CreateListingJsonDto
         {
             AgentId = AgentId,
             AddressText = AddressText,
+            LocationId = LocationId,
+            Latitude = Latitude,
+            Longitude = Longitude,
             Title = Title,
             Description = Description,
             PriceAmount = PriceAmount,
