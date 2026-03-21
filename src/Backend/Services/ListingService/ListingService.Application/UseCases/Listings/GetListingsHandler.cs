@@ -2,6 +2,7 @@ using ListingService.Application.DTOs.Listings;
 using BasicBuildingBlocks.Collections;
 using AutoMapper;
 using MediatR;
+using ListingService.Application.Contracts.Repositories;
 
 namespace ListingService.Application.UseCases.Listings;
  

@@ -18,6 +18,43 @@ export function AppHeader() {
   const isCreateListingPage = pathname.startsWith("/create-listing");
   const iconFilter = theme === "dark" ? "brightness(0) invert(1)" : "none";
 
+  function renderAccountAvatar() {
+    if (user?.accountImageUrl) {
+      return (
+        <img
+          alt={user.name}
+          src={user.accountImageUrl}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      );
+    }
+
+    if (user?.name) {
+      const initials = user.name
+        .split(" ")
+        .map((part) => part.trim()[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+
+      return (
+        <span
+          style={{
+            fontWeight: 800,
+            fontSize: "0.9rem",
+            letterSpacing: "-0.05em",
+            color: "var(--color-primary-strong)",
+          }}
+        >
+          {initials}
+        </span>
+      );
+    }
+
+    return <img alt="" src="/icons/account.svg" style={{ width: 20, height: 20, filter: iconFilter }} />;
+  }
+
   useEffect(() => {
     if (!isAccountMenuOpen) {
       return;
@@ -85,28 +122,33 @@ export function AppHeader() {
             >
               <div
                 style={{
-                  width: 38,
-                  height: 38,
+                  width: 74,
+                  height: 42,
                   borderRadius: 14,
+                  overflow: "visible",
                   display: "grid",
                   placeItems: "center",
-                  background:
-                    "linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-accent) 75%, white) 100%)",
-                  color: "white",
-                  fontWeight: 700,
-                  fontFamily: "var(--font-display)",
-                  fontSize: "1.1rem",
                 }}
               >
-                R
+                <img
+                  alt="Realt"
+                  src="/header-logo.png"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    transform: "translateY(-20%)",
+                  }}
+                />
               </div>
               <div style={{ minWidth: 0 }}>
                 <div
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "1.15rem",
-                    letterSpacing: "-0.04em",
-                    fontWeight: 700,
+                    fontSize: "1.32rem",
+                    letterSpacing: "-0.075em",
+                    fontWeight: 800,
+                    lineHeight: 1,
                   }}
                 >
                   Realt
@@ -143,6 +185,29 @@ export function AppHeader() {
             )}
 
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {status === "authenticated" ? (
+                <Link
+                  aria-label="Создать объявление"
+                  className="icon-button"
+                  href="/create-listing"
+                  style={{
+                    width: 42,
+                    height: 42,
+                    display: "grid",
+                    placeItems: "center",
+                    textDecoration: "none",
+                    fontSize: "1.55rem",
+                    fontWeight: 500,
+                    lineHeight: 1,
+                    background: isCreateListingPage ? "var(--color-primary-soft)" : undefined,
+                    color: isCreateListingPage ? "var(--color-primary-strong)" : "inherit",
+                  }}
+                  title="Создать объявление"
+                >
+                  +
+                </Link>
+              ) : null}
+
               {status === "authenticated" && user ? (
                 <div
                   ref={accountMenuRef}
@@ -162,10 +227,11 @@ export function AppHeader() {
                       height: 42,
                       display: "grid",
                       placeItems: "center",
+                      overflow: "hidden",
                     }}
                     title={user.name}
                   >
-                    <img alt="" src="/icons/account.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
+                    {renderAccountAvatar()}
                   </button>
 
                   {isAccountMenuOpen ? (
@@ -212,6 +278,69 @@ export function AppHeader() {
                         >
                           {user.email}
                         </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 8,
+                        }}
+                      >
+                        <Link
+                          href="/profile"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                          role="menuitem"
+                          style={{
+                            display: "grid",
+                            gap: 4,
+                            padding: "12px 12px",
+                            borderRadius: 14,
+                            textDecoration: "none",
+                            color: "inherit",
+                            background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                          }}
+                        >
+                          <div className="eyebrow">Раздел</div>
+                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Мои объявления</div>
+                        </Link>
+
+                        <Link
+                          href="/favorites"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                          role="menuitem"
+                          style={{
+                            display: "grid",
+                            gap: 4,
+                            padding: "12px 12px",
+                            borderRadius: 14,
+                            textDecoration: "none",
+                            color: "inherit",
+                            background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                          }}
+                        >
+                          <div className="eyebrow">Раздел</div>
+                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Избранное</div>
+                        </Link>
+
+                        <Link
+                          href="/create-listing"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                          role="menuitem"
+                          style={{
+                            gridColumn: "1 / -1",
+                            display: "grid",
+                            gap: 4,
+                            padding: "12px 12px",
+                            borderRadius: 14,
+                            textDecoration: "none",
+                            color: "var(--color-primary-strong)",
+                            background: "color-mix(in srgb, var(--color-primary-soft) 74%, var(--background-elevated))",
+                          }}
+                        >
+                          <div className="eyebrow">Действие</div>
+                          <div style={{ fontWeight: 800, lineHeight: 1.2 }}>Добавить объявление</div>
+                        </Link>
                       </div>
 
                       <Link

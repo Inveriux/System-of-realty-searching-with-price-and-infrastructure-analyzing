@@ -14,9 +14,10 @@ public class Listing : AuditableEntity<Guid>
     public decimal? Longitude { get; set; }
     public string Title { get; set; } = null!;
     public string Description { get; set; } = string.Empty;
-    //TODO check price properties
     public decimal? PriceAmount { get; set; } 
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
     public string? PricePeriod { get; set; }
     public decimal AreaTotal { get; set; }
     public int? BuildYear { get; set; }
@@ -45,5 +46,7 @@ public class Listing : AuditableEntity<Guid>
 
         PriceAmount = priceHistory.PriceAmount;
         PriceCurrency = priceHistory.PriceCurrency;
+        PriceAmountByn = priceHistory.PriceAmountByn;
+        PriceAmountUsd = priceHistory.PriceAmountUsd;
     }
 }

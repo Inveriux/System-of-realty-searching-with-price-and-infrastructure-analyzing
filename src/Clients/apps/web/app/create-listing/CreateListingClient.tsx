@@ -97,6 +97,11 @@ const YANDEX_MAPS_API_KEY =
   "3225bb0b-e2a7-455f-9c95-ce49d86acbcb";
 
 const MAP_DEFAULT_CENTER: [number, number] = [53.902284, 27.561831];
+const BELARUS_BOUNDS: [[number, number], [number, number]] = [
+  [51.262011, 23.178338],
+  [56.17218, 32.77682],
+];
+const BELARUS_COUNTRY_CODES = new Set(["BY", "BYN"]);
 
 const initialState: CreateListingState = {
   title: "",
@@ -279,7 +284,7 @@ type YandexMapsApi = {
   ready(callback: () => void): void;
   Map: new (container: HTMLElement, state: unknown, options?: unknown) => YandexMapInstance;
   Placemark: new (geometry: [number, number], properties?: unknown, options?: unknown) => YandexPlacemark;
-  geocode(request: string | number[]): Promise<YandexGeocodeResult>;
+  geocode(request: string | number[], options?: Record<string, unknown>): Promise<YandexGeocodeResult>;
 };
 
 type YandexMapInstance = {
@@ -302,12 +307,24 @@ type YandexPlacemark = {
 
 type YandexGeocodeResult = {
   geoObjects: {
-    get(index: number): {
-      getAddressLine?: () => string;
-      properties: {
-        get(name: string): string | undefined;
-      };
-    } | null;
+    get(index: number): YandexGeoObject | null;
+  };
+};
+
+type YandexGeoObject = {
+  getAddressLine?: () => string;
+  geometry?: {
+    getCoordinates?: () => [number, number];
+  };
+  properties: {
+    get(name: string): unknown;
+  };
+};
+
+type YandexGeocoderMetaData = {
+  Address?: {
+    country_code?: string;
+    formatted?: string;
   };
 };
 
@@ -357,6 +374,39 @@ function getListingSectionLabel(value: ListingDetailsType) {
   }
 }
 
+function isWithinBelarusBounds(latitude: number, longitude: number) {
+  return (
+    latitude >= BELARUS_BOUNDS[0][0] &&
+    latitude <= BELARUS_BOUNDS[1][0] &&
+    longitude >= BELARUS_BOUNDS[0][1] &&
+    longitude <= BELARUS_BOUNDS[1][1]
+  );
+}
+
+function getGeoObjectAddress(geoObject: YandexGeoObject | null) {
+  if (!geoObject) {
+    return null;
+  }
+
+  return (
+    geoObject.getAddressLine?.() ??
+    (typeof geoObject.properties.get("text") === "string" ? geoObject.properties.get("text") : null) ??
+    null
+  );
+}
+
+function getGeoObjectCountryCode(geoObject: YandexGeoObject | null) {
+  if (!geoObject) {
+    return null;
+  }
+
+  const metadata = geoObject.properties.get("metaDataProperty") as
+    | { GeocoderMetaData?: YandexGeocoderMetaData }
+    | undefined;
+
+  return metadata?.GeocoderMetaData?.Address?.country_code ?? null;
+}
+
 function loadYandexMaps() {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Yandex Maps доступны только в браузере."));
@@ -402,7 +452,9 @@ export function CreateListingClient() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
+  const [draftAddressQuery, setDraftAddressQuery] = useState("");
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<YandexMapInstance | null>(null);
@@ -464,30 +516,98 @@ export function CreateListingClient() {
   }, [lookupsQuery.data]);
 
   const updateDraftLocation = useEffectEvent(async (ymaps: YandexMapsApi, coords: [number, number]) => {
+    if (!isWithinBelarusBounds(coords[0], coords[1])) {
+      setMapError("Можно выбрать адрес только на территории Беларуси.");
+      return;
+    }
+
     setIsResolvingAddress(true);
     setMapError(null);
 
     try {
       updatePlacemark(coords, ymaps);
 
-      const result = await ymaps.geocode(coords);
+      const result = await ymaps.geocode(coords, {
+        boundedBy: BELARUS_BOUNDS,
+        strictBounds: true,
+        results: 1,
+      });
       const firstGeoObject = result.geoObjects.get(0);
-      const addressText =
-        firstGeoObject?.getAddressLine?.() ??
-        firstGeoObject?.properties.get("text") ??
-        `${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`;
+      const countryCode = getGeoObjectCountryCode(firstGeoObject);
+      if (countryCode && !BELARUS_COUNTRY_CODES.has(countryCode)) {
+        setMapError("Можно выбрать адрес только на территории Беларуси.");
+        return;
+      }
+
+      const addressText = getGeoObjectAddress(firstGeoObject) ?? `${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`;
 
       setDraftLocation({
         addressText,
         latitude: coords[0],
         longitude: coords[1],
       });
+      setDraftAddressQuery(addressText);
     } catch {
       setMapError("Не удалось определить адрес по точке на карте.");
     } finally {
       setIsResolvingAddress(false);
     }
   });
+
+  async function searchDraftAddress() {
+    const query = draftAddressQuery.trim();
+    if (!query) {
+      setMapError("Введите адрес для поиска.");
+      return;
+    }
+
+    setIsSearchingAddress(true);
+    setMapError(null);
+
+    try {
+      const ymaps = await loadYandexMaps();
+      const result = await ymaps.geocode(query, {
+        boundedBy: BELARUS_BOUNDS,
+        strictBounds: true,
+        results: 1,
+      });
+      const firstGeoObject = result.geoObjects.get(0);
+      if (!firstGeoObject) {
+        setMapError("Адрес не найден в пределах Беларуси.");
+        return;
+      }
+
+      const countryCode = getGeoObjectCountryCode(firstGeoObject);
+      if (countryCode && !BELARUS_COUNTRY_CODES.has(countryCode)) {
+        setMapError("Можно выбрать адрес только на территории Беларуси.");
+        return;
+      }
+
+      const coords =
+        firstGeoObject.geometry?.getCoordinates?.() ??
+        ((firstGeoObject.properties.get("coords") as [number, number] | undefined) ?? null);
+
+      if (!coords || !isWithinBelarusBounds(coords[0], coords[1])) {
+        setMapError("Адрес не найден в пределах Беларуси.");
+        return;
+      }
+
+      updatePlacemark(coords, ymaps);
+      mapRef.current?.setCenter(coords, 16);
+
+      const addressText = getGeoObjectAddress(firstGeoObject) ?? query;
+      setDraftLocation({
+        addressText,
+        latitude: coords[0],
+        longitude: coords[1],
+      });
+      setDraftAddressQuery(addressText);
+    } catch {
+      setMapError("Не удалось выполнить поиск адреса.");
+    } finally {
+      setIsSearchingAddress(false);
+    }
+  }
 
   useEffect(() => {
     if (!isMapOpen || !mapContainerRef.current) {
@@ -640,6 +760,7 @@ export function CreateListingClient() {
           }
         : null,
     );
+    setDraftAddressQuery(values.addressText);
     setIsMapOpen(true);
   }
 
@@ -648,6 +769,7 @@ export function CreateListingClient() {
     mapRef.current = null;
     placemarkRef.current = null;
     setIsResolvingAddress(false);
+    setIsSearchingAddress(false);
     setMapError(null);
     setIsMapOpen(false);
   }
@@ -756,6 +878,11 @@ export function CreateListingClient() {
       return;
     }
 
+    if (!values.addressText.trim() || !values.latitude || !values.longitude) {
+      setError("Подтвердите адрес на карте в пределах Беларуси.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -768,7 +895,8 @@ export function CreateListingClient() {
       title: values.title,
       description: values.description,
       priceAmount: Number(values.priceAmount),
-      priceCurrency: "USD",
+      priceAmountByn: Number(values.priceAmount),
+      priceCurrency: "BYN",
       pricePeriod: values.listingType === "Sale" ? "OneTime" : "Monthly",
       areaTotal: Number(values.areaTotal),
       buildYear: Number(values.buildYear),
@@ -855,9 +983,6 @@ export function CreateListingClient() {
                 <div className="eyebrow">Основное</div>
                 <h2 className="section-title" style={{ marginTop: 8 }}>Карточка объекта</h2>
               </div>
-              <button className="button-secondary" type="button" onClick={openMapPicker}>
-                Выбрать адрес на карте
-              </button>
             </div>
 
             {lookupsQuery.isLoading ? (
@@ -894,7 +1019,7 @@ export function CreateListingClient() {
 
             <div className="listing-create-grid listing-create-grid-main">
               <label style={{ display: "grid", gap: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Цена, USD</span>
+                <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Цена, BYN</span>
                 <input
                   className="field"
                   value={values.priceAmount}
@@ -1465,20 +1590,14 @@ export function CreateListingClient() {
               <h2 className="section-title" style={{ marginTop: 8 }}>Расположение</h2>
             </div>
 
-            <label style={{ display: "grid", gap: 8 }}>
-              <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Адрес объекта</span>
-              <input
-                className="field"
-                value={values.addressText}
-                placeholder="Выберите точку на карте"
-                readOnly
-                required
-              />
-            </label>
-
-            <button className="button-secondary" type="button" onClick={openMapPicker}>
-              Выбрать адрес на карте
-            </button>
+            <div style={{ display: "grid", gap: 10 }}>
+              <button className="button-secondary" type="button" onClick={openMapPicker}>
+                Выбрать адрес на карте
+              </button>
+              <div style={{ fontSize: 13, color: "var(--foreground-muted)" }}>
+                Доступны только адреса на территории Беларуси. После ручного изменения адреса его нужно подтвердить заново.
+              </div>
+            </div>
 
             <div className="listing-create-summary">
               <div className="eyebrow">Сводка</div>
@@ -1524,14 +1643,37 @@ export function CreateListingClient() {
               </button>
             </div>
 
+            <div className="listing-create-map-hint">
+              Введите адрес или нажмите на точку на карте. После подтверждения сохраним адрес и координаты только в пределах Беларуси.
+            </div>
+
+            <form
+              className="listing-create-map-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void searchDraftAddress();
+              }}
+            >
+              <input
+                className="field"
+                value={draftAddressQuery}
+                onChange={(event) => setDraftAddressQuery(event.target.value)}
+                placeholder="Например, Минск, проспект Независимости 44"
+              />
+              <button
+                className="button-secondary"
+                type="submit"
+                disabled={isSearchingAddress || isResolvingAddress}
+              >
+                {isSearchingAddress ? "Ищем..." : "Найти"}
+              </button>
+            </form>
+
             <div className="listing-create-map-panel">
               <div ref={mapContainerRef} className="listing-create-map-canvas" />
               <div className="listing-create-map-sidebar">
-                <div className="listing-create-map-hint">
-                  Нажмите на точку на карте. Мы сохраним координаты и попытаемся определить адрес.
-                </div>
 
-                {isResolvingAddress ? (
+                {isResolvingAddress || isSearchingAddress ? (
                   <div className="listing-create-alert">Определяем адрес...</div>
                 ) : null}
 
@@ -1562,7 +1704,17 @@ export function CreateListingClient() {
                   <button className="button-primary" type="button" onClick={confirmMapSelection}>
                     Подтвердить адрес
                   </button>
-                  <button className="button-secondary" type="button" onClick={() => setDraftLocation(null)}>
+                  <button
+                    className="button-secondary"
+                    type="button"
+                    onClick={() => {
+                      if (placemarkRef.current && mapRef.current) {
+                        mapRef.current.geoObjects.remove(placemarkRef.current);
+                      }
+                      placemarkRef.current = null;
+                      setDraftLocation(null);
+                    }}
+                  >
                     Сбросить точку
                   </button>
                 </div>

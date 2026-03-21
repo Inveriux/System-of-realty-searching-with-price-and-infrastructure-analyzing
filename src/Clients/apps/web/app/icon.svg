@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bgGlow" x1="512" y1="80" x2="512" y2="944" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="pinGrad" x1="300" y1="170" x2="748" y2="844" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C084FC"/>
+      <stop offset="0.45" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="buildingGrad" x1="420" y1="250" x2="620" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5E8FF"/>
+      <stop offset="1" stop-color="#DDD6FE"/>
+    </linearGradient>
+    <linearGradient id="houseGrad" x1="416" y1="560" x2="608" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F3E8FF"/>
+      <stop offset="1" stop-color="#E9D5FF"/>
+    </linearGradient>
+    <filter id="softGlow" x="110" y="30" width="804" height="964" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+      <feGaussianBlur stdDeviation="30" result="effect1_foregroundBlur"/>
+    </filter>
+    <filter id="shadow" x="180" y="110" width="664" height="796" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.298039 0 0 0 0 0.152941 0 0 0 0 0.627451 0 0 0 0.28 0"/>
+      <feBlend in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="256" fill="#0F0620"/>
+  <circle cx="512" cy="500" r="250" fill="url(#bgGlow)" opacity="0.18" filter="url(#softGlow)"/>
+
+  <g filter="url(#shadow)">
+    <path d="M512 150C392.706 150 296 246.706 296 366C296 530.997 482.314 778.348 503.25 805.506C507.629 811.186 514.371 811.186 518.75 805.506C539.686 778.348 726 530.997 726 366C726 246.706 629.294 150 510 150H512Z" fill="url(#pinGrad)"/>
+    <path d="M512 212C426.396 212 357 281.396 357 367C357 476.442 465.153 645.196 512 709C558.847 645.196 667 476.442 667 367C667 281.396 597.604 212 512 212Z" fill="#140A2B" fill-opacity="0.28"/>
+
+    <path d="M418 286.5C418 278.492 424.492 272 432.5 272H528.863C532.727 272 536.432 273.534 539.164 276.266L600.734 337.836C603.466 340.568 605 344.273 605 348.137V681.5C605 689.508 598.508 696 590.5 696H432.5C424.492 696 418 689.508 418 681.5V286.5Z" fill="url(#buildingGrad)"/>
+    <path d="M539 272V330.5C539 338.508 545.492 345 553.5 345H612" stroke="#A855F7" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+
+    <rect x="460" y="352" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.9"/>
+    <rect x="526" y="352" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.9"/>
+    <rect x="460" y="426" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.82"/>
+    <rect x="526" y="426" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.82"/>
+    <rect x="460" y="500" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.74"/>
+    <rect x="526" y="500" width="42" height="42" rx="8" fill="#8B5CF6" opacity="0.74"/>
+
+    <path d="M416 614.862L504.155 541.881C509.977 537.06 518.39 537.065 524.207 541.892L609 612.25V696H416V614.862Z" fill="url(#houseGrad)"/>
+    <path d="M446 696V612.716L512.241 557.818L579 613.191V696" stroke="#7C3AED" stroke-width="18" stroke-linejoin="round"/>
+    <rect x="489" y="627" width="46" height="69" rx="10" fill="#8B5CF6"/>
+
+    <path d="M372 735H652" stroke="#C084FC" stroke-width="22" stroke-linecap="round" opacity="0.75"/>
+  </g>
+</svg>

@@ -15,9 +15,10 @@ public class GetDetailedListingDto
     public decimal? Longitude { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
-    //TODO check price properties
     public decimal? PriceAmount { get; set; } 
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
     public string? PricePeriod { get; set; }
     public required decimal AreaTotal { get; init; }//TODO implement
     public int? BuildYear { get; set; }
@@ -27,6 +28,7 @@ public class GetDetailedListingDto
     public string? MainMedia { get; set; }
     public ICollection<ListingMediaDto>? Media { get; set; } 
     public ICollection<ListingPriceHistoryDto>? PriceHistory { get; set; }
+    public string? ListingDetailsType { get; set; }
     public required IListingDetailsDto ListingDetails { get; set; }
     public DateTime? Created { get; set; }
     public string? CreatedBy { get; set; }

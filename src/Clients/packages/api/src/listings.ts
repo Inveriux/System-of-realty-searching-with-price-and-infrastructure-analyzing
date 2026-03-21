@@ -43,6 +43,11 @@ export async function getListings(api: ApiClient) {
   return result.data;
 }
 
+export async function getDetailedListings(api: ApiClient) {
+  const result = await api.get("/api/listings/details", ListingsResultSchema);
+  return result.data;
+}
+
 export type LookupOption = z.infer<typeof LookupOptionSchema>;
 
 async function getLookupOptions(api: ApiClient, path: string) {
@@ -117,4 +122,8 @@ export async function createListingWithImages(
   }
 
   await api.postFormVoid("/api/listings/with-images", formData);
+}
+
+export async function deleteListing(api: ApiClient, listingId: string) {
+  await api.deleteVoid(`/api/listings/${listingId}`);
 }

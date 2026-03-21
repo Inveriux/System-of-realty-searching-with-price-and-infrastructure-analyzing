@@ -14,6 +14,8 @@ public sealed class CreateListingJsonDto
     public string? Description { get; set; }
     public decimal? PriceAmount { get; set; }
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
     public string? PricePeriod { get; set; }
     public decimal AreaTotal { get; set; }
     public int? BuildYear { get; set; }
@@ -37,6 +39,8 @@ public sealed class CreateListingJsonDto
             Description = Description,
             PriceAmount = PriceAmount,
             PriceCurrency = PriceCurrency,
+            PriceAmountByn = PriceAmountByn,
+            PriceAmountUsd = PriceAmountUsd,
             PricePeriod = PricePeriod,
             AreaTotal = AreaTotal,
             BuildYear = BuildYear,

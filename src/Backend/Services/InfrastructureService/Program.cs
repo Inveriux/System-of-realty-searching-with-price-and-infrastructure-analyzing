@@ -6,8 +6,16 @@ using FluentValidation;
 using InfrastructureService.Data;
 using InfrastructureService.Data.Repositories;
 using InfrastructureService.Data.Repositories.Abstractions;
+using InfrastructureService.Services.Places;
+using InfrastructureService.Services.Places.Abstractions;
+using InfrastructureService.Services.Places.Geoapify;
+using InfrastructureService.Services.Places.Geoapify.Abstractions;
+using InfrastructureService.Services.Places.Overpass;
+using InfrastructureService.Services.Places.Overpass.Abstractions;
 using InfrastructureService.Services.Scoring;
 using InfrastructureService.Services.Scoring.Abstractions;
+using InfrastructureService.Services.Summaries;
+using InfrastructureService.Services.Summaries.Abstractions;
 using InfrastructureService.Services.Yandex;
 using InfrastructureService.Services.Yandex.Abstractions;
 using MediatR;
@@ -30,8 +38,30 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddOptions<YandexOptions>()
     .BindConfiguration(YandexOptions.SectionName)
     .Validate(x => !string.IsNullOrWhiteSpace(x.GeocoderBaseUrl), "Yandex geocoder base url is required.")
-    .Validate(x => !string.IsNullOrWhiteSpace(x.OrganizationSearchBaseUrl), "Yandex organization search base url is required.")
     .Validate(x => !string.IsNullOrWhiteSpace(x.ApiKey), "Yandex api key is required.")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<PlacesProviderOptions>()
+    .BindConfiguration(PlacesProviderOptions.SectionName)
+    .Validate(x => !string.IsNullOrWhiteSpace(x.Provider), "PlacesProvider provider is required.")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<OverpassOptions>()
+    .BindConfiguration(OverpassOptions.SectionName)
+    .Validate(x => !string.IsNullOrWhiteSpace(x.BaseUrl), "Overpass base url is required.")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<GeoapifyOptions>()
+    .BindConfiguration(GeoapifyOptions.SectionName)
+    .Validate(x => !string.IsNullOrWhiteSpace(x.BaseUrl), "Geoapify base url is required.")
+    .Validate(x => !string.IsNullOrWhiteSpace(x.ApiKey), "Geoapify api key is required.")
+    .ValidateOnStart();
+
+builder.Services.AddOptions<InfrastructureScoringOptions>()
+    .BindConfiguration(InfrastructureScoringOptions.SectionName)
+    .Validate(x => x.DefaultRadiusMeters > 0, "DefaultRadiusMeters must be positive.")
+    .Validate(x => x.MaxRadiusMeters >= x.DefaultRadiusMeters, "MaxRadiusMeters must be greater than or equal to DefaultRadiusMeters.")
+    .Validate(x => x.MaxPoiCount > 0, "MaxPoiCount must be positive.")
     .ValidateOnStart();
 
 builder.Services.AddHttpClient<IYandexGeocoderClient, YandexGeocoderClient>((serviceProvider, client) =>
@@ -40,16 +70,40 @@ builder.Services.AddHttpClient<IYandexGeocoderClient, YandexGeocoderClient>((ser
     client.BaseAddress = new Uri(options.GeocoderBaseUrl.TrimEnd('/') + "/");
 });
 
-builder.Services.AddHttpClient<IYandexOrganizationSearchClient, YandexOrganizationSearchClient>((serviceProvider, client) =>
+builder.Services.AddHttpClient<IOverpassApiClient, OverpassApiClient>((serviceProvider, client) =>
 {
-    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<YandexOptions>>().Value;
-    client.BaseAddress = new Uri(options.OrganizationSearchBaseUrl.TrimEnd('/') + "/");
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OverpassOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+});
+
+builder.Services.AddHttpClient<IGeoapifyPlacesClient, GeoapifyPlacesClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<GeoapifyOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 });
 
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IPoiRepository, PoiRepository>();
 builder.Services.AddScoped<IInfrastructureRepository, InfrastructureRepository>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IPlaceCategoryNormalizer, PlaceCategoryNormalizer>();
+builder.Services.AddScoped<OverpassPlacesProvider>();
+builder.Services.AddScoped<GeoapifyPlacesProvider>();
+builder.Services.AddScoped<IPlacesProvider>(serviceProvider =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlacesProviderOptions>>().Value;
+    return options.Provider.Trim() switch
+    {
+        "Geoapify" => serviceProvider.GetRequiredService<GeoapifyPlacesProvider>(),
+        "Overpass" => serviceProvider.GetRequiredService<OverpassPlacesProvider>(),
+        _ => throw new InvalidOperationException($"Unsupported places provider '{options.Provider}'.")
+    };
+});
 builder.Services.AddScoped<IInfrastructureScoringService, InfrastructureScoringService>();
+builder.Services.AddScoped<IInfrastructureSummaryBuilder, InfrastructureSummaryBuilder>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
 builder.Services.AddProblemDetails();

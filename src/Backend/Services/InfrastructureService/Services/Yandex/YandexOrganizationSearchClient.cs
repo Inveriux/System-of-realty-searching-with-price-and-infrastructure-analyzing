@@ -5,10 +5,14 @@ using System.Text.Json;
 
 namespace InfrastructureService.Services.Yandex;
 
-public sealed class YandexOrganizationSearchClient(HttpClient httpClient, IOptions<YandexOptions> options) : IYandexOrganizationSearchClient
+public sealed class YandexOrganizationSearchClient(
+    HttpClient httpClient,
+    IOptions<YandexOptions> options,
+    ILogger<YandexOrganizationSearchClient> logger) : IYandexOrganizationSearchClient
 {
     private readonly HttpClient _httpClient = httpClient;
     private readonly YandexOptions _options = options.Value;
+    private readonly ILogger<YandexOrganizationSearchClient> _logger = logger;
 
     public async Task<IReadOnlyCollection<YandexOrganizationSearchResult>> SearchAsync(
         decimal latitude,
@@ -23,7 +27,17 @@ public sealed class YandexOrganizationSearchClient(HttpClient httpClient, IOptio
         using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            _logger.LogWarning(
+                "Yandex organization search failed. Status: {StatusCode}. Query: {SearchText}. Coordinates: {Latitude}, {Longitude}. Response: {ResponseBody}",
+                (int)response.StatusCode,
+                searchText,
+                latitude,
+                longitude,
+                Truncate(responseBody, 2000));
             return [];
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
@@ -119,4 +133,12 @@ public sealed class YandexOrganizationSearchClient(HttpClient httpClient, IOptio
 
     private static double DegreesToRadians(double degrees)
         => degrees * Math.PI / 180d;
+
+    private static string Truncate(string? value, int maxLength)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            return value ?? string.Empty;
+
+        return value[..maxLength];
+    }
 }

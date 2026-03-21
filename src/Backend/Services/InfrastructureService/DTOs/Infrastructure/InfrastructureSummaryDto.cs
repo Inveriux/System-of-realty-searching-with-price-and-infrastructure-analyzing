@@ -7,5 +7,7 @@ public sealed class InfrastructureSummaryDto
     public decimal Latitude { get; init; }
     public decimal Longitude { get; init; }
     public InfrastructureScoreDto Score { get; init; } = null!;
+    public string Summary { get; init; } = string.Empty;
+    public IReadOnlyCollection<string> Highlights { get; init; } = [];
     public IReadOnlyCollection<PoiDto> Pois { get; init; } = [];
 }

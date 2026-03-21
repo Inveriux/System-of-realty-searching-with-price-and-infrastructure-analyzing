@@ -389,6 +389,18 @@ img {
   line-height: 1.5;
 }
 
+.listing-create-map-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.listing-create-map-search .button-secondary {
+  margin-left: 2px;
+}
+
 @media (max-width: 1080px) {
   .listing-create-map-panel {
     grid-template-columns: 1fr;
@@ -414,5 +426,9 @@ img {
   .listing-create-summary-line strong {
     max-width: none;
     text-align: left;
+  }
+
+  .listing-create-map-search {
+    grid-template-columns: 1fr;
   }
 }

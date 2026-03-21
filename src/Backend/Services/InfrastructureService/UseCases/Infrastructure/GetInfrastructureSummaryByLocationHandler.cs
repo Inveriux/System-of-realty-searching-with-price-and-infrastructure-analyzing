@@ -1,13 +1,18 @@
 using BasicBuildingBlocks.BusinessResults;
 using InfrastructureService.Data.Repositories.Abstractions;
 using InfrastructureService.DTOs.Infrastructure;
+using InfrastructureService.Services.Summaries.Abstractions;
 using MediatR;
 
 namespace InfrastructureService.UseCases.Infrastructure;
 
 public sealed record GetInfrastructureSummaryByLocationQuery(Guid LocationId) : IRequest<Result<InfrastructureSummaryDto>>;
 
-public sealed class GetInfrastructureSummaryByLocationHandler(ISender sender, ILocationRepository locationRepository)
+public sealed class GetInfrastructureSummaryByLocationHandler(
+    ISender sender,
+    ILocationRepository locationRepository,
+    IInfrastructureRepository infrastructureRepository,
+    IInfrastructureSummaryBuilder summaryBuilder)
     : IRequestHandler<GetInfrastructureSummaryByLocationQuery, Result<InfrastructureSummaryDto>>
 {
     public async Task<Result<InfrastructureSummaryDto>> Handle(GetInfrastructureSummaryByLocationQuery request, CancellationToken cancellationToken)
@@ -24,6 +29,8 @@ public sealed class GetInfrastructureSummaryByLocationHandler(ISender sender, IL
         if (!poisResult.IsSuccess || poisResult.Data is null)
             return Result.Fail<InfrastructureSummaryDto>(poisResult.StatusCode, poisResult.Message, poisResult.Errors);
 
+        var snapshotItems = await infrastructureRepository.GetSnapshotItemsAsync(request.LocationId, cancellationToken);
+
         return Result.Ok(new InfrastructureSummaryDto
         {
             LocationId = location.Id,
@@ -31,6 +38,8 @@ public sealed class GetInfrastructureSummaryByLocationHandler(ISender sender, IL
             Latitude = location.Latitude,
             Longitude = location.Longitude,
             Score = scoreResult.Data,
+            Summary = summaryBuilder.BuildSummary(scoreResult.Data.ToModel(location.Id), snapshotItems),
+            Highlights = summaryBuilder.BuildHighlights(scoreResult.Data.ToModel(location.Id), snapshotItems),
             Pois = poisResult.Data
         });
     }

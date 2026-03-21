@@ -48,6 +48,15 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .HasMaxLength(StringMaxLength)
             .IsRequired();
             
+        builder.Property(x => x.PriceAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.PriceAmountByn)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.PriceAmountUsd)
+            .HasPrecision(18, 2);
+
         builder.Property(x => x.PriceCurrency)
             .HasMaxLength(StringMaxLength);
 

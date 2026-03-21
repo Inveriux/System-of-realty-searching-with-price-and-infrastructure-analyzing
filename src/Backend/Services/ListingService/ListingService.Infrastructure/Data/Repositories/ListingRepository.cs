@@ -24,6 +24,36 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
             .ToPagedResultAsync(pageRequest.PageNumber, pageRequest.PageSize, cancellationToken);
     }
 
+    public async Task<PagedResult<Listing>> GetAllDetailedAsync(
+        PagedRequest pageRequest,
+        bool isTracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        var pagedListings = await context.Listings
+            .IsTracking(isTracking)
+            .Include(x => x.Media)
+            .Include(x => x.PriceHistory)
+            .Include(x => x.ListingType)
+            .Include(x => x.BuildingType)
+            .ToPagedResultAsync(pageRequest.PageNumber, pageRequest.PageSize, cancellationToken);
+
+        if (pagedListings.Items.Count == 0)
+        {
+            return pagedListings;
+        }
+
+        var listingsById = pagedListings.Items.ToDictionary(x => x.Id);
+        var listingIds = listingsById.Keys.ToArray();
+
+        await LoadApartmentDetailsAsync(listingIds, listingsById, isTracking, cancellationToken);
+        await LoadHouseDetailsAsync(listingIds, listingsById, isTracking, cancellationToken);
+        await LoadLandDetailsAsync(listingIds, listingsById, isTracking, cancellationToken);
+        await LoadOfficeDetailsAsync(listingIds, listingsById, isTracking, cancellationToken);
+        await LoadWarehouseDetailsAsync(listingIds, listingsById, isTracking, cancellationToken);
+
+        return pagedListings;
+    }
+
     public async Task<Listing?> GetByIdAsync(Guid id, 
         bool isTracking = false,
         CancellationToken cancellationToken = default)
@@ -188,13 +218,15 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
 
     private async Task SavePriceHistoryAsync(Listing listing, CancellationToken cancellationToken)
     {
-        if(listing.PriceAmount is null)
+        if(listing.PriceAmountByn is null)
             return;
 
         var priceHistory = new ListingPriceHistory()
         {
             PriceCurrency = listing.PriceCurrency,
             PriceAmount = listing.PriceAmount,
+            PriceAmountByn = listing.PriceAmountByn,
+            PriceAmountUsd = listing.PriceAmountUsd,
             ChangedAt = DateTimeOffset.UtcNow,
             ListingId = listing.Id
         };
@@ -217,5 +249,122 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
             ?? throw new ArgumentException($"There is no listing with id: {id}");
 
         context.Listings.Remove(listing);
+    }
+
+    private async Task LoadApartmentDetailsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        IReadOnlyDictionary<Guid, Listing> listingsById,
+        bool isTracking,
+        CancellationToken cancellationToken)
+    {
+        var details = await context.Set<ApartmentDetails>()
+            .IsTracking(isTracking)
+            .Include(x => x.BathroomType)
+            .Include(x => x.RenovationType)
+            .Include(x => x.BuildingMaterial)
+            .Where(x => listingIds.Contains(x.ListingId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            if (listingsById.TryGetValue(detail.ListingId, out var listing))
+            {
+                listing.ListingDetails = detail;
+            }
+        }
+    }
+
+    private async Task LoadHouseDetailsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        IReadOnlyDictionary<Guid, Listing> listingsById,
+        bool isTracking,
+        CancellationToken cancellationToken)
+    {
+        var details = await context.Set<HouseDetails>()
+            .IsTracking(isTracking)
+            .Include(x => x.WallMaterial)
+            .Include(x => x.HeatingType)
+            .Include(x => x.SewerType)
+            .Include(x => x.GasType)
+            .Include(x => x.RoofMaterial)
+            .Include(x => x.WaterSupplyType)
+            .Where(x => listingIds.Contains(x.ListingId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            if (listingsById.TryGetValue(detail.ListingId, out var listing))
+            {
+                listing.ListingDetails = detail;
+            }
+        }
+    }
+
+    private async Task LoadLandDetailsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        IReadOnlyDictionary<Guid, Listing> listingsById,
+        bool isTracking,
+        CancellationToken cancellationToken)
+    {
+        var details = await context.Set<LandDetails>()
+            .IsTracking(isTracking)
+            .Include(x => x.LandCategory)
+            .Include(x => x.RoadAccessType)
+            .Where(x => listingIds.Contains(x.ListingId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            if (listingsById.TryGetValue(detail.ListingId, out var listing))
+            {
+                listing.ListingDetails = detail;
+            }
+        }
+    }
+
+    private async Task LoadOfficeDetailsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        IReadOnlyDictionary<Guid, Listing> listingsById,
+        bool isTracking,
+        CancellationToken cancellationToken)
+    {
+        var details = await context.Set<OfficeDetails>()
+            .IsTracking(isTracking)
+            .Include(x => x.OfficeClass)
+            .Include(x => x.LayoutType)
+            .Include(x => x.RenovationType)
+            .Include(x => x.ParkingType)
+            .Where(x => listingIds.Contains(x.ListingId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            if (listingsById.TryGetValue(detail.ListingId, out var listing))
+            {
+                listing.ListingDetails = detail;
+            }
+        }
+    }
+
+    private async Task LoadWarehouseDetailsAsync(
+        IReadOnlyCollection<Guid> listingIds,
+        IReadOnlyDictionary<Guid, Listing> listingsById,
+        bool isTracking,
+        CancellationToken cancellationToken)
+    {
+        var details = await context.Set<WarehouseDetails>()
+            .IsTracking(isTracking)
+            .Include(x => x.ClassType)
+            .Include(x => x.HeatingType)
+            .Where(x => listingIds.Contains(x.ListingId))
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in details)
+        {
+            if (listingsById.TryGetValue(detail.ListingId, out var listing))
+            {
+                listing.ListingDetails = detail;
+            }
+        }
     }
 }

@@ -21,5 +21,11 @@ export type CurrentUserDto = {
   name: string;
   email: string;
   accountImageUrl: string | null;
+  phoneNumber?: string | null;
   role: string;
+};
+
+export type UpdateOwnProfileDto = {
+  name: string;
+  phoneNumber?: string | null;
 };

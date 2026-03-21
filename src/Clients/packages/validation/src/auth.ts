@@ -4,6 +4,7 @@ import type {
   CurrentUserDto,
   SignInDto,
   SignUpDto,
+  UpdateOwnProfileDto,
 } from "@diploma/contracts/auth";
 
 export const SignInDtoSchema: z.ZodType<SignInDto> = z.object({
@@ -29,5 +30,11 @@ export const CurrentUserDtoSchema: z.ZodType<CurrentUserDto> = z.object({
   name: z.string(),
   email: z.string().email(),
   accountImageUrl: z.string().nullable(),
+  phoneNumber: z.string().nullable().optional(),
   role: z.string(),
+});
+
+export const UpdateOwnProfileDtoSchema: z.ZodType<UpdateOwnProfileDto> = z.object({
+  name: z.string().min(1),
+  phoneNumber: z.string().nullable().optional(),
 });

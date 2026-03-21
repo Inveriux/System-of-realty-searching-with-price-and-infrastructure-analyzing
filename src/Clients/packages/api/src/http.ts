@@ -58,8 +58,21 @@ export class ApiClient {
     await this.request("POST", path, z.void(), body, 0, options);
   }
 
+  async put<TBody, TResponse>(
+    path: string,
+    body: TBody,
+    schema: z.ZodType<TResponse>,
+    options?: RequestOptions,
+  ): Promise<TResponse> {
+    return this.request("PUT", path, schema, body, 0, options);
+  }
+
   async postFormVoid(path: string, body: FormData, options?: RequestOptions): Promise<void> {
     await this.request("POST", path, z.void(), body, 0, options);
+  }
+
+  async deleteVoid(path: string, options?: RequestOptions): Promise<void> {
+    await this.request("DELETE", path, z.void(), undefined, 0, options);
   }
 
   private async getValidAccessToken() {

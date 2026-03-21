@@ -21,15 +21,20 @@ const initialSignUpState: SignUpDto = {
   accountImageUrl: "",
 };
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://diploma.com:5102";
+
 export function AuthDialog({ mode, onClose }: AuthDialogProps) {
   const { signIn, signUp } = useAuth();
+  const [activeMode, setActiveMode] = useState<"signin" | "signup">("signin");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signInValues, setSignInValues] = useState(initialSignInState);
   const [signUpValues, setSignUpValues] = useState(initialSignUpState);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (mode) {
+      setActiveMode(mode);
       setError(null);
     }
   }, [mode]);
@@ -44,13 +49,13 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
     setError(null);
 
     try {
-      if (mode === "signin") {
+      if (activeMode === "signin") {
         await signIn(signInValues);
       } else {
         await signUp({
           ...signUpValues,
           accountImageUrl: signUpValues.accountImageUrl?.trim() || null,
-        });
+        }, avatarFile);
       }
 
       onClose();
@@ -65,11 +70,16 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
     }
   }
 
-  const title = mode === "signin" ? "Вход в профиль" : "Создание аккаунта";
-  const description =
-    mode === "signin"
-      ? "Сохраняем access и refresh токены в cookie, а потом автоматически обновляем сессию."
-      : "Сразу после регистрации делаем вход и подтягиваем профиль пользователя.";
+  const title = activeMode === "signin" ? "Вход в профиль" : "Создание аккаунта";
+
+  function handleGoogleSignIn() {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `${API_BASE_URL}/api/users/google/signup`;
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  }
 
   return (
     <div
@@ -93,14 +103,106 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
           padding: 24,
         }}
       >
-        <div className="eyebrow">{mode === "signin" ? "Auth" : "Sign Up"}</div>
+        <div className="eyebrow">Профиль</div>
         <h2 className="section-title" style={{ marginTop: 8 }}>
           {title}
         </h2>
-        <p style={{ color: "var(--foreground-muted)", marginBottom: 20 }}>{description}</p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginTop: 18,
+            marginBottom: 18,
+            padding: 6,
+            borderRadius: 20,
+            background: "var(--background-muted)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMode("signin");
+              setError(null);
+            }}
+            style={{
+              border: "none",
+              borderRadius: 14,
+              padding: "10px 14px",
+              font: "inherit",
+              fontWeight: 700,
+              cursor: "pointer",
+              background: activeMode === "signin" ? "var(--background-elevated)" : "transparent",
+              color: activeMode === "signin" ? "var(--foreground)" : "var(--foreground-muted)",
+              boxShadow: activeMode === "signin" ? "0 10px 24px rgba(15, 23, 42, 0.08)" : "none",
+            }}
+          >
+            Вход
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMode("signup");
+              setError(null);
+            }}
+            style={{
+              border: "none",
+              borderRadius: 14,
+              padding: "10px 14px",
+              font: "inherit",
+              fontWeight: 700,
+              cursor: "pointer",
+              background: activeMode === "signup" ? "var(--background-elevated)" : "transparent",
+              color: activeMode === "signup" ? "var(--foreground)" : "var(--foreground-muted)",
+              boxShadow: activeMode === "signup" ? "0 10px 24px rgba(15, 23, 42, 0.08)" : "none",
+            }}
+          >
+            Регистрация
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          style={{
+            width: "100%",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            marginBottom: 18,
+            borderRadius: 18,
+            border: "1px solid var(--border-color)",
+            background: "var(--background-elevated)",
+            color: "var(--foreground)",
+            padding: "13px 16px",
+            font: "inherit",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              display: "grid",
+              placeItems: "center",
+              width: 34,
+              height: 34,
+              borderRadius: 999,
+              background: "color-mix(in srgb, var(--color-primary-soft) 72%, white)",
+              color: "var(--color-primary-strong)",
+              fontSize: 20,
+              fontWeight: 900,
+            }}
+          >
+            G
+          </span>
+          <span>Войти через Google</span>
+        </button>
 
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
-          {mode === "signup" ? (
+          {activeMode === "signup" ? (
             <>
               <input
                 className="field"
@@ -112,16 +214,35 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
                 value={signUpValues.name}
               />
               <input
-                className="field"
-                onChange={(event) =>
-                  setSignUpValues((current) => ({
-                    ...current,
-                    accountImageUrl: event.target.value,
-                  }))
-                }
-                placeholder="Ссылка на аватар, если есть"
-                value={signUpValues.accountImageUrl ?? ""}
+                accept="image/*"
+                id="auth-avatar-upload"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setAvatarFile(file);
+                }}
+                style={{ display: "none" }}
+                type="file"
               />
+              <label
+                htmlFor="auth-avatar-upload"
+                style={{
+                  display: "grid",
+                  gap: 6,
+                  borderRadius: 18,
+                  border: "1px dashed var(--border-color)",
+                  background: "var(--background-elevated)",
+                  padding: "14px 16px",
+                  color: "var(--foreground)",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>
+                  {avatarFile ? "Фото профиля выбрано" : "Загрузить фото профиля"}
+                </span>
+                <span style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
+                  {avatarFile ? avatarFile.name : "PNG, JPG, WEBP"}
+                </span>
+              </label>
             </>
           ) : null}
 
@@ -129,7 +250,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
             className="field"
             onChange={(event) => {
               const email = event.target.value;
-              if (mode === "signin") {
+              if (activeMode === "signin") {
                 setSignInValues((current) => ({ ...current, email }));
               } else {
                 setSignUpValues((current) => ({ ...current, email }));
@@ -138,7 +259,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
             placeholder="Email"
             required
             type="email"
-            value={mode === "signin" ? signInValues.email : signUpValues.email}
+            value={activeMode === "signin" ? signInValues.email : signUpValues.email}
           />
 
           <input
@@ -146,7 +267,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
             minLength={8}
             onChange={(event) => {
               const password = event.target.value;
-              if (mode === "signin") {
+              if (activeMode === "signin") {
                 setSignInValues((current) => ({ ...current, password }));
               } else {
                 setSignUpValues((current) => ({ ...current, password }));
@@ -155,7 +276,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
             placeholder="Пароль"
             required
             type="password"
-            value={mode === "signin" ? signInValues.password : signUpValues.password}
+            value={activeMode === "signin" ? signInValues.password : signUpValues.password}
           />
 
           {error ? (
@@ -177,7 +298,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
               Отмена
             </button>
             <button className="button-primary" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Отправка..." : mode === "signin" ? "Войти" : "Создать аккаунт"}
+              {isSubmitting ? "Отправка..." : activeMode === "signin" ? "Войти" : "Создать аккаунт"}
             </button>
           </div>
         </form>

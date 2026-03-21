@@ -1,6 +1,6 @@
 "use client";
 
-import { getCurrentUser, refreshToken, signIn, signUp } from "@diploma/api/users";
+import { getCurrentUser, refreshToken, signIn, signUp, signUpWithAvatar } from "@diploma/api/users";
 import { ApiClient } from "@diploma/api/http";
 import type { CurrentUserDto, SignInDto, SignUpDto } from "@diploma/contracts/auth";
 import React, {
@@ -31,7 +31,8 @@ type AuthContextValue = {
   status: AuthStatus;
   user: CurrentUserDto | null;
   signIn(payload: SignInDto): Promise<void>;
-  signUp(payload: SignUpDto): Promise<void>;
+  signUp(payload: SignUpDto, avatarFile?: File | null): Promise<void>;
+  reloadCurrentUser(): Promise<void>;
   signOut(): void;
 };
 
@@ -222,8 +223,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     await queryClient.invalidateQueries({ queryKey: ["listings"] });
   }
 
-  async function handleSignUp(payload: SignUpDto) {
-    await signUp(api, payload);
+  async function handleSignUp(payload: SignUpDto, avatarFile?: File | null) {
+    if (avatarFile) {
+      await signUpWithAvatar(api, payload, avatarFile);
+    } else {
+      await signUp(api, payload);
+    }
+
     await handleSignIn({
       email: payload.email,
       password: payload.password,
@@ -238,6 +244,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         signIn: handleSignIn,
         signUp: handleSignUp,
+        reloadCurrentUser: loadCurrentUser,
         signOut: clearAuthInternal,
       }}
     >

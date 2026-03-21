@@ -30,3 +30,23 @@ public sealed class InfrastructureScoreDto
         }
     }
 }
+
+public static class InfrastructureScoreDtoExtensions
+{
+    public static InfrastructureScore ToModel(this InfrastructureScoreDto dto, Guid locationId)
+        => new()
+        {
+            Id = Guid.Empty,
+            LocationId = locationId,
+            SnapshotId = dto.SnapshotId,
+            TotalScore = dto.TotalScore,
+            EducationScore = dto.EducationScore,
+            HealthcareScore = dto.HealthcareScore,
+            TransportScore = dto.TransportScore,
+            CommerceScore = dto.CommerceScore,
+            LeisureScore = dto.LeisureScore,
+            PoiCount = dto.PoiCount,
+            CalculatedAtUtc = dto.CalculatedAtUtc,
+            SearchFeaturesJson = JsonSerializer.Serialize(dto.SearchFeatures)
+        };
+}

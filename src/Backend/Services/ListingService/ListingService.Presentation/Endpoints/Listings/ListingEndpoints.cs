@@ -32,6 +32,10 @@ public class ListingsEndpoints : IEndpointRegistrar
             .WithName("GetListings")
             .WithSummary("Gets paged listings.")
             .WithDescription("Returns a paginated list of listings. Supports page and pageSize query parameters.");
+        group.MapGet("/details", GetAllDetailedAsync)
+            .WithName("GetDetailedListings")
+            .WithSummary("Gets paged detailed listings.")
+            .WithDescription("Returns a paginated list of listings with media, pricing and polymorphic listing details.");
         group.MapGet("/{id}", GetByIdAsync)
             .WithName("GetListingById")
             .WithSummary("Gets a listing by id.")
@@ -91,6 +95,16 @@ public class ListingsEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetDetailedListingByIdQuery(id), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> GetAllDetailedAsync(
+        ISender sender,
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 0,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(new GetDetailedListingsQuery(page, pageSize), cancellationToken);
         return result.ToHttpResult();
     }
 

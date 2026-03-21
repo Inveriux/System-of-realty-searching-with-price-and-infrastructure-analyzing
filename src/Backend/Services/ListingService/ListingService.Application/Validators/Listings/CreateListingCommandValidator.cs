@@ -34,6 +34,11 @@ public class CreateListingCommandValidator : AbstractValidator<CreateListingComm
             .GreaterThan(0)
             .WithMessage("Price must be greater than 0.");
 
+        RuleFor(x => x.ListingDto.PriceAmountByn)
+            .GreaterThan(0)
+            .When(x => x.ListingDto.PriceAmountByn.HasValue)
+            .WithMessage("Price in BYN must be greater than 0.");
+
         When(x => x.ListingDto.ListingDetails is ApartmentDetailsDto, () =>
         {
             RuleFor(x => (ApartmentDetailsDto)x.ListingDto.ListingDetails)

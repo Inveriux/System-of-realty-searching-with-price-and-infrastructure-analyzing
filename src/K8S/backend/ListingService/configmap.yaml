@@ -10,3 +10,5 @@ data:
   ImageService__BaseUrl: http://image-service-svc:8080
   InfrastructureService__BaseUrl: http://infrastructure-service-svc:8080
   SearchService__BaseUrl: http://search-service-svc:8080
+  CurrencyRate__BaseUrl: https://api.nbrb.by/
+  CurrencyRate__UsdRatePath: exrates/rates/USD?parammode=2

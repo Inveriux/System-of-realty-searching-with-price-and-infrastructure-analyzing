@@ -17,6 +17,8 @@ public class CreateListingDto
     public string? Description { get; set; }
     public decimal? PriceAmount { get; set; }
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
     public string? PricePeriod { get; set; }
     public decimal AreaTotal { get; set; }
     public int? BuildYear { get; set; }

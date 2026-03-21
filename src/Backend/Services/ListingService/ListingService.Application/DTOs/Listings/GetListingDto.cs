@@ -13,9 +13,10 @@ public class GetListingDto
     public decimal? Longitude { get; set; }
     public required string Title { get; init; }
     public string? Description { get; set; }
-    //TODO check price properties
     public decimal? PriceAmount { get; set; } 
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
     public string? PricePeriod { get; set; }
     public required decimal AreaTotal { get; init; }//TODO implement
     public int? BuildYear { get; set; }
@@ -27,6 +28,7 @@ public class GetListingDto
     public string? CreatedBy { get; set; }
     public DateTime? LastModified { get; set; }
     public string? LastModifiedBy { get; set; }
+    public string? ListingDetailsType { get; set; }
 
 
     private class Mapping : Profile

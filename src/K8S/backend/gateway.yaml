@@ -55,6 +55,13 @@ spec:
     - matches:
       - path:
           type: PathPrefix
+          value: /api/listing-pages
+      backendRefs:
+        - name: listing-page-bff-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
           value: /api/listing_types
       - path:
           type: PathPrefix

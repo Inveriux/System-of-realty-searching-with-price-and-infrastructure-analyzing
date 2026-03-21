@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listing-page-bff
+  namespace: diploma
+  labels:
+    app: listing-page-bff
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: listing-page-bff
+  template:
+    metadata:
+      labels:
+        app: listing-page-bff
+    spec:
+      containers:
+        - name: listing-page-bff
+          image: diploma.listingpagebff:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: listing-page-bff-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listing-page-bff-svc
+  namespace: diploma
+spec:
+  selector:
+    app: listing-page-bff
+  ports:
+    - protocol: TCP
+      port: 8080

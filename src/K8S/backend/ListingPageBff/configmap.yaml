@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: listing-page-bff-config
+  namespace: diploma
+data:
+  SERVICE_NAME: LISTING_PAGE_BFF
+  ASPNETCORE_URLS: http://+:8080
+  ListingService__BaseUrl: http://listing-service-svc:8080
+  InfrastructureService__BaseUrl: http://infrastructure-service-svc:8080
+  AgentService__BaseUrl: http://user-service-svc:8080
+  SearchService__BaseUrl: http://search-service-svc:8080

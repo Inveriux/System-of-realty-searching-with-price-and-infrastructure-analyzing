@@ -44,6 +44,12 @@ builder.Services
     .BindConfiguration(SearchServiceOptions.SectionName)
     .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Search service base url is required.")
     .ValidateOnStart();
+builder.Services
+    .AddOptions<CurrencyRateOptions>()
+    .BindConfiguration(CurrencyRateOptions.SectionName)
+    .Validate(options => !string.IsNullOrWhiteSpace(options.BaseUrl), "Currency rate base url is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.UsdRatePath), "Currency rate path is required.")
+    .ValidateOnStart();
 builder.Services.AddHttpClient<IImageServiceClient, ImageServiceClient>();
 builder.Services.AddHttpClient<ListingService.Application.Contracts.Services.IInfrastructureServiceClient, InfrastructureServiceClient>((serviceProvider, client) =>
 {
@@ -53,6 +59,11 @@ builder.Services.AddHttpClient<ListingService.Application.Contracts.Services.IIn
 builder.Services.AddHttpClient<ListingService.Application.Contracts.Services.ISearchServiceClient, SearchServiceClient>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<IOptions<SearchServiceOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddHttpClient<ICurrencyRateService, NbrbCurrencyRateService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<IOptions<CurrencyRateOptions>>().Value;
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
 });
 

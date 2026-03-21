@@ -4,8 +4,10 @@ using InfrastructureService.Data.Repositories.Abstractions;
 using InfrastructureService.DTOs.Infrastructure;
 using InfrastructureService.DTOs.Locations;
 using InfrastructureService.Models;
+using InfrastructureService.Services.Places;
+using InfrastructureService.Services.Places.Abstractions;
 using InfrastructureService.Services.Scoring.Abstractions;
-using InfrastructureService.Services.Yandex;
+using InfrastructureService.Services.Summaries.Abstractions;
 using InfrastructureService.Services.Yandex.Abstractions;
 using InfrastructureService.UseCases.Locations;
 using MediatR;
@@ -20,9 +22,11 @@ public sealed class RefreshInfrastructureHandler(
     ILocationRepository locationRepository,
     IPoiRepository poiRepository,
     IInfrastructureRepository infrastructureRepository,
-    IYandexOrganizationSearchClient yandexOrganizationSearchClient,
+    IPlacesProvider placesProvider,
+    IPlaceCategoryNormalizer placeCategoryNormalizer,
     IInfrastructureScoringService scoringService,
-    IOptions<YandexOptions> yandexOptions,
+    IInfrastructureSummaryBuilder summaryBuilder,
+    IOptions<InfrastructureScoringOptions> scoringOptions,
     IMapper mapper) : IRequestHandler<RefreshInfrastructureCommand, Result<InfrastructureSummaryDto>>
 {
     public async Task<Result<InfrastructureSummaryDto>> Handle(RefreshInfrastructureCommand request, CancellationToken cancellationToken)
@@ -36,41 +40,58 @@ public sealed class RefreshInfrastructureHandler(
         {
             Id = Guid.NewGuid(),
             LocationId = location.Id,
-            SearchRadiusMeters = request.Request.SearchRadiusMeters > 0 ? request.Request.SearchRadiusMeters : yandexOptions.Value.DefaultSearchRadiusMeters,
-            Source = "yandex",
+            SearchRadiusMeters = request.Request.SearchRadiusMeters > 0 ? request.Request.SearchRadiusMeters : scoringOptions.Value.DefaultRadiusMeters,
+            Source = "places-provider",
             RefreshedAtUtc = DateTime.UtcNow
         };
 
-        foreach (var category in categories)
+        var nearbyPois = await placesProvider.GetNearbyPoisAsync(
+            latitude: (double)location.Latitude,
+            longitude: (double)location.Longitude,
+            radiusMeters: snapshot.SearchRadiusMeters,
+            categories:
+            [
+                InfrastructureCategory.Education,
+                InfrastructureCategory.Healthcare,
+                InfrastructureCategory.Transport,
+                InfrastructureCategory.Commerce,
+                InfrastructureCategory.Leisure
+            ],
+            limit: 20,
+            cancellationToken: cancellationToken);
+
+        foreach (var externalPoi in nearbyPois)
         {
-            var organizations = await yandexOrganizationSearchClient.SearchAsync(
-                location.Latitude,
-                location.Longitude,
-                category.SearchText,
-                snapshot.SearchRadiusMeters,
-                cancellationToken);
+            var normalizationTags = new Dictionary<string, string>(externalPoi.Tags, StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(externalPoi.RawCategory))
+                normalizationTags["raw"] = externalPoi.RawCategory!;
 
-            foreach (var organization in organizations)
+            var normalizedCategory = placeCategoryNormalizer.Normalize(normalizationTags);
+            if (string.IsNullOrWhiteSpace(normalizedCategory))
+                continue;
+
+            var category = categories.FirstOrDefault(x => x.Name.Equals(normalizedCategory, StringComparison.OrdinalIgnoreCase));
+            if (category is null)
+                continue;
+
+            var poi = await poiRepository.UpsertAsync(new Poi
             {
-                var poi = await poiRepository.UpsertAsync(new Poi
-                {
-                    Id = Guid.NewGuid(),
-                    ExternalId = organization.ExternalId,
-                    Name = organization.Name,
-                    AddressText = organization.AddressText,
-                    Latitude = organization.Latitude,
-                    Longitude = organization.Longitude,
-                    CategoryId = category.Id
-                }, cancellationToken);
+                Id = Guid.NewGuid(),
+                ExternalId = externalPoi.ExternalId,
+                Name = externalPoi.Name,
+                AddressText = externalPoi.AddressText,
+                Latitude = externalPoi.Latitude,
+                Longitude = externalPoi.Longitude,
+                CategoryId = category.Id
+            }, cancellationToken);
 
-                snapshot.Items.Add(new LocationPoiSnapshotItem
-                {
-                    Id = Guid.NewGuid(),
-                    PoiId = poi.Id,
-                    Poi = poi,
-                    DistanceMeters = organization.DistanceMeters
-                });
-            }
+            snapshot.Items.Add(new LocationPoiSnapshotItem
+            {
+                Id = Guid.NewGuid(),
+                PoiId = poi.Id,
+                Poi = poi,
+                DistanceMeters = externalPoi.DistanceMeters
+            });
         }
 
         await infrastructureRepository.AddSnapshotAsync(snapshot, cancellationToken);
@@ -88,6 +109,8 @@ public sealed class RefreshInfrastructureHandler(
             Latitude = location.Latitude,
             Longitude = location.Longitude,
             Score = scoreDto,
+            Summary = summaryBuilder.BuildSummary(score, snapshot.Items.ToList()),
+            Highlights = summaryBuilder.BuildHighlights(score, snapshot.Items.ToList()),
             Pois = pois
         });
     }
@@ -118,11 +141,11 @@ public sealed class RefreshInfrastructureHandler(
 
         var categories = new[]
         {
-            new PoiCategory { Id = Guid.NewGuid(), Name = "education", SearchText = "school kindergarten university", Weight = 1.2m, CreatedAtUtc = DateTime.UtcNow },
-            new PoiCategory { Id = Guid.NewGuid(), Name = "healthcare", SearchText = "hospital clinic pharmacy", Weight = 1.1m, CreatedAtUtc = DateTime.UtcNow },
-            new PoiCategory { Id = Guid.NewGuid(), Name = "transport", SearchText = "metro bus stop train", Weight = 1.0m, CreatedAtUtc = DateTime.UtcNow },
-            new PoiCategory { Id = Guid.NewGuid(), Name = "commerce", SearchText = "supermarket mall grocery", Weight = 0.9m, CreatedAtUtc = DateTime.UtcNow },
-            new PoiCategory { Id = Guid.NewGuid(), Name = "leisure", SearchText = "park gym cafe cinema", Weight = 0.8m, CreatedAtUtc = DateTime.UtcNow }
+            new PoiCategory { Id = Guid.NewGuid(), Name = "education", SearchText = "education", Weight = 1.1m, CreatedAtUtc = DateTime.UtcNow },
+            new PoiCategory { Id = Guid.NewGuid(), Name = "healthcare", SearchText = "healthcare", Weight = 1.05m, CreatedAtUtc = DateTime.UtcNow },
+            new PoiCategory { Id = Guid.NewGuid(), Name = "transport", SearchText = "transport", Weight = 1.2m, CreatedAtUtc = DateTime.UtcNow },
+            new PoiCategory { Id = Guid.NewGuid(), Name = "commerce", SearchText = "commerce", Weight = 0.95m, CreatedAtUtc = DateTime.UtcNow },
+            new PoiCategory { Id = Guid.NewGuid(), Name = "leisure", SearchText = "leisure", Weight = 0.85m, CreatedAtUtc = DateTime.UtcNow }
         };
 
         foreach (var category in categories)

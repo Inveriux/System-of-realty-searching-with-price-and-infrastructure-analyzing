@@ -6,6 +6,8 @@ public class ListingPriceHistory
     public DateTimeOffset ChangedAt { get; set; } 
     public decimal? PriceAmount { get; set; }
     public string? PriceCurrency { get; set; }
+    public decimal? PriceAmountByn { get; set; }
+    public decimal? PriceAmountUsd { get; set; }
 
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }
@@ -17,6 +19,8 @@ public class ListingPriceHistory
             return false;
 
         return priceHistory.PriceAmount == PriceAmount 
-            && priceHistory.PriceCurrency == PriceCurrency;
+            && priceHistory.PriceCurrency == PriceCurrency
+            && priceHistory.PriceAmountByn == PriceAmountByn
+            && priceHistory.PriceAmountUsd == PriceAmountUsd;
     }
 }

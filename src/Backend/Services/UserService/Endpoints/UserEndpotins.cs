@@ -1,4 +1,5 @@
 using BasicBuildingBlocks.BusinessResults.Extensoins;
+using BasicBuildingBlocks.Services.Abstractions;
 using Microsoft.AspNetCore.Authentication.Google;
 using BasicBuildingBlocks.Endpoints.Abstractions;
 using Microsoft.AspNetCore.Authentication;
@@ -25,6 +26,8 @@ public class UserEndpoints : IEndpointRegistrar
     {
         var group = application.MapGroup("/api/users")
             .WithTags("Users");
+        var agentsGroup = application.MapGroup("/api/agents")
+            .WithTags("Agents");
 
         group.MapGet("/info/{email}", GetUserInfoByEmailAsync)
             .WithName("GetUserInfoByEmail")
@@ -79,6 +82,11 @@ public class UserEndpoints : IEndpointRegistrar
             .WithDescription("Requires authentication and validates the current password before applying the new password.")
             .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
             .RequireAuthorization();
+        group.MapPut("/profile", UpdateOwnProfileAsync)
+            .WithName("UpdateOwnProfile")
+            .WithSummary("Updates the current authenticated user's public profile settings.")
+            .WithDescription("Allows changing the display name and phone number for the authenticated user.")
+            .RequireAuthorization();
         group.MapPost("/avatar/{email}", UploadAvatarAsync)
             .WithName("UploadUserAvatar")
             .WithSummary("Uploads a single avatar image for a user.")
@@ -87,6 +95,18 @@ public class UserEndpoints : IEndpointRegistrar
             .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
             .Accepts<UploadAvatarRequest>("multipart/form-data")
             .DisableAntiforgery();
+        group.MapPost("/avatar", UploadOwnAvatarAsync)
+            .WithName("UploadOwnUserAvatar")
+            .WithSummary("Uploads a single avatar image for the current authenticated user.")
+            .WithDescription("Uploads one avatar through ImageService for the current authenticated user.")
+            .RequireAuthorization()
+            .Accepts<UploadAvatarRequest>("multipart/form-data")
+            .DisableAntiforgery();
+
+        agentsGroup.MapGet("/{id:guid}/public-profile", GetSellerPublicProfileAsync)
+            .WithName("GetSellerPublicProfile")
+            .WithSummary("Gets the public seller profile by agent id.")
+            .WithDescription("Returns a public-safe seller profile projection intended for BFF consumption.");
 
         return group;
     }
@@ -209,6 +229,15 @@ public class UserEndpoints : IEndpointRegistrar
         return result.ToHttpResult();
     }
 
+    public async Task<IResult> UpdateOwnProfileAsync(
+        ISender sender,
+        UpdateOwnProfileDto dto,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new UpdateOwnProfileCommand(dto), cancellationToken);
+        return result.ToHttpResult();
+    }
+
     public async Task<IResult> UploadAvatarAsync(
         ISender sender,
         IImageServiceClient imageServiceClient,
@@ -227,6 +256,36 @@ public class UserEndpoints : IEndpointRegistrar
             new UploadUserAvatarCommand(email, uploadResult.Data.Url),
             cancellationToken);
 
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> UploadOwnAvatarAsync(
+        ISender sender,
+        IImageServiceClient imageServiceClient,
+        ICurrentUserProvider currentUserProvider,
+        [FromForm] UploadAvatarRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Image is null)
+            return Results.BadRequest("Image file is required.");
+
+        var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
+        if (!uploadResult.IsSuccess || uploadResult.Data is null)
+            return uploadResult.ToHttpResult();
+
+        var result = await sender.Send(
+            new UploadUserAvatarCommand(currentUserProvider.GetEmail(), uploadResult.Data.Url),
+            cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> GetSellerPublicProfileAsync(
+        ISender sender,
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetSellerPublicProfileQuery(id), cancellationToken);
         return result.ToHttpResult();
     }
 }

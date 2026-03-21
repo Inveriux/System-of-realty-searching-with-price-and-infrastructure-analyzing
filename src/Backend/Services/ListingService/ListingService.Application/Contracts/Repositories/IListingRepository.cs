@@ -8,6 +8,9 @@ public interface IListingRepository
     Task<PagedResult<Listing>> GetAllAsync(PagedRequest pageRequest, 
         bool isTracking = true, 
         CancellationToken cancellationToken = default);
+    Task<PagedResult<Listing>> GetAllDetailedAsync(PagedRequest pageRequest,
+        bool isTracking = false,
+        CancellationToken cancellationToken = default);
     Task<Listing?> GetByIdAsync(Guid id, bool isTracking, CancellationToken cancellationToken);
     Task<Listing?> GetDetailedByIdAsync(Guid id, bool isTracking = false, CancellationToken cancellationToken = default);
     Task AddAsync(Listing listing, CancellationToken cancellationToken);

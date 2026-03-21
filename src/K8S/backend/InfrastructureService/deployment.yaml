@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: infrastructure-service
+  name: infrastructure-service-deployment
   namespace: diploma
   labels:
     app: infrastructure-service
@@ -10,11 +10,11 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app: infrastructure-service
+      app: infrastructure-service-deployment
   template:
     metadata:
       labels:
-        app: infrastructure-service
+        app: infrastructure-service-deployment
     spec:
       containers:
         - name: infrastructure-service
@@ -39,7 +39,7 @@ metadata:
   namespace: diploma
 spec:
   selector:
-    app: infrastructure-service
+    app: infrastructure-service-deployment
   ports:
     - protocol: TCP
       port: 8080

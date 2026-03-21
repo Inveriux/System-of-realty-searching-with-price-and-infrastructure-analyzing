@@ -5,6 +5,7 @@ using InfrastructureService.DTOs.Locations;
 using InfrastructureService.Models;
 using InfrastructureService.Services.Yandex.Abstractions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace InfrastructureService.UseCases.Locations;
 
@@ -28,6 +29,10 @@ public sealed class ResolveLocationHandler(
             if (resolved is null)
                 return Result.NotFound<LocationDto>("Location was not resolved.");
 
+            var resolvedCached = await locationRepository.GetByNormalizedAddressAsync(resolved.NormalizedAddressText, cancellationToken);
+            if (resolvedCached is not null)
+                return Result.Ok(mapper.Map<LocationDto>(resolvedCached));
+
             var location = new Location
             {
                 Id = Guid.NewGuid(),
@@ -45,7 +50,19 @@ public sealed class ResolveLocationHandler(
             };
 
             await locationRepository.AddAsync(location, cancellationToken);
-            await locationRepository.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await locationRepository.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                var concurrentLocation = await locationRepository.GetByNormalizedAddressAsync(resolved.NormalizedAddressText, cancellationToken);
+                if (concurrentLocation is not null)
+                    return Result.Ok(mapper.Map<LocationDto>(concurrentLocation));
+
+                throw;
+            }
+
             return Result.Ok(mapper.Map<LocationDto>(location));
         }
 

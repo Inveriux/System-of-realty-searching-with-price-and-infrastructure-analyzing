@@ -1,62 +1,212 @@
 "use client";
 
+import { deleteListing } from "@diploma/api/listings";
 import { useListingsQuery } from "@diploma/features";
-import Image from "next/image";
+import type { ListingDto } from "@diploma/contracts/listings";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useAuth } from "../providers";
+import { ListingGrid } from "./components/ListingGrid";
+import { ListingsMapOverview } from "./components/ListingsMapOverview";
+import type { ListingCardItem } from "./components/listing-card.types";
+import { listingsPageClasses } from "./styles/listings-page.styles";
+
+function mapApiListingToCard(
+  listing: ListingDto,
+  options: {
+    canDelete: boolean;
+    deletingId: string | null;
+    onDelete: (id: string) => Promise<void>;
+  },
+): ListingCardItem {
+  const listingType = listing.listingType === "Rent" ? "Аренда" : "Продажа";
+  const href = `/listings/${listing.id}`;
+
+  switch (listing.listingDetailsType) {
+    case "House":
+      return {
+        id: listing.id,
+        title: listing.title,
+        addressText: listing.addressText ?? "Адрес уточняется",
+        priceAmount: listing.priceAmountByn ?? listing.priceAmount ?? undefined,
+        priceAmountUsd: listing.priceAmountUsd ?? undefined,
+        priceCurrency: "BYN",
+        pricePeriod: listing.pricePeriod ?? undefined,
+        areaTotal: listing.areaTotal,
+        mainMedia: listing.mainMedia,
+        listingType,
+        buildingType: listing.buildingType,
+        publishedDate: listing.publishedDate,
+        mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
+        canDelete: options.canDelete,
+        isDeleting: options.deletingId === listing.id,
+        onDelete: options.onDelete,
+        href,
+        details: {
+          kind: "house",
+          ...listing.listingDetails,
+        },
+      };
+    case "Land":
+      return {
+        id: listing.id,
+        title: listing.title,
+        addressText: listing.addressText ?? "Адрес уточняется",
+        priceAmount: listing.priceAmountByn ?? listing.priceAmount ?? undefined,
+        priceAmountUsd: listing.priceAmountUsd ?? undefined,
+        priceCurrency: "BYN",
+        pricePeriod: listing.pricePeriod ?? undefined,
+        areaTotal: listing.areaTotal,
+        mainMedia: listing.mainMedia,
+        listingType,
+        buildingType: listing.buildingType,
+        publishedDate: listing.publishedDate,
+        mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
+        canDelete: options.canDelete,
+        isDeleting: options.deletingId === listing.id,
+        onDelete: options.onDelete,
+        href,
+        details: {
+          kind: "land",
+          ...listing.listingDetails,
+        },
+      };
+    case "Office":
+      return {
+        id: listing.id,
+        title: listing.title,
+        addressText: listing.addressText ?? "Адрес уточняется",
+        priceAmount: listing.priceAmountByn ?? listing.priceAmount ?? undefined,
+        priceAmountUsd: listing.priceAmountUsd ?? undefined,
+        priceCurrency: "BYN",
+        pricePeriod: listing.pricePeriod ?? undefined,
+        areaTotal: listing.areaTotal,
+        mainMedia: listing.mainMedia,
+        listingType,
+        buildingType: listing.buildingType,
+        publishedDate: listing.publishedDate,
+        mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
+        canDelete: options.canDelete,
+        isDeleting: options.deletingId === listing.id,
+        onDelete: options.onDelete,
+        href,
+        details: {
+          kind: "office",
+          ...listing.listingDetails,
+        },
+      };
+    case "Warehouse":
+      return {
+        id: listing.id,
+        title: listing.title,
+        addressText: listing.addressText ?? "Адрес уточняется",
+        priceAmount: listing.priceAmountByn ?? listing.priceAmount ?? undefined,
+        priceAmountUsd: listing.priceAmountUsd ?? undefined,
+        priceCurrency: "BYN",
+        pricePeriod: listing.pricePeriod ?? undefined,
+        areaTotal: listing.areaTotal,
+        mainMedia: listing.mainMedia,
+        listingType,
+        buildingType: listing.buildingType,
+        publishedDate: listing.publishedDate,
+        mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
+        canDelete: options.canDelete,
+        isDeleting: options.deletingId === listing.id,
+        onDelete: options.onDelete,
+        href,
+        details: {
+          kind: "warehouse",
+          ...listing.listingDetails,
+        },
+      };
+    case "Apartment":
+    default:
+      return {
+        id: listing.id,
+        title: listing.title,
+        addressText: listing.addressText ?? "Адрес уточняется",
+        priceAmount: listing.priceAmountByn ?? listing.priceAmount ?? undefined,
+        priceAmountUsd: listing.priceAmountUsd ?? undefined,
+        priceCurrency: "BYN",
+        pricePeriod: listing.pricePeriod ?? undefined,
+        areaTotal: listing.areaTotal,
+        mainMedia: listing.mainMedia,
+        listingType,
+        buildingType: listing.buildingType,
+        publishedDate: listing.publishedDate,
+        mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
+        canDelete: options.canDelete,
+        isDeleting: options.deletingId === listing.id,
+        onDelete: options.onDelete,
+        href,
+        details: {
+          kind: "apartment",
+          ...listing.listingDetails,
+        },
+      };
+  }
+}
+
+function getPropertyTypeLabel(listing: ListingDto) {
+  switch (listing.listingDetailsType) {
+    case "House":
+      return "Дом";
+    case "Land":
+      return "Участок";
+    case "Office":
+      return "Офис";
+    case "Warehouse":
+      return "Склад";
+    case "Apartment":
+    default:
+      return "Квартира";
+  }
+}
 
 export function ListingsClient() {
-  const { api } = useAuth();
+  const queryClient = useQueryClient();
+  const { api, user } = useAuth();
   const { data, isLoading, error } = useListingsQuery(api);
-  const placeholderImage =
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 700'%3E%3Crect width='900' height='700' fill='%23ece5ff'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%235326d4' font-family='Arial' font-size='54'%3EDiploma Listing%3C/text%3E%3C/svg%3E";
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isMapOverviewOpen, setIsMapOverviewOpen] = useState(false);
+  const isAdmin = user?.role?.toLowerCase() === "admin";
+
+  async function handleDelete(id: string) {
+    try {
+      setDeletingId(id);
+      await deleteListing(api, id);
+      await queryClient.invalidateQueries({ queryKey: ["listings"] });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  const items = (data?.items ?? []).map((listing) =>
+    mapApiListingToCard(listing, {
+      canDelete: isAdmin,
+      deletingId,
+      onDelete: handleDelete,
+    }),
+  );
+  const mapListings = (data?.items ?? [])
+    .filter((listing) => listing.latitude != null && listing.longitude != null)
+    .map((listing) => ({
+      id: listing.id,
+      title: listing.title,
+      href: `/listings/${listing.id}`,
+      addressText: listing.addressText,
+      propertyType: getPropertyTypeLabel(listing),
+      latitude: listing.latitude as number,
+      longitude: listing.longitude as number,
+      priceText: `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(listing.priceAmountByn ?? listing.priceAmount ?? 0)} BYN`,
+    }));
 
   return (
     <AppShell>
-      <main style={{ display: "grid", gap: 20 }}>
-        <section
-          className="surface"
-          style={{
-            borderRadius: 28,
-            padding: 28,
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: "auto -60px -80px auto",
-              width: 220,
-              height: 220,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, var(--color-accent) 0%, transparent 68%)",
-              opacity: 0.32,
-              pointerEvents: "none",
-            }}
-          />
-          <p
-            style={{
-              maxWidth: 720,
-              color: "var(--foreground-muted)",
-              fontSize: "1rem",
-              marginBottom: 0,
-            }}
-          >
-            Лента объявлений с фотографиями, ценой и кратким описанием.
-          </p>
-        </section>
-
-        <section style={{ display: "grid", gap: 16 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              alignItems: "end",
-              flexWrap: "wrap",
-            }}
-          >
+      <main className={listingsPageClasses.main}>
+        <section className={listingsPageClasses.section}>
+          <div className={listingsPageClasses.headingWrap}>
             <div>
               <h2 className="section-title" style={{ marginTop: 8 }}>
                 Объявлений найдено: {data?.totalCount ?? 0}
@@ -64,87 +214,45 @@ export function ListingsClient() {
             </div>
           </div>
 
-          {isLoading ? <div className="surface" style={{ borderRadius: 28, padding: 24 }}>Загрузка объявлений...</div> : null}
           {error ? (
-            <div className="surface" style={{ borderRadius: 28, padding: 24, color: "#d04b73" }}>
+            <div className={listingsPageClasses.error}>
               Ошибка: {String(error.message)}
             </div>
           ) : null}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {(data?.items ?? []).map((listing) => (
-              <article
-                className="surface"
-                key={listing.id}
-                style={{
-                  borderRadius: 28,
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ background: "var(--background-muted)", aspectRatio: "4 / 3" }}>
-                  <Image
-                    src={listing.mainMedia ?? placeholderImage}
-                    alt={listing.title}
-                    width={900}
-                    height={700}
-                    unoptimized
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-
-                <div style={{ padding: 20, display: "grid", gap: 10 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      alignItems: "start",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "1.1rem",
-                        lineHeight: 1.15,
-                      }}
-                    >
-                      {listing.title}
-                    </h3>
-                    <span
-                      style={{
-                        padding: "8px 10px",
-                        borderRadius: 999,
-                        background: "var(--color-primary-soft)",
-                        color: "var(--color-primary-strong)",
-                        whiteSpace: "nowrap",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {listing.priceAmount
-                        ? `${listing.priceAmount.toLocaleString()} ${listing.priceCurrency ?? ""}`
-                        : "Цена скрыта"}
-                    </span>
-                  </div>
-
-                  <p style={{ margin: 0, color: "var(--foreground-muted)" }}>
-                    {listing.description ?? "Описание пока не заполнено."}
-                  </p>
-                </div>
-              </article>
-            ))}
-          </div>
+          <ListingGrid items={items} isLoading={isLoading && items.length === 0} />
         </section>
       </main>
+
+      <button
+        type="button"
+        onClick={() => setIsMapOverviewOpen(true)}
+        className="surface"
+        style={{
+          position: "fixed",
+          right: 22,
+          bottom: 22,
+          zIndex: 24,
+          borderRadius: 24,
+          padding: "18px 16px",
+          display: "grid",
+          gap: 10,
+          justifyItems: "center",
+          minWidth: 96,
+          border: "1px solid var(--border-color)",
+          background: "color-mix(in srgb, var(--background-elevated) 94%, white)",
+        }}
+        title="Обзор объектов на карте"
+      >
+        <span style={{ fontSize: "1.9rem", lineHeight: 1 }}>⌖</span>
+        <span style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>На карте</span>
+      </button>
+
+      <ListingsMapOverview
+        open={isMapOverviewOpen}
+        onClose={() => setIsMapOverviewOpen(false)}
+        listings={mapListings}
+      />
     </AppShell>
   );
 }

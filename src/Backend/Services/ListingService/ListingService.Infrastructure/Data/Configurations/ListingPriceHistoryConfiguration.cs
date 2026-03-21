@@ -23,6 +23,15 @@ internal class ListingPriceHistoryConfiguration : IEntityTypeConfiguration<Listi
             .OnDelete(DeleteBehavior.Cascade); //TODO Is need cascade delete?
 
         builder.Property(x => x.PriceAmount)
+            .HasPrecision(18, 2)
+            .IsRequired();
+
+        builder.Property(x => x.PriceAmountByn)
+            .HasPrecision(18, 2)
+            .IsRequired();
+
+        builder.Property(x => x.PriceAmountUsd)
+            .HasPrecision(18, 2)
             .IsRequired();
 
         builder.Property(x => x.PriceCurrency)

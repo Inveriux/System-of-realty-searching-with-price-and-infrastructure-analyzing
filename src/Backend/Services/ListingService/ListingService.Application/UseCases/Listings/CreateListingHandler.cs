@@ -2,6 +2,7 @@ using ListingService.Application.Contracts.Cache;
 using ListingService.Application.Contracts.Services;
 using ListingService.Application.DTOs.Listings;
 using ListingService.Domain.Abstractions;
+using ListingService.Domain.Enums;
 using ListingService.Domain.Models;
 using BasicBuildingBlocks.Services.Abstractions;
 using AutoMapper;
@@ -17,6 +18,7 @@ public class CreateListingHandler(IRepositoryManager manager,
     IMapper mapper,
     ICurrentUserProvider currentUserProvider,
     IInfrastructureServiceClient infrastructureServiceClient,
+    ICurrencyRateService currencyRateService,
     ISearchServiceClient searchServiceClient,
     ILogger<CreateListingHandler> logger)
     : IRequestHandler<CreateListingCommand, Result>
@@ -26,6 +28,7 @@ public class CreateListingHandler(IRepositoryManager manager,
     {   
         var listing = mapper.Map<Listing>(request.ListingDto);
         listing.AgentId = currentUserProvider.GetUserId();
+        await NormalizePriceAsync(listing, request.ListingDto, cancellationToken);
 
         if (!listing.LocationId.HasValue && !string.IsNullOrWhiteSpace(listing.AddressText))
         {
@@ -85,6 +88,30 @@ public class CreateListingHandler(IRepositoryManager manager,
         }
 
         return Result.Ok();
+    }
+
+    private async Task NormalizePriceAsync(Listing listing, CreateListingDto listingDto, CancellationToken cancellationToken)
+    {
+        var bynAmount = listingDto.PriceAmountByn ?? listingDto.PriceAmount;
+        if (!bynAmount.HasValue)
+        {
+            listing.PriceAmount = null;
+            listing.PriceAmountByn = null;
+            listing.PriceAmountUsd = null;
+            listing.PriceCurrency = null;
+            return;
+        }
+
+        var conversion = await currencyRateService.ConvertBynToUsdAsync(bynAmount.Value, cancellationToken);
+
+        listing.PriceAmount = conversion.AmountByn;
+        listing.PriceCurrency = Currency.BYN.ToString();
+        listing.PriceAmountByn = conversion.AmountByn;
+        listing.PriceAmountUsd = conversion.AmountUsd;
+        listingDto.PriceAmount = conversion.AmountByn;
+        listingDto.PriceCurrency = Currency.BYN.ToString();
+        listingDto.PriceAmountByn = conversion.AmountByn;
+        listingDto.PriceAmountUsd = conversion.AmountUsd;
     }
 
     private async Task<Result<Guid>> ResolveLookupIds(Listing listing, 

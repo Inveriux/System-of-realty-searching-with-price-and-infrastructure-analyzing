@@ -14,8 +14,13 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Diploma Store",
+  title: "Realt",
   description: "Платформа объявлений по недвижимости",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
