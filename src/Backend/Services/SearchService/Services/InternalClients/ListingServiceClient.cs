@@ -27,6 +27,7 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
             return new IndexListingRequestDto
             {
                 ListingId = wrapped.Data.Id,
+                AgentId = wrapped.Data.AgentId,
                 Title = wrapped.Data.Title,
                 Description = wrapped.Data.Description,
                 AddressText = wrapped.Data.AddressText,
@@ -36,10 +37,13 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
                 ListingType = wrapped.Data.ListingType,
                 BuildingType = wrapped.Data.BuildingType,
                 PriceAmount = wrapped.Data.PriceAmount,
+                PriceAmountByn = wrapped.Data.PriceAmountByn,
+                PriceAmountUsd = wrapped.Data.PriceAmountUsd,
                 PriceCurrency = wrapped.Data.PriceCurrency,
                 AreaTotal = wrapped.Data.AreaTotal,
                 MainMediaUrl = wrapped.Data.MainMedia,
-                PublishedDate = wrapped.Data.PublishedDate
+                PublishedDate = wrapped.Data.PublishedDate,
+                ListingDetailsType = wrapped.Data.ListingDetailsType
             };
         }
         catch (JsonException)
@@ -57,6 +61,7 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
     private sealed class ListingPayload
     {
         public Guid Id { get; init; }
+        public Guid AgentId { get; init; }
         public string Title { get; init; } = string.Empty;
         public string? Description { get; init; }
         public string? AddressText { get; init; }
@@ -66,9 +71,12 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
         public string? ListingType { get; init; }
         public string? BuildingType { get; init; }
         public decimal? PriceAmount { get; init; }
+        public decimal? PriceAmountByn { get; init; }
+        public decimal? PriceAmountUsd { get; init; }
         public string? PriceCurrency { get; init; }
         public decimal AreaTotal { get; init; }
         public string? MainMedia { get; init; }
         public DateTimeOffset? PublishedDate { get; init; }
+        public string? ListingDetailsType { get; init; }
     }
 }

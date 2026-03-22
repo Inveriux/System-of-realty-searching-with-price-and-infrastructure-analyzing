@@ -105,7 +105,6 @@ public sealed class OverpassPlacesProvider(
     private static ExternalPoiResult Map(OverpassElement element, decimal latitude, decimal longitude)
     {
         var tags = element.Tags;
-        var rawCategory = tags.FirstOrDefault(static tag => !string.IsNullOrWhiteSpace(tag.Value)).Value;
         return new ExternalPoiResult
         {
             ExternalId = $"{element.Type}/{element.Id}",
@@ -119,7 +118,8 @@ public sealed class OverpassPlacesProvider(
             Longitude = element.Longitude!.Value,
             DistanceMeters = CalculateDistanceMeters(latitude, longitude, element.Latitude.Value, element.Longitude.Value),
             Source = ProviderName,
-            RawCategory = rawCategory,
+            RawCategory = null,
+            RawCategories = [],
             Tags = tags
         };
     }

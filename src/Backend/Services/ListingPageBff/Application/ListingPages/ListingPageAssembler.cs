@@ -62,6 +62,12 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
         if (TryGetDetailNumber(listing.ListingDetails, "floor", out var floor))
             stats.Add(new ListingQuickStatDto { Key = "floor", Label = "Этаж", Value = floor });
 
+        if (TryGetDetailNumber(listing.ListingDetails, "floors", out var floors))
+            stats.Add(new ListingQuickStatDto { Key = "floors", Label = "Этажей", Value = floors });
+
+        if (TryGetDetailNumber(listing.ListingDetails, "plotArea", out var plotArea))
+            stats.Add(new ListingQuickStatDto { Key = "plotArea", Label = "Участок", Value = plotArea, Unit = "м²" });
+
         return stats;
     }
 
@@ -203,7 +209,6 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
             GroupedPois = GroupPoisByCategory(infrastructure.Pois),
             NearbyPois = infrastructure.Pois
                 .OrderBy(static x => x.DistanceMeters)
-                .Take(12)
                 .Select(MapPoi)
                 .ToArray(),
             Highlights = infrastructure.Highlights.Count > 0

@@ -65,6 +65,7 @@ public class CreateListingHandler(IRepositoryManager manager,
         var indexed = await searchServiceClient.IndexListingAsync(new SearchListingIndexRequest
         {
             ListingId = listing.Id,
+            AgentId = listing.AgentId,
             Title = listing.Title,
             Description = listing.Description,
             AddressText = listing.AddressText,
@@ -74,10 +75,13 @@ public class CreateListingHandler(IRepositoryManager manager,
             ListingType = request.ListingDto.ListingType,
             BuildingType = request.ListingDto.BuildingType,
             PriceAmount = listing.PriceAmount,
+            PriceAmountByn = listing.PriceAmountByn,
+            PriceAmountUsd = listing.PriceAmountUsd,
             PriceCurrency = listing.PriceCurrency,
             AreaTotal = listing.AreaTotal,
             MainMediaUrl = request.ListingDto.MediaUrls?.FirstOrDefault(static url => !string.IsNullOrWhiteSpace(url)),
-            PublishedDate = listing.PublishedDate
+            PublishedDate = listing.PublishedDate,
+            ListingDetailsType = listing.ListingDetailsType.ToString()
         }, cancellationToken);
 
         if (!indexed)

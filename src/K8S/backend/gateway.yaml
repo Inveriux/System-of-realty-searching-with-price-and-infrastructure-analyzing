@@ -62,6 +62,13 @@ spec:
     - matches:
       - path:
           type: PathPrefix
+          value: /api/search
+      backendRefs:
+        - name: search-service-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
           value: /api/listing_types
       - path:
           type: PathPrefix

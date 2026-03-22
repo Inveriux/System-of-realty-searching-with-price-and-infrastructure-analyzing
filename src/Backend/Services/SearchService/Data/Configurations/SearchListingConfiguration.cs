@@ -17,17 +17,35 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.Property(x => x.AddressText).HasMaxLength(500);
         builder.Property(x => x.ListingType).HasMaxLength(100);
         builder.Property(x => x.BuildingType).HasMaxLength(100);
+        builder.Property(x => x.ListingDetailsType).HasMaxLength(100);
         builder.Property(x => x.PriceCurrency).HasMaxLength(10);
         builder.Property(x => x.MainMediaUrl).HasMaxLength(1000);
         builder.Property(x => x.Latitude).HasPrecision(10, 6);
         builder.Property(x => x.Longitude).HasPrecision(10, 6);
         builder.Property(x => x.PriceAmount).HasPrecision(18, 2);
+        builder.Property(x => x.PriceAmountByn).HasPrecision(18, 2);
+        builder.Property(x => x.PriceAmountUsd).HasPrecision(18, 2);
         builder.Property(x => x.AreaTotal).HasPrecision(18, 2);
         builder.Property(x => x.InfrastructureScore).HasPrecision(10, 4);
+        builder.Property(x => x.EducationScore).HasPrecision(10, 4);
+        builder.Property(x => x.HealthcareScore).HasPrecision(10, 4);
+        builder.Property(x => x.TransportScore).HasPrecision(10, 4);
+        builder.Property(x => x.CommerceScore).HasPrecision(10, 4);
+        builder.Property(x => x.LeisureScore).HasPrecision(10, 4);
+        builder.Property(x => x.EducationNearestMeters).HasPrecision(10, 2);
+        builder.Property(x => x.HealthcareNearestMeters).HasPrecision(10, 2);
+        builder.Property(x => x.TransportNearestMeters).HasPrecision(10, 2);
+        builder.Property(x => x.CommerceNearestMeters).HasPrecision(10, 2);
+        builder.Property(x => x.LeisureNearestMeters).HasPrecision(10, 2);
         builder.Property(x => x.SearchFeaturesJson).HasColumnType("jsonb");
 
         builder.HasIndex(x => x.ListingId).IsUnique();
         builder.HasIndex(x => x.LocationId);
+        builder.HasIndex(x => x.AgentId);
         builder.HasIndex(x => x.ListingType);
+        builder.HasIndex(x => x.BuildingType);
+        builder.HasIndex(x => x.PriceAmount);
+        builder.HasIndex(x => x.PublishedDate);
+        builder.HasIndex(x => x.InfrastructureScore);
     }
 }

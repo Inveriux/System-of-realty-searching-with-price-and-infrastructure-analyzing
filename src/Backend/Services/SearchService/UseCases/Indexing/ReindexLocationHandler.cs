@@ -2,7 +2,6 @@ using BasicBuildingBlocks.BusinessResults;
 using SearchService.Data.Repositories.Abstractions;
 using SearchService.Services.InternalClients.Abstractions;
 using MediatR;
-using System.Text.Json;
 
 namespace SearchService.UseCases.Indexing;
 
@@ -15,13 +14,11 @@ public sealed class ReindexLocationHandler(
     public async Task<Result> Handle(ReindexLocationCommand request, CancellationToken cancellationToken)
     {
         var listings = await repository.GetByLocationIdAsync(request.LocationId, cancellationToken);
-        var features = await infrastructureServiceClient.GetSearchFeaturesAsync(request.LocationId, cancellationToken);
-        var score = features.Count == 0 ? (decimal?)null : features.Values.Sum();
+        var infrastructureScore = await infrastructureServiceClient.GetInfrastructureScoreAsync(request.LocationId, cancellationToken);
 
         foreach (var listing in listings)
         {
-            listing.InfrastructureScore = score;
-            listing.SearchFeaturesJson = JsonSerializer.Serialize(features);
+            SearchListingInfrastructureMapper.Apply(listing, infrastructureScore);
             listing.UpdatedAtUtc = DateTime.UtcNow;
         }
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using SearchService.Services.InternalClients.Abstractions;
+using SearchService.Services.InternalClients.Contracts;
 
 namespace SearchService.Services.InternalClients;
 
@@ -26,6 +27,25 @@ public sealed class InfrastructureServiceClient(HttpClient httpClient, IOptions<
         catch (JsonException)
         {
             return [];
+        }
+    }
+
+    public async Task<InfrastructureScorePayloadDto?> GetInfrastructureScoreAsync(Guid locationId, CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.GetAsync($"internal/infrastructure/{locationId}", cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        var payload = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            var wrapped = JsonSerializer.Deserialize<InternalResult<InfrastructureScorePayloadDto>>(payload, JsonOptions);
+            return wrapped?.Data;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 

@@ -1,6 +1,7 @@
 using BasicBuildingBlocks.Collections;
 using Microsoft.EntityFrameworkCore;
 using SearchService.Data.Repositories.Abstractions;
+using SearchService.DTOs.Search;
 using SearchService.Models;
 
 namespace SearchService.Data.Repositories;
@@ -17,47 +18,124 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
             .ToListAsync(cancellationToken);
 
     public async Task<PagedResult<SearchListing>> SearchAsync(
-        string? query,
-        Guid? locationId,
-        string? listingType,
-        decimal? minPrice,
-        decimal? maxPrice,
-        int page,
-        int pageSize,
+        SearchListingsRequestDto request,
         CancellationToken cancellationToken)
     {
         var searchQuery = context.SearchListings.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(query))
+        if (!string.IsNullOrWhiteSpace(request.Query))
         {
-            var pattern = $"%{query.Trim()}%";
+            var pattern = $"%{request.Query.Trim()}%";
             searchQuery = searchQuery.Where(x =>
                 EF.Functions.ILike(x.Title, pattern) ||
                 (x.Description != null && EF.Functions.ILike(x.Description, pattern)) ||
                 (x.AddressText != null && EF.Functions.ILike(x.AddressText, pattern)));
         }
 
-        if (locationId.HasValue)
-            searchQuery = searchQuery.Where(x => x.LocationId == locationId.Value);
+        if (request.LocationId.HasValue)
+            searchQuery = searchQuery.Where(x => x.LocationId == request.LocationId.Value);
 
-        if (!string.IsNullOrWhiteSpace(listingType))
-            searchQuery = searchQuery.Where(x => x.ListingType == listingType);
+        if (!string.IsNullOrWhiteSpace(request.ListingType))
+            searchQuery = searchQuery.Where(x => x.ListingType == request.ListingType);
 
-        if (minPrice.HasValue)
-            searchQuery = searchQuery.Where(x => x.PriceAmount >= minPrice.Value);
+        if (!string.IsNullOrWhiteSpace(request.BuildingType))
+            searchQuery = searchQuery.Where(x => x.BuildingType == request.BuildingType);
 
-        if (maxPrice.HasValue)
-            searchQuery = searchQuery.Where(x => x.PriceAmount <= maxPrice.Value);
+        if (request.MinPrice.HasValue)
+            searchQuery = searchQuery.Where(x => x.PriceAmount >= request.MinPrice.Value);
+
+        if (request.MaxPrice.HasValue)
+            searchQuery = searchQuery.Where(x => x.PriceAmount <= request.MaxPrice.Value);
+
+        if (request.MinArea.HasValue)
+            searchQuery = searchQuery.Where(x => x.AreaTotal >= request.MinArea.Value);
+
+        if (request.MaxArea.HasValue)
+            searchQuery = searchQuery.Where(x => x.AreaTotal <= request.MaxArea.Value);
+
+        if (request.MinInfrastructureScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.InfrastructureScore >= request.MinInfrastructureScore.Value);
+
+        if (request.MinEducationScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.EducationScore >= request.MinEducationScore.Value);
+
+        if (request.MinHealthcareScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.HealthcareScore >= request.MinHealthcareScore.Value);
+
+        if (request.MinTransportScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.TransportScore >= request.MinTransportScore.Value);
+
+        if (request.MinCommerceScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.CommerceScore >= request.MinCommerceScore.Value);
+
+        if (request.MinLeisureScore.HasValue)
+            searchQuery = searchQuery.Where(x => x.LeisureScore >= request.MinLeisureScore.Value);
+
+        if (request.MinEducationCount.HasValue)
+            searchQuery = searchQuery.Where(x => (x.EducationCount ?? 0) >= request.MinEducationCount.Value);
+
+        if (request.MinHealthcareCount.HasValue)
+            searchQuery = searchQuery.Where(x => (x.HealthcareCount ?? 0) >= request.MinHealthcareCount.Value);
+
+        if (request.MinTransportCount.HasValue)
+            searchQuery = searchQuery.Where(x => (x.TransportCount ?? 0) >= request.MinTransportCount.Value);
+
+        if (request.MinCommerceCount.HasValue)
+            searchQuery = searchQuery.Where(x => (x.CommerceCount ?? 0) >= request.MinCommerceCount.Value);
+
+        if (request.MinLeisureCount.HasValue)
+            searchQuery = searchQuery.Where(x => (x.LeisureCount ?? 0) >= request.MinLeisureCount.Value);
+
+        if (request.MaxEducationNearestMeters.HasValue)
+            searchQuery = searchQuery.Where(x => x.EducationNearestMeters != null && x.EducationNearestMeters <= request.MaxEducationNearestMeters.Value);
+
+        if (request.MaxHealthcareNearestMeters.HasValue)
+            searchQuery = searchQuery.Where(x => x.HealthcareNearestMeters != null && x.HealthcareNearestMeters <= request.MaxHealthcareNearestMeters.Value);
+
+        if (request.MaxTransportNearestMeters.HasValue)
+            searchQuery = searchQuery.Where(x => x.TransportNearestMeters != null && x.TransportNearestMeters <= request.MaxTransportNearestMeters.Value);
+
+        if (request.MaxCommerceNearestMeters.HasValue)
+            searchQuery = searchQuery.Where(x => x.CommerceNearestMeters != null && x.CommerceNearestMeters <= request.MaxCommerceNearestMeters.Value);
+
+        if (request.MaxLeisureNearestMeters.HasValue)
+            searchQuery = searchQuery.Where(x => x.LeisureNearestMeters != null && x.LeisureNearestMeters <= request.MaxLeisureNearestMeters.Value);
+
+        if (HasBounds(request))
+        {
+            searchQuery = searchQuery.Where(x =>
+                x.Latitude != null &&
+                x.Longitude != null &&
+                x.Latitude >= request.BoundsMinLatitude!.Value &&
+                x.Latitude <= request.BoundsMaxLatitude!.Value &&
+                x.Longitude >= request.BoundsMinLongitude!.Value &&
+                x.Longitude <= request.BoundsMaxLongitude!.Value);
+        }
+
+        if (request.CenterLatitude.HasValue && request.CenterLongitude.HasValue && request.RadiusMeters.HasValue)
+        {
+            var radiusBounds = BuildRadiusBounds(
+                request.CenterLatitude.Value,
+                request.CenterLongitude.Value,
+                request.RadiusMeters.Value);
+
+            searchQuery = searchQuery.Where(x =>
+                x.Latitude != null &&
+                x.Longitude != null &&
+                x.Latitude >= radiusBounds.MinLatitude &&
+                x.Latitude <= radiusBounds.MaxLatitude &&
+                x.Longitude >= radiusBounds.MinLongitude &&
+                x.Longitude <= radiusBounds.MaxLongitude);
+        }
 
         var totalCount = await searchQuery.LongCountAsync(cancellationToken);
-        var items = await searchQuery
-            .OrderByDescending(x => x.InfrastructureScore ?? 0m)
-            .ThenByDescending(x => x.PublishedDate)
-            .Skip(page * pageSize)
-            .Take(pageSize)
+        var sortedQuery = ApplySorting(searchQuery, request.SortBy);
+        var items = await sortedQuery
+            .Skip(request.Page * request.PageSize)
+            .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<SearchListing>(items, page, pageSize, totalCount);
+        return new PagedResult<SearchListing>(items, request.Page, request.PageSize, totalCount);
     }
 
     public async Task UpsertAsync(SearchListing listing, CancellationToken cancellationToken)
@@ -70,6 +148,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         }
 
         existing.Title = listing.Title;
+        existing.AgentId = listing.AgentId;
         existing.Description = listing.Description;
         existing.AddressText = listing.AddressText;
         existing.LocationId = listing.LocationId;
@@ -77,12 +156,30 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         existing.Longitude = listing.Longitude;
         existing.ListingType = listing.ListingType;
         existing.BuildingType = listing.BuildingType;
+        existing.ListingDetailsType = listing.ListingDetailsType;
         existing.PriceAmount = listing.PriceAmount;
+        existing.PriceAmountByn = listing.PriceAmountByn;
+        existing.PriceAmountUsd = listing.PriceAmountUsd;
         existing.PriceCurrency = listing.PriceCurrency;
         existing.AreaTotal = listing.AreaTotal;
         existing.MainMediaUrl = listing.MainMediaUrl;
         existing.PublishedDate = listing.PublishedDate;
         existing.InfrastructureScore = listing.InfrastructureScore;
+        existing.EducationScore = listing.EducationScore;
+        existing.HealthcareScore = listing.HealthcareScore;
+        existing.TransportScore = listing.TransportScore;
+        existing.CommerceScore = listing.CommerceScore;
+        existing.LeisureScore = listing.LeisureScore;
+        existing.EducationCount = listing.EducationCount;
+        existing.HealthcareCount = listing.HealthcareCount;
+        existing.TransportCount = listing.TransportCount;
+        existing.CommerceCount = listing.CommerceCount;
+        existing.LeisureCount = listing.LeisureCount;
+        existing.EducationNearestMeters = listing.EducationNearestMeters;
+        existing.HealthcareNearestMeters = listing.HealthcareNearestMeters;
+        existing.TransportNearestMeters = listing.TransportNearestMeters;
+        existing.CommerceNearestMeters = listing.CommerceNearestMeters;
+        existing.LeisureNearestMeters = listing.LeisureNearestMeters;
         existing.SearchFeaturesJson = listing.SearchFeaturesJson;
         existing.UpdatedAtUtc = DateTime.UtcNow;
     }
@@ -92,4 +189,52 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
         => context.SaveChangesAsync(cancellationToken);
+
+    private static bool HasBounds(SearchListingsRequestDto request)
+        => request.BoundsMinLatitude.HasValue &&
+           request.BoundsMinLongitude.HasValue &&
+           request.BoundsMaxLatitude.HasValue &&
+           request.BoundsMaxLongitude.HasValue;
+
+    private static IQueryable<SearchListing> ApplySorting(IQueryable<SearchListing> query, string? sortBy)
+        => (sortBy ?? "published_desc").Trim().ToLowerInvariant() switch
+        {
+            "price_asc" => query
+                .OrderBy(x => x.PriceAmount == null)
+                .ThenBy(x => x.PriceAmount)
+                .ThenByDescending(x => x.PublishedDate),
+            "price_desc" => query
+                .OrderByDescending(x => x.PriceAmount)
+                .ThenByDescending(x => x.PublishedDate),
+            "infrastructure_desc" => query
+                .OrderByDescending(x => x.InfrastructureScore ?? 0m)
+                .ThenByDescending(x => x.PublishedDate),
+            "published_desc" => query
+                .OrderByDescending(x => x.PublishedDate)
+                .ThenByDescending(x => x.InfrastructureScore ?? 0m),
+            _ => query
+                .OrderByDescending(x => x.PublishedDate)
+                .ThenByDescending(x => x.InfrastructureScore ?? 0m)
+        };
+
+    private static RadiusBounds BuildRadiusBounds(decimal centerLatitude, decimal centerLongitude, decimal radiusMeters)
+    {
+        const decimal metersPerLatitudeDegree = 111_320m;
+        var latitudeDelta = radiusMeters / metersPerLatitudeDegree;
+        var latitudeRadians = (double)centerLatitude * Math.PI / 180d;
+        var longitudeMetersPerDegree = Math.Max(1m, metersPerLatitudeDegree * (decimal)Math.Cos(latitudeRadians));
+        var longitudeDelta = radiusMeters / longitudeMetersPerDegree;
+
+        return new RadiusBounds(
+            centerLatitude - latitudeDelta,
+            centerLongitude - longitudeDelta,
+            centerLatitude + latitudeDelta,
+            centerLongitude + longitudeDelta);
+    }
+
+    private sealed record RadiusBounds(
+        decimal MinLatitude,
+        decimal MinLongitude,
+        decimal MaxLatitude,
+        decimal MaxLongitude);
 }

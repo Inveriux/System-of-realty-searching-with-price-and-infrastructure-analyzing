@@ -14,6 +14,8 @@ import {
   formatNumericAmount,
   formatNumericPricePerSquareMeter,
   formatPricePeriodSuffix,
+  formatInfrastructureScore,
+  formatMeters,
   getBuildingTypeLabel,
   getDealBadgeTone,
   getMaterialLabel,
@@ -63,6 +65,8 @@ export function ListingCard({ item }: ListingCardProps) {
   const usdPricePerSquareMeter = isSale
     ? formatNumericPricePerSquareMeter(item.priceAmountUsd, item.areaTotal)
     : null;
+  const infrastructureScore = formatInfrastructureScore(item.infrastructureScore);
+  const transportNearest = formatMeters(item.transportNearestMeters);
 
   async function handleDelete(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -216,6 +220,31 @@ export function ListingCard({ item }: ListingCardProps) {
 
           <div className="mt-3 border-t border-[color:color-mix(in_srgb,var(--color-primary)_14%,var(--border-color))] pt-2.5">
             <div className="flex flex-wrap gap-2">
+              {infrastructureScore ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#0f766e_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ccfbf1_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#115e59]">
+                  Инфраструктура: {infrastructureScore}
+                </span>
+              ) : null}
+              {item.transportCount != null && item.transportCount > 0 ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#2563eb_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#1d4ed8]">
+                  Транспорт: {item.transportCount}
+                </span>
+              ) : null}
+              {item.educationCount != null && item.educationCount > 0 ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#7c3aed_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ede9fe_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#6d28d9]">
+                  Учеба: {item.educationCount}
+                </span>
+              ) : null}
+              {item.healthcareCount != null && item.healthcareCount > 0 ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#b42318_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee4e2_80%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#b42318]">
+                  Медицина: {item.healthcareCount}
+                </span>
+              ) : null}
+              {transportNearest ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#0f766e_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ecfeff_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#155e75]">
+                  До транспорта: {transportNearest}
+                </span>
+              ) : null}
               {bottomFeatures.map((feature) => (
                 <span
                   key={feature.label}

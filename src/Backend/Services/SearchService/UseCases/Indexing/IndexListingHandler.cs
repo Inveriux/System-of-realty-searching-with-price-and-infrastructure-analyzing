@@ -4,7 +4,6 @@ using SearchService.DTOs.Internal;
 using SearchService.Models;
 using SearchService.Services.InternalClients.Abstractions;
 using MediatR;
-using System.Text.Json;
 
 namespace SearchService.UseCases.Indexing;
 
@@ -16,14 +15,15 @@ public sealed class IndexListingHandler(
 {
     public async Task<Result> Handle(IndexListingCommand request, CancellationToken cancellationToken)
     {
-        var features = request.Request.LocationId.HasValue
-            ? await infrastructureServiceClient.GetSearchFeaturesAsync(request.Request.LocationId.Value, cancellationToken)
-            : [];
+        var infrastructureScore = request.Request.LocationId.HasValue
+            ? await infrastructureServiceClient.GetInfrastructureScoreAsync(request.Request.LocationId.Value, cancellationToken)
+            : null;
 
         var listing = new SearchListing
         {
             Id = Guid.NewGuid(),
             ListingId = request.Request.ListingId,
+            AgentId = request.Request.AgentId,
             Title = request.Request.Title,
             Description = request.Request.Description,
             AddressText = request.Request.AddressText,
@@ -32,16 +32,19 @@ public sealed class IndexListingHandler(
             Longitude = request.Request.Longitude,
             ListingType = request.Request.ListingType,
             BuildingType = request.Request.BuildingType,
+            ListingDetailsType = request.Request.ListingDetailsType,
             PriceAmount = request.Request.PriceAmount,
+            PriceAmountByn = request.Request.PriceAmountByn,
+            PriceAmountUsd = request.Request.PriceAmountUsd,
             PriceCurrency = request.Request.PriceCurrency,
             AreaTotal = request.Request.AreaTotal,
             MainMediaUrl = request.Request.MainMediaUrl,
             PublishedDate = request.Request.PublishedDate,
-            InfrastructureScore = features.Count == 0 ? null : features.Values.Sum(),
-            SearchFeaturesJson = JsonSerializer.Serialize(features),
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow
         };
+
+        SearchListingInfrastructureMapper.Apply(listing, infrastructureScore);
 
         await repository.UpsertAsync(listing, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);

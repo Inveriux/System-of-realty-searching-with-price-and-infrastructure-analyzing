@@ -23,6 +23,7 @@ public sealed class InfrastructureEndpoints : IEndpointRegistrar
             .WithTags("Internal Infrastructure");
 
         internalGroup.MapPost("/refresh-for-location", RefreshAsync);
+        internalGroup.MapGet("/{locationId:guid}", GetScoreAsync);
         internalGroup.MapGet("/{locationId:guid}/search-features", GetSearchFeaturesAsync);
 
         return publicGroup;

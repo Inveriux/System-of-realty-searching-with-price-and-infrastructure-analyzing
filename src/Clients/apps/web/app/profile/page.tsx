@@ -3,7 +3,7 @@
 import { updateOwnProfile, uploadUserAvatar } from "@diploma/api/users";
 import { useListingsQuery } from "@diploma/features";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
 import { useAuth } from "../providers";
 
@@ -36,14 +36,10 @@ export default function ProfilePage() {
     setPhoneNumber(user?.phoneNumber ?? "");
   }, [user]);
 
-  const ownListings = useMemo(() => {
-    const items = listingsData?.items ?? [];
-    if (!user) {
-      return [];
-    }
-
-    return items.filter((listing) => listing.agentId === user.id);
-  }, [listingsData?.items, user]);
+  const ownListingsCount =
+    user == null
+      ? 0
+      : (listingsData?.items ?? []).filter((listing) => listing.agentId === user.id).length;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -156,7 +152,7 @@ export default function ProfilePage() {
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <Link
-                  href="/profile"
+                  href="/profile/listings"
                   className="surface"
                   style={{
                     borderRadius: 22,
@@ -169,7 +165,7 @@ export default function ProfilePage() {
                   <div className="eyebrow">Раздел</div>
                   <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Мои объявления</div>
                   <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                    {ownListings.length} объектов
+                    {listingsLoading ? "Загрузка..." : `${ownListingsCount} объектов`}
                   </div>
                 </Link>
                 <Link
@@ -214,55 +210,19 @@ export default function ProfilePage() {
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="surface grid gap-4 rounded-[30px] p-7">
             <div>
-              <div className="eyebrow">Мои объявления</div>
-              <h2 className="section-title" style={{ marginTop: 8 }}>Ваши объекты</h2>
+              <div className="eyebrow">Управление объектами</div>
+              <h2 className="section-title" style={{ marginTop: 8 }}>Каталог ваших объявлений</h2>
             </div>
 
-            {listingsLoading ? (
-              <div style={{ color: "var(--foreground-muted)" }}>Загрузка объявлений...</div>
-            ) : ownListings.length > 0 ? (
-              <div className="grid gap-3">
-                {ownListings.map((listing) => (
-                  <Link
-                    key={listing.id}
-                    href={`/listings/${listing.id}`}
-                    className="surface"
-                    style={{
-                      borderRadius: 22,
-                      padding: 18,
-                      textDecoration: "none",
-                      color: "inherit",
-                      border: "1px solid var(--border-color)",
-                      display: "grid",
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                      <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>{listing.title}</div>
-                      <div style={{ color: "var(--foreground-muted)", fontWeight: 700 }}>{listing.listingType}</div>
-                    </div>
-                    <div style={{ color: "var(--foreground-muted)" }}>
-                      {listing.addressText ?? "Адрес уточняется"}
-                    </div>
-                    <div style={{ fontWeight: 800 }}>
-                      {new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(listing.priceAmountByn ?? listing.priceAmount ?? 0)} BYN
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div
-                className="surface"
-                style={{
-                  borderRadius: 22,
-                  padding: 18,
-                  border: "1px solid var(--border-color)",
-                  color: "var(--foreground-muted)",
-                }}
-              >
-                У вас пока нет своих объявлений.
-              </div>
-            )}
+            <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 560 }}>
+              Список ваших объектов вынесен на отдельную страницу, чтобы редактирование профиля оставалось компактным.
+            </p>
+
+            <div>
+              <Link className="button-primary" href="/profile/listings">
+                Открыть мой каталог
+              </Link>
+            </div>
           </section>
 
           <aside className="surface grid gap-4 rounded-[30px] p-7 self-start">

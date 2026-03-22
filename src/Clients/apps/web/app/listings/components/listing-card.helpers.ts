@@ -214,6 +214,26 @@ export function formatArea(value?: number, unit = "м²") {
   }).format(value)} ${unit}`;
 }
 
+export function formatInfrastructureScore(value?: number | null) {
+  if (value == null) {
+    return null;
+  }
+
+  return new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: value % 1 === 0 ? 0 : 1,
+  }).format(value);
+}
+
+export function formatMeters(value?: number | null) {
+  if (value == null) {
+    return null;
+  }
+
+  return `${new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 0,
+  }).format(value)} м`;
+}
+
 export function formatFloor(floor?: number, total?: number) {
   if (!floor && !total) {
     return "—";
@@ -264,43 +284,47 @@ export function getPropertyBadgeTone(item: ListingCardItem) {
 }
 
 export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
-  switch (item.details.kind) {
-    case "apartment":
-      return [
-        { label: "Площадь", value: formatArea(item.areaTotal) },
-        { label: "Комнаты", value: item.details.rooms ? `${item.details.rooms}` : "Студия" },
-        { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
-        { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
-      ];
-    case "house":
-      return [
-        { label: "Дом", value: formatArea(item.details.houseArea ?? item.areaTotal) },
-        { label: "Участок", value: formatArea(item.details.plotArea) },
-        { label: "Комнаты", value: item.details.rooms ? `${item.details.rooms}` : "—" },
-        { label: "Этажей", value: item.details.floors ? `${item.details.floors}` : "—" },
-      ];
-    case "land":
-      return [
-        { label: "Участок", value: formatArea(item.details.plotArea ?? item.areaTotal) },
-        { label: "Категория", value: landCategoryMap[item.details.landCategory ?? ""] ?? item.details.landCategory ?? "—" },
-        { label: "Назначение", value: item.details.allowedUse ?? "—" },
-        { label: "Подъезд", value: roadAccessMap[item.details.roadAccessType ?? ""] ?? item.details.roadAccessType ?? "—" },
-      ];
-    case "office":
-      return [
-        { label: "Площадь", value: formatArea(item.areaTotal) },
-        { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
-        { label: "Класс", value: item.details.officeClass ?? "—" },
-        { label: "Парковка", value: item.details.parkingSpaces ? `${item.details.parkingSpaces} м.` : item.details.parkingType ?? "—" },
-      ];
-    case "warehouse":
-      return [
-        { label: "Площадь", value: formatArea(item.areaTotal) },
-        { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
-        { label: "Класс", value: item.details.classType ?? "—" },
-        { label: "Ворота", value: item.details.gateCount ? `${item.details.gateCount}` : "—" },
-      ];
-  }
+  const specs = (() => {
+    switch (item.details.kind) {
+      case "apartment":
+        return [
+          { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Комнаты", value: item.details.rooms === 0 ? "Студия" : item.details.rooms ? `${item.details.rooms}` : "—" },
+          { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
+          { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
+        ];
+      case "house":
+        return [
+          { label: "Дом", value: formatArea(item.details.houseArea ?? item.areaTotal) },
+          { label: "Участок", value: formatArea(item.details.plotArea) },
+          { label: "Комнаты", value: item.details.rooms ? `${item.details.rooms}` : "—" },
+          { label: "Этажей", value: item.details.floors ? `${item.details.floors}` : "—" },
+        ];
+      case "land":
+        return [
+          { label: "Участок", value: formatArea(item.details.plotArea ?? item.areaTotal) },
+          { label: "Категория", value: landCategoryMap[item.details.landCategory ?? ""] ?? item.details.landCategory ?? "—" },
+          { label: "Назначение", value: item.details.allowedUse ?? "—" },
+          { label: "Подъезд", value: roadAccessMap[item.details.roadAccessType ?? ""] ?? item.details.roadAccessType ?? "—" },
+        ];
+      case "office":
+        return [
+          { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
+          { label: "Класс", value: item.details.officeClass ?? "—" },
+          { label: "Парковка", value: item.details.parkingSpaces ? `${item.details.parkingSpaces} м.` : item.details.parkingType ?? "—" },
+        ];
+      case "warehouse":
+        return [
+          { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
+          { label: "Класс", value: item.details.classType ?? "—" },
+          { label: "Ворота", value: item.details.gateCount ? `${item.details.gateCount}` : "—" },
+        ];
+    }
+  })();
+
+  return specs.filter((spec) => spec.value !== "—");
 }
 
 export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFeature[] {

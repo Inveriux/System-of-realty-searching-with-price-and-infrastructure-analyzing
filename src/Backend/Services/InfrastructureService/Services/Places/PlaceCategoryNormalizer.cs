@@ -4,6 +4,14 @@ namespace InfrastructureService.Services.Places;
 
 public sealed class PlaceCategoryNormalizer : IPlaceCategoryNormalizer
 {
+    private static readonly IReadOnlyCollection<PlaceCategoryRule> ExclusionRules =
+    [
+        new("amenity", ["place_of_worship"], null),
+        new("religion", ["christian", "orthodox", "catholic", "muslim", "jewish", "buddhist", "hindu"], null),
+        new("building", ["church", "cathedral", "chapel", "mosque", "synagogue", "temple", "shrine", "religious"], null),
+        new("office", ["religion"], null)
+    ];
+
     private static readonly IReadOnlyCollection<PlaceCategoryRule> Rules =
     [
         new("raw", ["education.school", "building.school", "building.kindergarten", "building.university", "education"], "education"),
@@ -17,7 +25,7 @@ public sealed class PlaceCategoryNormalizer : IPlaceCategoryNormalizer
 
         new("amenity", ["hospital", "clinic", "doctors", "pharmacy", "dentist"], "healthcare"),
         new("healthcare", ["hospital", "clinic", "doctor", "pharmacy", "dentist"], "healthcare"),
-        new("shop", ["medical_supply"], "healthcare"),
+        new("shop", ["medical_supply", "pharmacy"], "healthcare"),
 
         new("public_transport", ["platform", "station", "stop_position"], "transport"),
         new("highway", ["bus_stop"], "transport"),
@@ -35,17 +43,42 @@ public sealed class PlaceCategoryNormalizer : IPlaceCategoryNormalizer
 
     public string? Normalize(IReadOnlyDictionary<string, string> tags)
     {
+        foreach (var exclusionRule in ExclusionRules)
+        {
+            if (MatchesRule(tags, exclusionRule))
+                return null;
+        }
+
         foreach (var rule in Rules)
         {
-            if (tags.TryGetValue(rule.TagKey, out var value) &&
-                rule.Values.Any(candidate =>
-                    value.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
-                    value.StartsWith(candidate, StringComparison.OrdinalIgnoreCase)))
+            if (MatchesRule(tags, rule))
                 return rule.Category;
         }
 
         return null;
     }
 
-    private sealed record PlaceCategoryRule(string TagKey, IReadOnlyCollection<string> Values, string Category);
+    private static bool MatchesRule(IReadOnlyDictionary<string, string> tags, PlaceCategoryRule rule)
+    {
+        if (!tags.TryGetValue(rule.TagKey, out var value) || string.IsNullOrWhiteSpace(value))
+            return false;
+
+        if (string.Equals(rule.TagKey, "raw", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(rule.TagKey, "raw_categories", StringComparison.OrdinalIgnoreCase))
+        {
+            var rawValues = value
+                .Split(['|', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            return rawValues.Any(rawValue => MatchesCandidate(rawValue, rule.Values));
+        }
+
+        return MatchesCandidate(value, rule.Values);
+    }
+
+    private static bool MatchesCandidate(string value, IReadOnlyCollection<string> candidates)
+        => candidates.Any(candidate =>
+            value.Equals(candidate, StringComparison.OrdinalIgnoreCase) ||
+            value.StartsWith(candidate, StringComparison.OrdinalIgnoreCase));
+
+    private sealed record PlaceCategoryRule(string TagKey, IReadOnlyCollection<string> Values, string? Category);
 }

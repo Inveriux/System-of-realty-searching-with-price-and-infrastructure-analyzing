@@ -13,15 +13,7 @@ public sealed class SearchListingsHandler(ISearchListingRepository repository, I
 {
     public async Task<Result<SearchListingsResponseDto>> Handle(SearchListingsQuery request, CancellationToken cancellationToken)
     {
-        var result = await repository.SearchAsync(
-            request.Request.Query,
-            request.Request.LocationId,
-            request.Request.ListingType,
-            request.Request.MinPrice,
-            request.Request.MaxPrice,
-            request.Request.Page,
-            request.Request.PageSize,
-            cancellationToken);
+        var result = await repository.SearchAsync(request.Request, cancellationToken);
 
         return Result.Ok(new SearchListingsResponseDto
         {

@@ -6,6 +6,7 @@
   "exports": {
     "./auth": "./src/auth.ts",
     "./listings": "./src/listings/listings.ts",
+    "./search": "./src/search.ts",
     "./listingPage": "./src/listingPage.ts",
     "./pagedResponse": "./src/pagedResponse.ts"
   }

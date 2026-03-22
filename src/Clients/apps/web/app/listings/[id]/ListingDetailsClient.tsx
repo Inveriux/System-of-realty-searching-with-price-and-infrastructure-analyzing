@@ -52,7 +52,7 @@ const detailLabelMap: Record<string, string> = {
   hasLoggia: "Лоджия",
   hasElevator: "Лифт",
   houseArea: "Площадь дома",
-  houseFloors: "Этажность дома",
+  floors: "Этажность дома",
   wallMaterial: "Материал стен",
   heatingType: "Отопление",
   sewerType: "Канализация",
@@ -533,8 +533,15 @@ export function ListingDetailsClient({ listingId }: Props) {
                     Ближайшие объекты
                   </div>
                   {cleanedNearbyPois.length ? (
-                    <div className="mt-4 grid gap-2">
-                      {cleanedNearbyPois.slice(0, 8).map((poi) => (
+                    <div
+                      className="mt-4 grid gap-2"
+                      style={{
+                        maxHeight: "560px",
+                        overflowY: "auto",
+                        paddingRight: 4,
+                      }}
+                    >
+                      {cleanedNearbyPois.map((poi) => (
                         <div
                           key={poi.id}
                           className={infoCardClass}

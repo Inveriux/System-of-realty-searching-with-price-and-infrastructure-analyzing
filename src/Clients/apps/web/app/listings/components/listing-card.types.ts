@@ -4,6 +4,7 @@ export type PricePeriod = "Месяц" | "Сутки" | "Неделя" | "Год
 
 export type ListingCardBase = {
   id: string;
+  agentId?: string;
   title: string;
   addressText?: string;
   priceAmount?: number;
@@ -20,6 +21,11 @@ export type ListingCardBase = {
   canDelete?: boolean;
   isDeleting?: boolean;
   mediaCount?: number;
+  infrastructureScore?: number | null;
+  transportCount?: number | null;
+  educationCount?: number | null;
+  healthcareCount?: number | null;
+  transportNearestMeters?: number | null;
   onDelete?: (id: string) => void | Promise<void>;
 };
 

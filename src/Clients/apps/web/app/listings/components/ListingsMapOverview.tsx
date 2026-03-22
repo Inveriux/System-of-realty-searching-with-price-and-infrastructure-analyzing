@@ -21,13 +21,27 @@ type YandexMapsApi = {
   ready(callback: () => void): void;
   Map: new (container: HTMLElement, state: unknown, options?: unknown) => YandexMapInstance;
   Placemark: new (geometry: [number, number], properties?: unknown, options?: unknown) => YandexPlacemark;
+  Circle: new (geometry: [[number, number], number], properties?: unknown, options?: unknown) => YandexGeoObject;
 };
 
 type YandexMapInstance = {
   geoObjects: {
     add(object: unknown): void;
+    remove(object: unknown): void;
   };
+  events?: {
+    add(eventName: string, handler: (event: YandexMapEvent) => void): void;
+  };
+  getBounds?(): [[number, number], [number, number]] | null;
+  setCenter?(center: [number, number], zoom?: number, options?: unknown): void;
   destroy(): void;
+};
+
+type YandexGeoObject = {
+  geometry?: {
+    setCoordinates?(coords: [number, number]): void;
+    setRadius?(radius: number): void;
+  };
 };
 
 type YandexPlacemark = {
@@ -37,6 +51,10 @@ type YandexPlacemark = {
   balloon?: {
     open(): void;
   };
+} & YandexGeoObject;
+
+type YandexMapEvent = {
+  get(name: "coords"): [number, number];
 };
 
 let yandexMapsPromise: Promise<YandexMapsApi> | null = null;
@@ -81,11 +99,31 @@ type Props = {
   open: boolean;
   onClose(): void;
   listings: MapListingItem[];
+  selectedCenter?: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  radiusMeters?: number | null;
+  onSelectCenter?(point: {
+    latitude: number;
+    longitude: number;
+  }): void;
+  onClearCenter?(): void;
 };
 
-export function ListingsMapOverview({ open, onClose, listings }: Props) {
+export function ListingsMapOverview({
+  open,
+  onClose,
+  listings,
+  selectedCenter = null,
+  radiusMeters = null,
+  onSelectCenter,
+  onClearCenter,
+}: Props) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<YandexMapInstance | null>(null);
+  const selectedPlacemarkRef = useRef<YandexPlacemark | null>(null);
+  const radiusCircleRef = useRef<YandexGeoObject | null>(null);
   const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,8 +158,10 @@ export function ListingsMapOverview({ open, onClose, listings }: Props) {
           const map = new ymaps.Map(
             mapContainerRef.current,
             {
-              center: fallbackCenter,
-              zoom: 7,
+              center: selectedCenter
+                ? [selectedCenter.latitude, selectedCenter.longitude]
+                : fallbackCenter,
+              zoom: selectedCenter ? 12 : 7,
               controls: ["zoomControl", "fullscreenControl"],
             },
             {
@@ -156,6 +196,46 @@ export function ListingsMapOverview({ open, onClose, listings }: Props) {
             map.geoObjects.add(placemark);
           }
 
+          let selectedPlacemark: YandexPlacemark | null = null;
+          let radiusCircle: YandexGeoObject | null = null;
+
+          if (selectedCenter) {
+            selectedPlacemark = new ymaps.Placemark(
+              [selectedCenter.latitude, selectedCenter.longitude],
+              {
+                hintContent: "Точка поиска",
+                balloonContentHeader: "Точка поиска",
+                balloonContentBody: "Объявления ищутся вокруг этой точки по заданному радиусу.",
+              },
+              {
+                preset: "islands#redIcon",
+              },
+            );
+
+            radiusCircle = new ymaps.Circle(
+              [
+                [selectedCenter.latitude, selectedCenter.longitude],
+                radiusMeters && radiusMeters > 0 ? radiusMeters : 1000,
+              ],
+              {},
+              {
+                fillColor: "rgba(91, 61, 245, 0.12)",
+                strokeColor: "rgba(91, 61, 245, 0.55)",
+                strokeWidth: 2,
+              },
+            );
+
+            map.geoObjects.add(radiusCircle);
+            map.geoObjects.add(selectedPlacemark);
+          }
+
+          map.events?.add("click", (event) => {
+            const [latitude, longitude] = event.get("coords");
+            onSelectCenter?.({ latitude, longitude });
+          });
+
+          selectedPlacemarkRef.current = selectedPlacemark;
+          radiusCircleRef.current = radiusCircle;
           mapRef.current = map;
         });
       } catch (error) {
@@ -169,8 +249,31 @@ export function ListingsMapOverview({ open, onClose, listings }: Props) {
       cancelled = true;
       mapRef.current?.destroy();
       mapRef.current = null;
+      selectedPlacemarkRef.current = null;
+      radiusCircleRef.current = null;
     };
-  }, [listings, open]);
+  }, [listings, onSelectCenter, open, radiusMeters, selectedCenter]);
+
+  useEffect(() => {
+    if (!open || !selectedCenter) {
+      return;
+    }
+
+    selectedPlacemarkRef.current?.geometry?.setCoordinates?.([
+      selectedCenter.latitude,
+      selectedCenter.longitude,
+    ]);
+    radiusCircleRef.current?.geometry?.setCoordinates?.([
+      selectedCenter.latitude,
+      selectedCenter.longitude,
+    ]);
+    if (radiusMeters && radiusMeters > 0) {
+      radiusCircleRef.current?.geometry?.setRadius?.(radiusMeters);
+    }
+    mapRef.current?.setCenter?.([selectedCenter.latitude, selectedCenter.longitude], 12, {
+      duration: 250,
+    });
+  }, [open, radiusMeters, selectedCenter]);
 
   if (!open) {
     return null;
@@ -182,7 +285,7 @@ export function ListingsMapOverview({ open, onClose, listings }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 60,
+        zIndex: 80,
         background: "rgba(10, 7, 20, 0.5)",
       }}
     >
@@ -201,9 +304,19 @@ export function ListingsMapOverview({ open, onClose, listings }: Props) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
           <h2 className="section-title" style={{ margin: 0 }}>Объекты на карте</h2>
-          <button className="button-secondary" onClick={onClose} type="button">
-            Закрыть
-          </button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <div style={{ color: "var(--foreground-muted)", fontSize: 14, maxWidth: 420, textAlign: "right" }}>
+              Кликни по карте, чтобы поставить метку. Поиск объявлений будет идти рядом с этой точкой в заданном радиусе.
+            </div>
+            {onClearCenter ? (
+              <button className="button-secondary" onClick={onClearCenter} type="button">
+                Сбросить точку
+              </button>
+            ) : null}
+            <button className="button-secondary" onClick={onClose} type="button">
+              Закрыть
+            </button>
+          </div>
         </div>
 
         <div

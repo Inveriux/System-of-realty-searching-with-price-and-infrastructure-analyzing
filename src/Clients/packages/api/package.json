@@ -11,6 +11,7 @@
   "exports": {
     "./users": "./src/users.ts",
     "./listings": "./src/listings.ts",
+    "./search": "./src/search.ts",
     "./listing-pages": "./src/listing-pages.ts",
     "./http": "./src/http.ts"
   }

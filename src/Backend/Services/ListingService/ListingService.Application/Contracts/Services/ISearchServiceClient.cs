@@ -9,6 +9,7 @@ public interface ISearchServiceClient
 public sealed class SearchListingIndexRequest
 {
     public Guid ListingId { get; init; }
+    public Guid AgentId { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
     public string? AddressText { get; init; }
@@ -18,8 +19,11 @@ public sealed class SearchListingIndexRequest
     public string? ListingType { get; init; }
     public string? BuildingType { get; init; }
     public decimal? PriceAmount { get; init; }
+    public decimal? PriceAmountByn { get; init; }
+    public decimal? PriceAmountUsd { get; init; }
     public string? PriceCurrency { get; init; }
     public decimal AreaTotal { get; init; }
     public string? MainMediaUrl { get; init; }
     public DateTimeOffset? PublishedDate { get; init; }
+    public string? ListingDetailsType { get; init; }
 }

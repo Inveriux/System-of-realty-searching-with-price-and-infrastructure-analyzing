@@ -1,13 +1,19 @@
 import { AppShell } from "../components/AppShell";
-import { SectionStub } from "../components/SectionStub";
 
 export default function FavoritesPage() {
   return (
     <AppShell>
-      <SectionStub
-        title="Избранное"
-        description="Раздел уже выведен в верхнее меню. Дальше сюда можно докинуть сохраненные объявления, фильтры и синхронизацию с профилем."
-      />
+      <section
+        className="surface"
+        style={{
+          borderRadius: 28,
+          padding: 28,
+        }}
+      >
+        <h1 className="section-title" style={{ marginTop: 0 }}>
+          Избранное
+        </h1>
+      </section>
     </AppShell>
   );
 }

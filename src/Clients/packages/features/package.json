@@ -6,6 +6,7 @@
   "main": "./index.ts",
   "dependencies": {
       "@diploma/api": "workspace:*",
+      "@diploma/contracts": "workspace:*",
       "zod": "^3.0.0",
       "@tanstack/react-query": "^5.0.0"
   }

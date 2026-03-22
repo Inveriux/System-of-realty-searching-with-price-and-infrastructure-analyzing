@@ -65,6 +65,8 @@ public sealed class RefreshInfrastructureHandler(
             var normalizationTags = new Dictionary<string, string>(externalPoi.Tags, StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(externalPoi.RawCategory))
                 normalizationTags["raw"] = externalPoi.RawCategory!;
+            if (externalPoi.RawCategories.Count > 0)
+                normalizationTags["raw_categories"] = string.Join('|', externalPoi.RawCategories);
 
             var normalizedCategory = placeCategoryNormalizer.Normalize(normalizationTags);
             if (string.IsNullOrWhiteSpace(normalizedCategory))
