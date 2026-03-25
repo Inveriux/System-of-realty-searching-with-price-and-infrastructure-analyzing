@@ -18,6 +18,8 @@ public sealed class InfrastructureEndpoints : IEndpointRegistrar
         publicGroup.MapGet("/{locationId:guid}", GetScoreAsync);
         publicGroup.MapGet("/{locationId:guid}/pois", GetPoisAsync);
         publicGroup.MapGet("/{locationId:guid}/summary", GetSummaryAsync);
+        publicGroup.MapGet("/{locationId:guid}/detailed-summary", GetDetailedSummaryAsync);
+        publicGroup.MapGet("/config", GetConfigAsync);
 
         var internalGroup = application.MapGroup("/internal/infrastructure")
             .WithTags("Internal Infrastructure");
@@ -41,6 +43,12 @@ public sealed class InfrastructureEndpoints : IEndpointRegistrar
     public async Task<IResult> GetSummaryAsync(ISender sender, [FromRoute] Guid locationId, CancellationToken cancellationToken)
         => (await sender.Send(new GetInfrastructureSummaryByLocationQuery(locationId), cancellationToken)).ToHttpResult();
 
+    public async Task<IResult> GetDetailedSummaryAsync(ISender sender, [FromRoute] Guid locationId, CancellationToken cancellationToken)
+        => (await sender.Send(new GetInfrastructureSummaryByLocationQuery(locationId), cancellationToken)).ToHttpResult();
+
     public async Task<IResult> GetSearchFeaturesAsync(ISender sender, [FromRoute] Guid locationId, CancellationToken cancellationToken)
         => (await sender.Send(new GetSearchFeaturesByLocationQuery(locationId), cancellationToken)).ToHttpResult();
+
+    public async Task<IResult> GetConfigAsync(ISender sender, CancellationToken cancellationToken)
+        => (await sender.Send(new GetInfrastructureConfigQuery(), cancellationToken)).ToHttpResult();
 }

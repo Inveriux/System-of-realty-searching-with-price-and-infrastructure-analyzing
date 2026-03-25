@@ -40,6 +40,47 @@ public sealed class SearchListingDto
     public decimal? TransportNearestMeters { get; init; }
     public decimal? CommerceNearestMeters { get; init; }
     public decimal? LeisureNearestMeters { get; init; }
+    public int? PharmacyCountPrimary { get; init; }
+    public int? StoreCountPrimary { get; init; }
+    public int? StopsCountPrimary { get; init; }
+    public int? StopGroupsCountPrimary { get; init; }
+    public int? StopPlatformsCountPrimary { get; init; }
+    public int? ParkingCountPrimary { get; init; }
+    public int? SchoolCountPrimary { get; init; }
+    public int? KindergartenCountPrimary { get; init; }
+    public int? ClinicCountPrimary { get; init; }
+    public int? HospitalCountPrimary { get; init; }
+    public decimal? NearestPharmacyWalkMinutes { get; init; }
+    public decimal? NearestStoreWalkMinutes { get; init; }
+    public decimal? NearestStopWalkMinutes { get; init; }
+    public decimal? NearestStopGroupWalkMinutes { get; init; }
+    public decimal? NearestStopGroupDriveMinutes { get; init; }
+    public bool NearestStopGroupDriveMinutesEstimated { get; init; }
+    public string? NearestStopGroupName { get; init; }
+    public int? NearestStopGroupPlatformCount { get; init; }
+    public decimal? NearestParkingWalkMinutes { get; init; }
+    public decimal? NearestParkingDriveMinutes { get; init; }
+    public bool NearestParkingDriveMinutesEstimated { get; init; }
+    public decimal? NearestSchoolWalkMinutes { get; init; }
+    public decimal? NearestKindergartenWalkMinutes { get; init; }
+    public decimal? NearestClinicDriveMinutes { get; init; }
+    public bool NearestClinicDriveMinutesEstimated { get; init; }
+    public decimal? NearestHospitalDriveMinutes { get; init; }
+    public bool NearestHospitalDriveMinutesEstimated { get; init; }
+    public int? ParksCountPrimary { get; init; }
+    public decimal? NearestParkWalkMinutes { get; init; }
+    public int? FitnessCountPrimary { get; init; }
+    public decimal? NearestFitnessWalkMinutes { get; init; }
+    public decimal? NearestFitnessDriveMinutes { get; init; }
+    public int? MuseumsCountPrimary { get; init; }
+    public decimal? NearestMuseumDriveMinutes { get; init; }
+    public int? TheatersCountPrimary { get; init; }
+    public decimal? NearestTheaterDriveMinutes { get; init; }
+    public int? CinemasCountPrimary { get; init; }
+    public decimal? NearestCinemaDriveMinutes { get; init; }
+    public decimal? NearestMetroWalkMinutes { get; init; }
+    public string? NearestMetroName { get; init; }
+    public bool MetroFoundInPrimaryRadius { get; init; }
     public Dictionary<string, decimal> SearchFeatures { get; init; } = [];
 
     private sealed class Mapping : Profile

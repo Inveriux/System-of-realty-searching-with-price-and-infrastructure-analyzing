@@ -10,4 +10,6 @@ public sealed class Poi
     public decimal Longitude { get; set; }
     public Guid CategoryId { get; set; }
     public PoiCategory? Category { get; set; }
+    public string? SubcategoryCode { get; set; }
+    public string? Source { get; set; }
 }

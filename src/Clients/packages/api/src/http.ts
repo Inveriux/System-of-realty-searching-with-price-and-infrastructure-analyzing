@@ -15,6 +15,58 @@ type RequestOptions = {
   authMode?: "optional" | "none";
 };
 
+type ApiErrorPayload = {
+  detail?: string | null;
+  title?: string | null;
+  errors?: Array<{
+    message?: string | null;
+    errorMessage?: string | null;
+    propertyName?: string | null;
+  }>;
+};
+
+function formatApiError(status: number, text: string) {
+  if (!text) {
+    return `Failed to fetch API: ${status}`;
+  }
+
+  try {
+    const payload = JSON.parse(text) as ApiErrorPayload;
+    const parts: string[] = [];
+
+    if (payload.detail) {
+      parts.push(payload.detail);
+    } else if (payload.title) {
+      parts.push(payload.title);
+    }
+
+    const fieldErrors = (payload.errors ?? [])
+      .map((error) => {
+        const message = error.message ?? error.errorMessage;
+        if (!message) {
+          return null;
+        }
+
+        return error.propertyName
+          ? `${error.propertyName}: ${message}`
+          : message;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    if (fieldErrors.length > 0) {
+      parts.push(fieldErrors.join("; "));
+    }
+
+    if (parts.length > 0) {
+      return `Failed to fetch API: ${status} ${parts.join(" | ")}`;
+    }
+  } catch {
+    // Ignore parse errors and fall back to raw response text.
+  }
+
+  return `Failed to fetch API: ${status} ${text}`;
+}
+
 function parseJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split(".")[1];
@@ -142,7 +194,7 @@ export class ApiClient {
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`Failed to fetch API: ${res.status} ${text}`);
+      throw new Error(formatApiError(res.status, text));
     }
 
     if (res.status === 204) {

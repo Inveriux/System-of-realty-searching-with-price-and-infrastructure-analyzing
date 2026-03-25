@@ -1,0 +1,166 @@
+{
+  "version": "2026-03-25",
+  "commerce": {
+    "supermarket": [
+      "евроопт", "euroopt", "е-доставка", "edostavka",
+      "green", "грин",
+      "санта", "santa",
+      "соседи", "sosedi",
+      "корона", "korona",
+      "гиппо", "hippo",
+      "алми", "almi",
+      "белмаркет", "belmarket",
+      "дионис", "dionis",
+      "виталюр", "vitalur",
+      "простор", "prostore",
+      "копеечка", "kopeecka", "копеечка",
+      "хит", "хит!", "hit", "hit!",
+      "грошык", "groshyk",
+      "маяк", "mayak",
+      "светофор", "svetofor",
+      "spar"
+    ],
+    "mall": [
+      "dana mall", "дана молл",
+      "galleria", "галерея", "galleria minsk",
+      "palazzo", "палаццо",
+      "green city", "грин сити",
+      "momo", "мomo", "момо",
+      "arena city", "арена сити",
+      "zamok", "замок",
+      "expobel", "экспобел",
+      "outleto", "аутлето"
+    ],
+    "electronics": [
+      "5 элемент", "5element", "5 element",
+      "электросила", "electrosila",
+      "21vek", "21 век",
+      "алло", "allo"
+    ],
+    "furniture": [
+      "ami", "ами",
+      "pinskdrev", "пинскдрев",
+      "jysk", "юск",
+      "askona", "аскона"
+    ],
+    "building_store": [
+      "ома", "oma",
+      "миля", "mile",
+      "материк", "materik",
+      "build", "билд"
+    ],
+    "drogerie": [
+      "остров", "ostrov",
+      "остров чистоты", "ostrov chistoty",
+      "остров чистоты и вкуса",
+      "мила", "mila",
+      "магия", "magiya", "магия"
+    ]
+  },
+  "healthcare": {
+    "pharmacy": [
+      "аптека", "pharmacy",
+      "adel", "адель", "a-del",
+      "добрыя лекi", "добрыя лекі", "dobryya leki", "d-leki",
+      "inlek", "инлек",
+      "планета здоровья", "planeta zdorovya", "planeta zdorovya",
+      "искамед", "iskamed",
+      "государственная аптека",
+      "фармация", "pharmacia", "farmacia",
+      "фармостров", "pharmostrov",
+      "астрафарма", "astrapharma",
+      "янина", "yanina",
+      "альфааптека", "alpha apteka", "alfa apteka",
+      "кладовая здоровья"
+    ],
+    "clinic": [
+      "поликлиника", "clinic", "medical center", "медицинский центр",
+      "медцентр", "medcenter"
+    ],
+    "hospital": [
+      "больница", "hospital", "стационар", "роддом", "родильный дом"
+    ],
+    "dentistry": [
+      "стоматология", "dentistry", "dental", "ортодонт"
+    ],
+    "laboratory": [
+      "лаборатория", "lab", "laboratory", "анализы", "invitro", "инвитро", "синэво", "synevo"
+    ]
+  },
+  "transport": {
+    "metro_station": [
+      "метро", "станция метро", "metro", "metro station",
+      "минский метрополитен", "minsk metro"
+    ],
+    "railway_station": [
+      "вокзал", "railway station", "train station", "станция", "жд вокзал"
+    ],
+    "parking": [
+      "парковка", "parking", "паркинг", "стоянка", "garage parking"
+    ]
+  },
+  "education": {
+    "kindergarten": [
+      "детский сад", "сад", "kindergarten", "ясли-сад", "дошкольный центр"
+    ],
+    "school": [
+      "школа", "school", "гимназия", "лицей"
+    ],
+    "college": [
+      "колледж", "college", "училище"
+    ],
+    "university": [
+      "университет", "university", "институт", "академия", "бгу", "бгуир", "бнту", "мглу", "бгэу"
+    ]
+  },
+  "leisure": {
+    "park": [
+      "парк", "park", "сквер", "square", "набережная", "embankment"
+    ],
+    "cinema": [
+      "кинотеатр", "cinema", "movie theater",
+      "silver screen", "silver screen cinemas",
+      "mooon", "moon"
+    ],
+    "cafe": [
+      "кафе", "cafe", "кофейня", "coffee", "пекарня", "bakery"
+    ],
+    "restaurant": [
+      "ресторан", "restaurant", "пиццерия"
+    ],
+    "bar": [
+      "бар", "bar", "pub", "паб", "taproom", "крафтовый бар"
+    ],
+    "fitness": [
+      "fitness", "фитнес", "gym", "спортзал", "тренажерный зал",
+      "world class", "ворлд класс",
+      "xfit", "x-fit", "иксфит",
+      "adrenaline", "адреналин",
+      "arena fitness", "arena city fitness"
+    ],
+    "sports_center": [
+      "falcon club", "falcon", "sports center", "спорткомплекс"
+    ],
+    "pool": [
+      "aquacenter", "аквацентр", "бассейн", "pool"
+    ],
+    "museum": [
+      "музей", "museum"
+    ],
+    "theater": [
+      "театр", "theatre", "theater", "опера", "балет"
+    ],
+    "gallery": [
+      "галерея", "gallery", "арт-галерея", "art gallery"
+    ],
+    "exhibition_hall": [
+      "выставочный зал", "exhibition hall", "арт-пространство"
+    ],
+    "library": [
+      "библиотека", "library"
+    ],
+    "recreation_zone": [
+      "зона отдыха", "recreation area", "пляж", "beach"
+    ]
+  }
+}

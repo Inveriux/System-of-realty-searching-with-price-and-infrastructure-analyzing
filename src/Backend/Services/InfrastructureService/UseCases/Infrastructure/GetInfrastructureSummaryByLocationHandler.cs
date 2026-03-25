@@ -38,9 +38,18 @@ public sealed class GetInfrastructureSummaryByLocationHandler(
             Latitude = location.Latitude,
             Longitude = location.Longitude,
             Score = scoreResult.Data,
-            Summary = summaryBuilder.BuildSummary(scoreResult.Data.ToModel(location.Id), snapshotItems),
-            Highlights = summaryBuilder.BuildHighlights(scoreResult.Data.ToModel(location.Id), snapshotItems),
-            Pois = poisResult.Data
+            Summary = summaryBuilder.BuildSummary(scoreResult.Data.ToModel(location.Id), scoreResult.Data.Details, snapshotItems),
+            Highlights = scoreResult.Data.Details.Highlights.Count > 0
+                ? scoreResult.Data.Details.Highlights
+                : summaryBuilder.BuildHighlights(scoreResult.Data.ToModel(location.Id), scoreResult.Data.Details, snapshotItems),
+            Pois = poisResult.Data,
+            NearbyCategories = scoreResult.Data.Details.NearbyCategories,
+            TransportDetails = scoreResult.Data.Details.TransportDetails,
+            SearchFeatures = scoreResult.Data.Details.SearchFeatures,
+            PrimaryRadiusConfig = scoreResult.Data.Details.PrimaryRadiusConfig,
+            FallbackRadiusConfig = scoreResult.Data.Details.FallbackRadiusConfig,
+            MissingPrimaryCategories = scoreResult.Data.Details.MissingPrimaryCategories,
+            ClassificationVersions = scoreResult.Data.Details.ClassificationVersions
         });
     }
 }

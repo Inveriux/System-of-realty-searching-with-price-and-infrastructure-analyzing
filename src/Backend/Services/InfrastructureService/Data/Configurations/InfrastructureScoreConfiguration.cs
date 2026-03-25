@@ -19,6 +19,7 @@ internal sealed class InfrastructureScoreConfiguration : IEntityTypeConfiguratio
         builder.Property(x => x.CommerceScore).HasPrecision(10, 4).IsRequired();
         builder.Property(x => x.LeisureScore).HasPrecision(10, 4).IsRequired();
         builder.Property(x => x.SearchFeaturesJson).HasColumnType("jsonb");
+        builder.Property(x => x.DetailedSummaryJson).HasColumnType("jsonb");
 
         builder.HasIndex(x => x.LocationId).IsUnique();
 

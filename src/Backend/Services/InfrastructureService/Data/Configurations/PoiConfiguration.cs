@@ -17,8 +17,11 @@ internal sealed class PoiConfiguration : IEntityTypeConfiguration<Poi>
         builder.Property(x => x.AddressText).HasMaxLength(500);
         builder.Property(x => x.Latitude).HasPrecision(10, 6).IsRequired();
         builder.Property(x => x.Longitude).HasPrecision(10, 6).IsRequired();
+        builder.Property(x => x.SubcategoryCode).HasMaxLength(120);
+        builder.Property(x => x.Source).HasMaxLength(50);
 
         builder.HasIndex(x => new { x.CategoryId, x.ExternalId });
+        builder.HasIndex(x => x.SubcategoryCode);
 
         builder.HasOne(x => x.Category)
             .WithMany(x => x.Pois)

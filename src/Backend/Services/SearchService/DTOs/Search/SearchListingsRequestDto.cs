@@ -26,6 +26,21 @@ public sealed class SearchListingsRequestDto
     public decimal? MaxTransportNearestMeters { get; init; }
     public decimal? MaxCommerceNearestMeters { get; init; }
     public decimal? MaxLeisureNearestMeters { get; init; }
+    public decimal? MaxStoreWalkMinutes { get; init; }
+    public decimal? MaxPharmacyWalkMinutes { get; init; }
+    public decimal? MaxStopWalkMinutes { get; init; }
+    public decimal? MaxParkingWalkMinutes { get; init; }
+    public decimal? MaxSchoolWalkMinutes { get; init; }
+    public decimal? MaxKindergartenWalkMinutes { get; init; }
+    public decimal? MaxClinicDriveMinutes { get; init; }
+    public decimal? MaxHospitalDriveMinutes { get; init; }
+    public decimal? MaxParkWalkMinutes { get; init; }
+    public decimal? MaxFitnessWalkMinutes { get; init; }
+    public decimal? MaxMuseumDriveMinutes { get; init; }
+    public decimal? MaxTheaterDriveMinutes { get; init; }
+    public decimal? MaxCinemaDriveMinutes { get; init; }
+    public decimal? MaxMetroWalkMinutes { get; init; }
+    public bool? RequireMetroInPrimaryRadius { get; init; }
     public decimal? CenterLatitude { get; init; }
     public decimal? CenterLongitude { get; init; }
     public decimal? RadiusMeters { get; init; }

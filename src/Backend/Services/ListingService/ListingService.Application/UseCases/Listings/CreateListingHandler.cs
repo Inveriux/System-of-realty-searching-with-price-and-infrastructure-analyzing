@@ -44,7 +44,19 @@ public class CreateListingHandler(IRepositoryManager manager,
         var resolveLookupIdsResult = await ResolveLookupIds(listing, request.ListingDto, cancellationToken);
 
         if (!resolveLookupIdsResult.IsSuccess)
-            return Result.Fail();
+        {
+            logger.LogWarning(
+                "Failed to resolve lookup ids while creating listing {Title}. Message: {Message}. Errors: {Errors}",
+                request.ListingDto.Title,
+                resolveLookupIdsResult.Message,
+                string.Join("; ", resolveLookupIdsResult.Errors.Select(static e =>
+                    $"{e.PropertyName}: {e.ErrorMessage}")));
+
+            return Result.Fail(
+                resolveLookupIdsResult.StatusCode,
+                resolveLookupIdsResult.Message,
+                resolveLookupIdsResult.Errors);
+        }
 
         await manager.Listing.AddAsync(listing, cancellationToken);
 
@@ -390,8 +402,8 @@ public class CreateListingHandler(IRepositoryManager manager,
 
             if (officeDetailsDto.RenovationType != null)
             {
-                var renovationTypeId = await ResolveLookupIdAsync<LayoutType>(
-                    nameof(LayoutType),
+                var renovationTypeId = await ResolveLookupIdAsync<RenovationType>(
+                    nameof(RenovationType),
                     officeDetailsDto.RenovationType,
                     nameof(OfficeDetailsDto.RenovationType),
                     cancellationToken);

@@ -12,6 +12,8 @@ public sealed class PoiDto
     public decimal Latitude { get; init; }
     public decimal Longitude { get; init; }
     public string Category { get; init; } = string.Empty;
+    public string? SubcategoryCode { get; init; }
+    public string? Source { get; init; }
     public decimal DistanceMeters { get; init; }
 
     private sealed class Mapping : Profile
@@ -25,7 +27,9 @@ public sealed class PoiDto
                 .ForMember(x => x.AddressText, y => y.MapFrom(s => s.Poi!.AddressText))
                 .ForMember(x => x.Latitude, y => y.MapFrom(s => s.Poi!.Latitude))
                 .ForMember(x => x.Longitude, y => y.MapFrom(s => s.Poi!.Longitude))
-                .ForMember(x => x.Category, y => y.MapFrom(s => s.Poi!.Category!.Name));
+                .ForMember(x => x.Category, y => y.MapFrom(s => s.Poi!.Category!.Name))
+                .ForMember(x => x.SubcategoryCode, y => y.MapFrom(s => s.Poi!.SubcategoryCode))
+                .ForMember(x => x.Source, y => y.MapFrom(s => s.Poi!.Source));
         }
     }
 }

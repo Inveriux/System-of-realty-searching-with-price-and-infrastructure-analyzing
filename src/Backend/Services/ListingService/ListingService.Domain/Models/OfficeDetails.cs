@@ -18,7 +18,7 @@ public class OfficeDetails : IListingDetails
     public Guid? LayoutTypeId { get; set; }
     public LayoutType? LayoutType { get; set; }
     public Guid? RenovationTypeId { get; set; }
-    public LayoutType? RenovationType { get; set; }
+    public RenovationType? RenovationType { get; set; }
     public Guid? ParkingTypeId { get; set; }
     public LayoutType? ParkingType { get; set; }
 }

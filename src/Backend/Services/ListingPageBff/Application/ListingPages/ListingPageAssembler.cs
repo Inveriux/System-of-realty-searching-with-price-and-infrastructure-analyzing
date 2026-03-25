@@ -140,10 +140,12 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
             .Select(group => new ListingPageGroupedPoisDto
             {
                 Category = group.Key,
-                Count = group.Count(),
-                Pois = group
-                    .OrderBy(static poi => poi.DistanceMeters)
-                    .Take(5)
+                Count = group.Key.Equals("Досуг", StringComparison.OrdinalIgnoreCase)
+                    ? DeduplicateLeisurePois(group).Count
+                    : group.Count(),
+                Pois = (group.Key.Equals("Досуг", StringComparison.OrdinalIgnoreCase)
+                        ? DeduplicateLeisurePois(group)
+                        : group.OrderBy(static poi => poi.DistanceMeters).ToList())
                     .Select(MapPoi)
                     .ToArray()
             })
@@ -192,6 +194,12 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
         decimal? searchFallbackScore)
     {
         var resolvedTotalScore = ResolveInfrastructureScore(infrastructure, searchFallbackScore);
+        var rawMapPois = infrastructure.Pois
+            .OrderBy(static x => x.DistanceMeters)
+            .Select(MapPoi)
+            .ToArray();
+        var groupedTransportSummary = BuildGroupedTransportSummary(infrastructure);
+        var compactInfrastructureSummary = BuildCompactInfrastructureSummary(infrastructure, groupedTransportSummary);
 
         return new ListingPageInfrastructureDto
         {
@@ -207,14 +215,333 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
                 ? BuildInfrastructureSummaryText(infrastructure)
                 : infrastructure.Summary,
             GroupedPois = GroupPoisByCategory(infrastructure.Pois),
-            NearbyPois = infrastructure.Pois
-                .OrderBy(static x => x.DistanceMeters)
-                .Select(MapPoi)
+            NearbyPois = rawMapPois,
+            RawMapPois = rawMapPois,
+            NearbyCategories = infrastructure.NearbyCategories
+                .Select(static x => new ListingPageInfrastructureNearbyCategoryDto
+                {
+                    CategoryCode = x.CategoryCode,
+                    SubcategoryCode = x.SubcategoryCode,
+                    CountInPrimaryRadius = x.CountInPrimaryRadius,
+                    NearestDistanceM = x.NearestDistanceM,
+                    NearestWalkMinutes = x.NearestWalkMinutes,
+                    NearestDriveMinutes = x.NearestDriveMinutes,
+                    NearestDriveMinutesEstimated = x.NearestDriveMinutesEstimated,
+                    NearestAnyDistanceM = x.NearestAnyDistanceM,
+                    NearestAnyWalkMinutes = x.NearestAnyWalkMinutes,
+                    NearestAnyDriveMinutes = x.NearestAnyDriveMinutes,
+                    NearestAnyDriveMinutesEstimated = x.NearestAnyDriveMinutesEstimated,
+                    FoundInRadiusM = x.FoundInRadiusM,
+                    FoundInPrimaryRadius = x.FoundInPrimaryRadius
+                })
                 .ToArray(),
+            TransportDetails = new ListingPageInfrastructureTransportDetailsDto
+            {
+                NearestStopDistanceM = infrastructure.TransportDetails.NearestStopDistanceM,
+                NearestStopWalkMinutes = infrastructure.TransportDetails.NearestStopWalkMinutes,
+                StopsCountPrimary = infrastructure.TransportDetails.StopsCountPrimary,
+                StopGroupsCountPrimary = infrastructure.TransportDetails.StopGroupsCountPrimary,
+                StopPlatformsCountPrimary = infrastructure.TransportDetails.StopPlatformsCountPrimary,
+                NearestStopGroupDistanceM = infrastructure.TransportDetails.NearestStopGroupDistanceM,
+                NearestStopGroupWalkMinutes = infrastructure.TransportDetails.NearestStopGroupWalkMinutes,
+                NearestStopGroupDriveMinutes = infrastructure.TransportDetails.NearestStopGroupDriveMinutes,
+                NearestStopGroupDriveMinutesEstimated = infrastructure.TransportDetails.NearestStopGroupDriveMinutesEstimated,
+                NearestStopGroupName = infrastructure.TransportDetails.NearestStopGroupName,
+                NearestStopGroupPlatformCount = infrastructure.TransportDetails.NearestStopGroupPlatformCount,
+                NearestStopGroupAnyDistanceM = infrastructure.TransportDetails.NearestStopGroupAnyDistanceM,
+                NearestStopGroupAnyWalkMinutes = infrastructure.TransportDetails.NearestStopGroupAnyWalkMinutes,
+                NearestStopGroupAnyDriveMinutes = infrastructure.TransportDetails.NearestStopGroupAnyDriveMinutes,
+                NearestStopGroupAnyDriveMinutesEstimated = infrastructure.TransportDetails.NearestStopGroupAnyDriveMinutesEstimated,
+                NearestStopGroupFoundRadiusM = infrastructure.TransportDetails.NearestStopGroupFoundRadiusM,
+                StopGroups = infrastructure.TransportDetails.StopGroups
+                    .Select(static group => new ListingPageInfrastructureTransportStopGroupDto
+                    {
+                        GroupId = group.GroupId,
+                        NormalizedName = group.NormalizedName,
+                        DisplayName = group.DisplayName,
+                        CenterLatitude = group.CenterLatitude,
+                        CenterLongitude = group.CenterLongitude,
+                        MaxDistanceWithinGroup = group.MaxDistanceWithinGroup,
+                        PointCount = group.PointCount,
+                        PlatformCount = group.PlatformCount,
+                        StopTypes = group.StopTypes.ToArray(),
+                        SourcePoiIds = group.SourcePoiIds.Select(static id => id.ToString()).ToArray(),
+                        NearestDistanceMeters = group.NearestDistanceMeters
+                    })
+                    .ToArray(),
+                NearestMetroDistanceM = infrastructure.TransportDetails.NearestMetroDistanceM,
+                NearestMetroWalkMinutes = infrastructure.TransportDetails.NearestMetroWalkMinutes,
+                NearestMetroName = infrastructure.TransportDetails.NearestMetroName,
+                MetroFoundInPrimaryRadius = infrastructure.TransportDetails.MetroFoundInPrimaryRadius,
+                NearestParkingDistanceM = infrastructure.TransportDetails.NearestParkingDistanceM,
+                NearestParkingWalkMinutes = infrastructure.TransportDetails.NearestParkingWalkMinutes,
+                NearestParkingDriveMinutes = infrastructure.TransportDetails.NearestParkingDriveMinutes,
+                NearestParkingDriveMinutesEstimated = infrastructure.TransportDetails.NearestParkingDriveMinutesEstimated,
+                ParkingCountPrimary = infrastructure.TransportDetails.ParkingCountPrimary
+            },
+            GroupedTransportSummary = groupedTransportSummary,
+            CompactInfrastructureSummary = compactInfrastructureSummary,
+            SearchFeatures = new ListingPageInfrastructureSearchFeaturesDto
+            {
+                StoreCountPrimary = infrastructure.SearchFeatures.StoreCountPrimary,
+                NearestStoreWalkMinutes = infrastructure.SearchFeatures.NearestStoreWalkMinutes,
+                NearestStoreDriveMinutes = infrastructure.SearchFeatures.NearestStoreDriveMinutes,
+                NearestStoreDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStoreDriveMinutesEstimated,
+                NearestStoreAnyWalkMinutes = infrastructure.SearchFeatures.NearestStoreAnyWalkMinutes,
+                NearestStoreAnyDriveMinutes = infrastructure.SearchFeatures.NearestStoreAnyDriveMinutes,
+                NearestStoreAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStoreAnyDriveMinutesEstimated,
+                NearestStoreFoundRadiusM = infrastructure.SearchFeatures.NearestStoreFoundRadiusM,
+                PharmacyCountPrimary = infrastructure.SearchFeatures.PharmacyCountPrimary,
+                NearestPharmacyWalkMinutes = infrastructure.SearchFeatures.NearestPharmacyWalkMinutes,
+                NearestPharmacyDriveMinutes = infrastructure.SearchFeatures.NearestPharmacyDriveMinutes,
+                NearestPharmacyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestPharmacyDriveMinutesEstimated,
+                NearestPharmacyAnyWalkMinutes = infrastructure.SearchFeatures.NearestPharmacyAnyWalkMinutes,
+                NearestPharmacyAnyDriveMinutes = infrastructure.SearchFeatures.NearestPharmacyAnyDriveMinutes,
+                NearestPharmacyAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestPharmacyAnyDriveMinutesEstimated,
+                NearestPharmacyFoundRadiusM = infrastructure.SearchFeatures.NearestPharmacyFoundRadiusM,
+                StopsCountPrimary = infrastructure.SearchFeatures.StopsCountPrimary,
+                NearestStopWalkMinutes = infrastructure.SearchFeatures.NearestStopWalkMinutes,
+                NearestStopDriveMinutes = infrastructure.SearchFeatures.NearestStopDriveMinutes,
+                NearestStopDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStopDriveMinutesEstimated,
+                NearestStopAnyWalkMinutes = infrastructure.SearchFeatures.NearestStopAnyWalkMinutes,
+                NearestStopAnyDriveMinutes = infrastructure.SearchFeatures.NearestStopAnyDriveMinutes,
+                NearestStopAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStopAnyDriveMinutesEstimated,
+                NearestStopFoundRadiusM = infrastructure.SearchFeatures.NearestStopFoundRadiusM,
+                StopGroupsCountPrimary = infrastructure.SearchFeatures.StopGroupsCountPrimary,
+                StopPlatformsCountPrimary = infrastructure.SearchFeatures.StopPlatformsCountPrimary,
+                NearestStopGroupWalkMinutes = infrastructure.SearchFeatures.NearestStopGroupWalkMinutes,
+                NearestStopGroupDriveMinutes = infrastructure.SearchFeatures.NearestStopGroupDriveMinutes,
+                NearestStopGroupDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStopGroupDriveMinutesEstimated,
+                NearestStopGroupName = infrastructure.SearchFeatures.NearestStopGroupName,
+                NearestStopGroupPlatformCount = infrastructure.SearchFeatures.NearestStopGroupPlatformCount,
+                NearestStopGroupAnyWalkMinutes = infrastructure.SearchFeatures.NearestStopGroupAnyWalkMinutes,
+                NearestStopGroupAnyDriveMinutes = infrastructure.SearchFeatures.NearestStopGroupAnyDriveMinutes,
+                NearestStopGroupAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestStopGroupAnyDriveMinutesEstimated,
+                NearestStopGroupFoundRadiusM = infrastructure.SearchFeatures.NearestStopGroupFoundRadiusM,
+                ParkingCountPrimary = infrastructure.SearchFeatures.ParkingCountPrimary,
+                NearestParkingWalkMinutes = infrastructure.SearchFeatures.NearestParkingWalkMinutes,
+                NearestParkingDriveMinutes = infrastructure.SearchFeatures.NearestParkingDriveMinutes,
+                NearestParkingDriveMinutesEstimated = infrastructure.SearchFeatures.NearestParkingDriveMinutesEstimated,
+                NearestParkingAnyWalkMinutes = infrastructure.SearchFeatures.NearestParkingAnyWalkMinutes,
+                NearestParkingAnyDriveMinutes = infrastructure.SearchFeatures.NearestParkingAnyDriveMinutes,
+                NearestParkingAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestParkingAnyDriveMinutesEstimated,
+                NearestParkingFoundRadiusM = infrastructure.SearchFeatures.NearestParkingFoundRadiusM,
+                SchoolCountPrimary = infrastructure.SearchFeatures.SchoolCountPrimary,
+                NearestSchoolWalkMinutes = infrastructure.SearchFeatures.NearestSchoolWalkMinutes,
+                NearestSchoolDriveMinutes = infrastructure.SearchFeatures.NearestSchoolDriveMinutes,
+                NearestSchoolDriveMinutesEstimated = infrastructure.SearchFeatures.NearestSchoolDriveMinutesEstimated,
+                NearestSchoolAnyWalkMinutes = infrastructure.SearchFeatures.NearestSchoolAnyWalkMinutes,
+                NearestSchoolAnyDriveMinutes = infrastructure.SearchFeatures.NearestSchoolAnyDriveMinutes,
+                NearestSchoolAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestSchoolAnyDriveMinutesEstimated,
+                NearestSchoolFoundRadiusM = infrastructure.SearchFeatures.NearestSchoolFoundRadiusM,
+                KindergartenCountPrimary = infrastructure.SearchFeatures.KindergartenCountPrimary,
+                NearestKindergartenWalkMinutes = infrastructure.SearchFeatures.NearestKindergartenWalkMinutes,
+                NearestKindergartenDriveMinutes = infrastructure.SearchFeatures.NearestKindergartenDriveMinutes,
+                NearestKindergartenDriveMinutesEstimated = infrastructure.SearchFeatures.NearestKindergartenDriveMinutesEstimated,
+                NearestKindergartenAnyWalkMinutes = infrastructure.SearchFeatures.NearestKindergartenAnyWalkMinutes,
+                NearestKindergartenAnyDriveMinutes = infrastructure.SearchFeatures.NearestKindergartenAnyDriveMinutes,
+                NearestKindergartenAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestKindergartenAnyDriveMinutesEstimated,
+                NearestKindergartenFoundRadiusM = infrastructure.SearchFeatures.NearestKindergartenFoundRadiusM,
+                ClinicCountPrimary = infrastructure.SearchFeatures.ClinicCountPrimary,
+                NearestClinicWalkMinutes = infrastructure.SearchFeatures.NearestClinicWalkMinutes,
+                NearestClinicDriveMinutes = infrastructure.SearchFeatures.NearestClinicDriveMinutes,
+                NearestClinicDriveMinutesEstimated = infrastructure.SearchFeatures.NearestClinicDriveMinutesEstimated,
+                NearestClinicAnyDriveMinutes = infrastructure.SearchFeatures.NearestClinicAnyDriveMinutes,
+                NearestClinicAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestClinicAnyDriveMinutesEstimated,
+                NearestClinicFoundRadiusM = infrastructure.SearchFeatures.NearestClinicFoundRadiusM,
+                HospitalCountPrimary = infrastructure.SearchFeatures.HospitalCountPrimary,
+                NearestHospitalDriveMinutes = infrastructure.SearchFeatures.NearestHospitalDriveMinutes,
+                NearestHospitalDriveMinutesEstimated = infrastructure.SearchFeatures.NearestHospitalDriveMinutesEstimated,
+                NearestHospitalAnyDriveMinutes = infrastructure.SearchFeatures.NearestHospitalAnyDriveMinutes,
+                NearestHospitalAnyDriveMinutesEstimated = infrastructure.SearchFeatures.NearestHospitalAnyDriveMinutesEstimated,
+                NearestHospitalFoundRadiusM = infrastructure.SearchFeatures.NearestHospitalFoundRadiusM,
+                LeisureCountPrimary = infrastructure.SearchFeatures.LeisureCountPrimary,
+                NearestLeisureWalkMinutes = infrastructure.SearchFeatures.NearestLeisureWalkMinutes,
+                NearestLeisureAnyWalkMinutes = infrastructure.SearchFeatures.NearestLeisureAnyWalkMinutes,
+                NearestLeisureFoundRadiusM = infrastructure.SearchFeatures.NearestLeisureFoundRadiusM,
+                ParksCountPrimary = infrastructure.SearchFeatures.ParksCountPrimary,
+                NearestParkWalkMinutes = infrastructure.SearchFeatures.NearestParkWalkMinutes,
+                NearestParkDriveMinutes = infrastructure.SearchFeatures.NearestParkDriveMinutes,
+                NearestParkAnyWalkMinutes = infrastructure.SearchFeatures.NearestParkAnyWalkMinutes,
+                NearestParkAnyDriveMinutes = infrastructure.SearchFeatures.NearestParkAnyDriveMinutes,
+                NearestParkFoundRadiusM = infrastructure.SearchFeatures.NearestParkFoundRadiusM,
+                FitnessCountPrimary = infrastructure.SearchFeatures.FitnessCountPrimary,
+                NearestFitnessWalkMinutes = infrastructure.SearchFeatures.NearestFitnessWalkMinutes,
+                NearestFitnessDriveMinutes = infrastructure.SearchFeatures.NearestFitnessDriveMinutes,
+                NearestFitnessAnyWalkMinutes = infrastructure.SearchFeatures.NearestFitnessAnyWalkMinutes,
+                NearestFitnessAnyDriveMinutes = infrastructure.SearchFeatures.NearestFitnessAnyDriveMinutes,
+                NearestFitnessFoundRadiusM = infrastructure.SearchFeatures.NearestFitnessFoundRadiusM,
+                MuseumsCountPrimary = infrastructure.SearchFeatures.MuseumsCountPrimary,
+                NearestMuseumWalkMinutes = infrastructure.SearchFeatures.NearestMuseumWalkMinutes,
+                NearestMuseumDriveMinutes = infrastructure.SearchFeatures.NearestMuseumDriveMinutes,
+                NearestMuseumAnyWalkMinutes = infrastructure.SearchFeatures.NearestMuseumAnyWalkMinutes,
+                NearestMuseumAnyDriveMinutes = infrastructure.SearchFeatures.NearestMuseumAnyDriveMinutes,
+                NearestMuseumFoundRadiusM = infrastructure.SearchFeatures.NearestMuseumFoundRadiusM,
+                TheatersCountPrimary = infrastructure.SearchFeatures.TheatersCountPrimary,
+                NearestTheaterWalkMinutes = infrastructure.SearchFeatures.NearestTheaterWalkMinutes,
+                NearestTheaterDriveMinutes = infrastructure.SearchFeatures.NearestTheaterDriveMinutes,
+                NearestTheaterAnyWalkMinutes = infrastructure.SearchFeatures.NearestTheaterAnyWalkMinutes,
+                NearestTheaterAnyDriveMinutes = infrastructure.SearchFeatures.NearestTheaterAnyDriveMinutes,
+                NearestTheaterFoundRadiusM = infrastructure.SearchFeatures.NearestTheaterFoundRadiusM,
+                CinemasCountPrimary = infrastructure.SearchFeatures.CinemasCountPrimary,
+                NearestCinemaWalkMinutes = infrastructure.SearchFeatures.NearestCinemaWalkMinutes,
+                NearestCinemaDriveMinutes = infrastructure.SearchFeatures.NearestCinemaDriveMinutes,
+                NearestCinemaAnyWalkMinutes = infrastructure.SearchFeatures.NearestCinemaAnyWalkMinutes,
+                NearestCinemaAnyDriveMinutes = infrastructure.SearchFeatures.NearestCinemaAnyDriveMinutes,
+                NearestCinemaFoundRadiusM = infrastructure.SearchFeatures.NearestCinemaFoundRadiusM,
+                CafesCountPrimary = infrastructure.SearchFeatures.CafesCountPrimary,
+                RestaurantsCountPrimary = infrastructure.SearchFeatures.RestaurantsCountPrimary,
+                NearestMetroWalkMinutes = infrastructure.SearchFeatures.NearestMetroWalkMinutes,
+                NearestMetroName = infrastructure.SearchFeatures.NearestMetroName,
+                MetroFoundInPrimaryRadius = infrastructure.SearchFeatures.MetroFoundInPrimaryRadius
+            },
+            MissingPrimaryCategories = infrastructure.MissingPrimaryCategories.ToArray(),
             Highlights = infrastructure.Highlights.Count > 0
                 ? infrastructure.Highlights.ToArray()
                 : BuildInfrastructureHighlights(infrastructure),
             CalculatedAtUtc = infrastructure.Score.CalculatedAtUtc
+        };
+    }
+
+    private static ListingPageGroupedTransportSummaryDto BuildGroupedTransportSummary(DownstreamInfrastructureSummaryDto infrastructure)
+    {
+        var details = infrastructure.TransportDetails;
+        var parking = infrastructure.NearbyCategories.FirstOrDefault(static x => x.SubcategoryCode == "parking");
+
+        return new ListingPageGroupedTransportSummaryDto
+        {
+            NearestStopGroupName = details.NearestStopGroupName,
+            NearestStopGroupDistanceM = details.NearestStopGroupDistanceM,
+            NearestStopGroupWalkMinutes = details.NearestStopGroupWalkMinutes,
+            NearestStopGroupDriveMinutes = details.NearestStopGroupDriveMinutes,
+            NearestStopGroupDriveMinutesEstimated = details.NearestStopGroupDriveMinutesEstimated,
+            NearestStopGroupAnyDistanceM = details.NearestStopGroupAnyDistanceM,
+            NearestStopGroupAnyWalkMinutes = details.NearestStopGroupAnyWalkMinutes,
+            NearestStopGroupAnyDriveMinutes = details.NearestStopGroupAnyDriveMinutes,
+            NearestStopGroupAnyDriveMinutesEstimated = details.NearestStopGroupAnyDriveMinutesEstimated,
+            StopGroupFoundInPrimaryRadius = details.NearestStopGroupWalkMinutes is not null || details.NearestStopGroupDistanceM is not null,
+            NearestStopGroupFoundRadiusM = details.NearestStopGroupFoundRadiusM,
+            StopGroupsCountPrimary = details.StopGroupsCountPrimary,
+            StopPlatformsCountPrimary = details.StopPlatformsCountPrimary,
+            NearestStopGroupPlatformCount = details.NearestStopGroupPlatformCount,
+            NearestMetroDistanceM = details.NearestMetroDistanceM,
+            NearestMetroWalkMinutes = details.NearestMetroWalkMinutes,
+            NearestMetroName = details.NearestMetroName,
+            MetroFoundInPrimaryRadius = details.MetroFoundInPrimaryRadius,
+            NearestParkingDistanceM = details.NearestParkingDistanceM,
+            NearestParkingWalkMinutes = details.NearestParkingWalkMinutes,
+            NearestParkingDriveMinutes = details.NearestParkingDriveMinutes,
+            NearestParkingDriveMinutesEstimated = details.NearestParkingDriveMinutesEstimated,
+            NearestParkingAnyDistanceM = parking?.NearestAnyDistanceM,
+            NearestParkingAnyWalkMinutes = parking?.NearestAnyWalkMinutes,
+            NearestParkingAnyDriveMinutes = parking?.NearestAnyDriveMinutes,
+            NearestParkingAnyDriveMinutesEstimated = parking?.NearestAnyDriveMinutesEstimated ?? false,
+            ParkingFoundInPrimaryRadius = parking?.FoundInPrimaryRadius ?? details.NearestParkingWalkMinutes is not null,
+            NearestParkingFoundRadiusM = parking?.FoundInRadiusM
+        };
+    }
+
+    private static IReadOnlyCollection<ListingPageCompactInfrastructureItemDto> BuildCompactInfrastructureSummary(
+        DownstreamInfrastructureSummaryDto infrastructure,
+        ListingPageGroupedTransportSummaryDto groupedTransportSummary)
+    {
+        return
+        [
+            new ListingPageCompactInfrastructureItemDto
+            {
+                Key = "stop_group",
+                Label = "Ближайшая остановка",
+                IconSrc = "/map-markers/bus-stop.svg",
+                EntityName = groupedTransportSummary.NearestStopGroupName,
+                PrimaryDistanceM = groupedTransportSummary.NearestStopGroupDistanceM,
+                PrimaryWalkMinutes = groupedTransportSummary.NearestStopGroupWalkMinutes,
+                PrimaryDriveMinutes = groupedTransportSummary.NearestStopGroupDriveMinutes,
+                PrimaryDriveMinutesEstimated = groupedTransportSummary.NearestStopGroupDriveMinutesEstimated,
+                FallbackDistanceM = groupedTransportSummary.NearestStopGroupAnyDistanceM,
+                FallbackWalkMinutes = groupedTransportSummary.NearestStopGroupAnyWalkMinutes,
+                FallbackDriveMinutes = groupedTransportSummary.NearestStopGroupAnyDriveMinutes,
+                FallbackDriveMinutesEstimated = groupedTransportSummary.NearestStopGroupAnyDriveMinutesEstimated,
+                FoundInPrimaryRadius = groupedTransportSummary.StopGroupFoundInPrimaryRadius,
+                FoundInRadiusM = groupedTransportSummary.NearestStopGroupFoundRadiusM,
+                Hint = groupedTransportSummary.NearestStopGroupPlatformCount is > 1
+                    ? $"Платформ в ближайшей группе: {groupedTransportSummary.NearestStopGroupPlatformCount}"
+                    : groupedTransportSummary.StopGroupsCountPrimary > 0
+                        ? $"Остановочных групп рядом: {groupedTransportSummary.StopGroupsCountPrimary}"
+                        : "В основной зоне доступности не найдено"
+            },
+            BuildCompactSummaryItem(infrastructure, "parking", "Ближайшая парковка", "/map-markers/parking.svg"),
+            BuildCompactSummaryItem(infrastructure, "store", "Ближайший магазин", "/map-markers/supermarket.svg"),
+            BuildCompactSummaryItem(infrastructure, "pharmacy", "Ближайшая аптека", "/map-markers/pharmacy.svg"),
+            BuildCompactSummaryItem(infrastructure, "school", "Ближайшая школа", "/map-markers/school.svg"),
+            BuildCompactSummaryItem(infrastructure, "kindergarten", "Ближайший детский сад", "/map-markers/kindergarten.svg"),
+            BuildCompactSummaryItem(infrastructure, "clinic", "Ближайшая поликлиника", "/map-markers/healthcare.svg"),
+            BuildCompactSummaryItem(infrastructure, "hospital", "Ближайшая больница", "/map-markers/hospital.svg"),
+            BuildCompactSummaryItem(infrastructure, "park", "Парк", "/map-markers/park.svg"),
+            BuildCompactSummaryItem(infrastructure, "fitness", "Фитнес-клуб", "/map-markers/fitness.svg"),
+            BuildCompactSummaryItem(infrastructure, "museum", "Музей", "/map-markers/museum.svg"),
+            BuildCompactSummaryItem(infrastructure, "theater", "Театр", "/map-markers/theater.svg"),
+            BuildCompactSummaryItem(infrastructure, "cinema", "Кинотеатр", "/map-markers/cinema.svg"),
+            new ListingPageCompactInfrastructureItemDto
+            {
+                Key = "metro",
+                Label = "Ближайшая станция метро",
+                IconSrc = "/map-markers/minsk-metro.svg",
+                EntityName = infrastructure.TransportDetails.NearestMetroName,
+                PrimaryDistanceM = infrastructure.TransportDetails.NearestMetroDistanceM,
+                PrimaryWalkMinutes = infrastructure.TransportDetails.NearestMetroWalkMinutes,
+                PrimaryDriveMinutes = null,
+                PrimaryDriveMinutesEstimated = false,
+                FallbackDistanceM = null,
+                FallbackWalkMinutes = null,
+                FallbackDriveMinutes = null,
+                FallbackDriveMinutesEstimated = false,
+                FoundInPrimaryRadius = infrastructure.TransportDetails.MetroFoundInPrimaryRadius,
+                FoundInRadiusM = infrastructure.TransportDetails.MetroFoundInPrimaryRadius ? 3000 : null,
+                Hint = infrastructure.TransportDetails.MetroFoundInPrimaryRadius
+                    ? "Метро в основной зоне доступности"
+                    : "Станции метро в пределах заданного радиуса не обнаружены."
+            }
+        ];
+    }
+
+    private static List<DownstreamPoiDto> DeduplicateLeisurePois(IEnumerable<DownstreamPoiDto> pois)
+        => pois
+            .OrderBy(static poi => poi.DistanceMeters)
+            .GroupBy(static poi =>
+                $"{poi.SubcategoryCode?.Trim().ToLowerInvariant() ?? string.Empty}:{poi.Name.Trim().ToLowerInvariant()}",
+                StringComparer.OrdinalIgnoreCase)
+            .Select(static group => group.First())
+            .ToList();
+
+    private static ListingPageCompactInfrastructureItemDto BuildCompactSummaryItem(
+        DownstreamInfrastructureSummaryDto infrastructure,
+        string subcategoryCode,
+        string label,
+        string iconSrc)
+    {
+        var item = infrastructure.NearbyCategories.FirstOrDefault(x => x.SubcategoryCode == subcategoryCode);
+
+        return new ListingPageCompactInfrastructureItemDto
+        {
+            Key = subcategoryCode,
+            Label = label,
+            IconSrc = iconSrc,
+            EntityName = null,
+            PrimaryDistanceM = item?.NearestDistanceM,
+            PrimaryWalkMinutes = item?.NearestWalkMinutes,
+            PrimaryDriveMinutes = item?.NearestDriveMinutes,
+            PrimaryDriveMinutesEstimated = item?.NearestDriveMinutesEstimated ?? false,
+            FallbackDistanceM = item?.NearestAnyDistanceM,
+            FallbackWalkMinutes = item?.NearestAnyWalkMinutes,
+            FallbackDriveMinutes = item?.NearestAnyDriveMinutes,
+            FallbackDriveMinutesEstimated = item?.NearestAnyDriveMinutesEstimated ?? false,
+            FoundInPrimaryRadius = item?.FoundInPrimaryRadius ?? false,
+            FoundInRadiusM = item?.FoundInRadiusM,
+            Hint = item?.FoundInPrimaryRadius == true
+                ? null
+                : item?.NearestAnyDistanceM is not null || item?.NearestAnyWalkMinutes is not null || item?.NearestAnyDriveMinutes is not null
+                    ? "В основной зоне доступности не найдено"
+                    : "В доступном радиусе не найдено"
         };
     }
 
@@ -239,13 +566,10 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
         if (componentScores.Length > 0)
             return Math.Round(componentScores.Average(), 1);
 
-        if (searchFallbackScore is > 0)
+        if (searchFallbackScore is > 0 && infrastructure.Score.PoiCount <= 0 && infrastructure.Pois.Count == 0)
             return searchFallbackScore.Value;
 
-        if (infrastructure.Score.PoiCount > 0)
-            return Math.Min(90m, 35m + infrastructure.Score.PoiCount * 2m);
-
-        return null;
+        return infrastructure.Score.TotalScore;
     }
 
     private ListingPagePoiDto MapPoi(DownstreamPoiDto poi) => new()
@@ -257,6 +581,7 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
         Latitude = poi.Latitude,
         Longitude = poi.Longitude,
         Category = TranslatePoiCategory(poi.Category),
+        SubcategoryCode = poi.SubcategoryCode,
         DistanceMeters = poi.DistanceMeters
     };
 

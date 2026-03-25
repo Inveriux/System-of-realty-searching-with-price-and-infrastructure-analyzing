@@ -47,6 +47,7 @@ public sealed class InfrastructureRepository(ApplicationDbContext context) : IIn
         existing.PoiCount = score.PoiCount;
         existing.CalculatedAtUtc = score.CalculatedAtUtc;
         existing.SearchFeaturesJson = score.SearchFeaturesJson;
+        existing.DetailedSummaryJson = score.DetailedSummaryJson;
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)

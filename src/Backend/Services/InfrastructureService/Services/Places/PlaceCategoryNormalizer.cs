@@ -18,7 +18,7 @@ public sealed class PlaceCategoryNormalizer : IPlaceCategoryNormalizer
         new("raw", ["healthcare.hospital", "healthcare.pharmacy", "building.healthcare", "healthcare"], "healthcare"),
         new("raw", ["public_transport", "public_transport.", "railway", "railway."], "transport"),
         new("raw", ["commercial.supermarket", "commercial.shopping_mall", "commercial.marketplace", "building.commercial", "commercial"], "commerce"),
-        new("raw", ["leisure.park", "leisure.playground", "activity.sport_club", "catering.cafe", "entertainment.cinema", "leisure", "activity", "catering"], "leisure"),
+        new("raw", ["leisure.park", "leisure.playground", "activity.sport_club", "activity.sports_centre", "catering.cafe", "catering.restaurant", "entertainment.cinema", "entertainment.theatre", "tourism.museum", "tourism.gallery", "leisure", "activity", "catering", "entertainment", "tourism"], "leisure"),
 
         new("amenity", ["school", "kindergarten", "college", "university"], "education"),
         new("building", ["school", "kindergarten", "university", "college"], "education"),
@@ -36,9 +36,12 @@ public sealed class PlaceCategoryNormalizer : IPlaceCategoryNormalizer
         new("amenity", ["marketplace"], "commerce"),
         new("building", ["retail", "supermarket", "commercial"], "commerce"),
 
-        new("leisure", ["park", "fitness_centre", "sports_centre", "playground", "stadium", "garden"], "leisure"),
-        new("amenity", ["cinema", "cafe", "theatre", "restaurant", "fast_food"], "leisure"),
-        new("tourism", ["museum", "attraction"], "leisure")
+        new("leisure", ["park", "fitness_centre", "sports_centre", "playground", "stadium", "garden", "swimming_pool", "pitch", "fitness_station"], "leisure"),
+        new("amenity", ["cinema", "cafe", "theatre", "restaurant", "fast_food", "bar", "pub", "library", "arts_centre"], "leisure"),
+        new("tourism", ["museum", "attraction", "gallery"], "leisure"),
+        new("building", ["sports_hall", "stadium", "museum", "theatre"], "leisure"),
+        new("natural", ["beach"], "leisure"),
+        new("place", ["square"], "leisure")
     ];
 
     public string? Normalize(IReadOnlyDictionary<string, string> tags)

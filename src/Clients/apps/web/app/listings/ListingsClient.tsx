@@ -1,15 +1,18 @@
 "use client";
 
+import { searchListings } from "@diploma/api/search";
 import { deleteListing } from "@diploma/api/listings";
 import { useSearchListingsQuery } from "@diploma/features";
 import type { SearchListingsRequest, SearchSortBy } from "@diploma/contracts/search";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { AppShell } from "../components/AppShell";
 import { useAuth } from "../providers";
 import { ListingGrid } from "./components/ListingGrid";
 import { ListingsMapOverview } from "./components/ListingsMapOverview";
 import { getSearchPropertyTypeLabel, mapSearchListingToCard } from "./search-listing-card.mapper";
+import { listingsClientStyles } from "./styles/listings-client.styles";
 import { listingsPageClasses } from "./styles/listings-page.styles";
 
 type SearchFormState = {
@@ -28,6 +31,16 @@ type SearchFormState = {
   maxTransportNearestMeters: string;
   maxEducationNearestMeters: string;
   maxHealthcareNearestMeters: string;
+  maxStoreWalkMinutes: string;
+  maxPharmacyWalkMinutes: string;
+  maxStopWalkMinutes: string;
+  maxParkingWalkMinutes: string;
+  maxSchoolWalkMinutes: string;
+  maxKindergartenWalkMinutes: string;
+  maxClinicDriveMinutes: string;
+  maxHospitalDriveMinutes: string;
+  maxMetroWalkMinutes: string;
+  requireMetroInPrimaryRadius: boolean;
   sortBy: SearchSortBy;
   page: number;
   pageSize: number;
@@ -57,6 +70,16 @@ const initialState: SearchFormState = {
   maxTransportNearestMeters: "",
   maxEducationNearestMeters: "",
   maxHealthcareNearestMeters: "",
+  maxStoreWalkMinutes: "",
+  maxPharmacyWalkMinutes: "",
+  maxStopWalkMinutes: "",
+  maxParkingWalkMinutes: "",
+  maxSchoolWalkMinutes: "",
+  maxKindergartenWalkMinutes: "",
+  maxClinicDriveMinutes: "",
+  maxHospitalDriveMinutes: "",
+  maxMetroWalkMinutes: "",
+  requireMetroInPrimaryRadius: false,
   sortBy: "published_desc",
   page: 0,
   pageSize: 12,
@@ -103,6 +126,16 @@ export function ListingsClient() {
     maxTransportNearestMeters: parseOptionalNumber(filters.maxTransportNearestMeters),
     maxEducationNearestMeters: parseOptionalNumber(filters.maxEducationNearestMeters),
     maxHealthcareNearestMeters: parseOptionalNumber(filters.maxHealthcareNearestMeters),
+    maxStoreWalkMinutes: parseOptionalNumber(filters.maxStoreWalkMinutes),
+    maxPharmacyWalkMinutes: parseOptionalNumber(filters.maxPharmacyWalkMinutes),
+    maxStopWalkMinutes: parseOptionalNumber(filters.maxStopWalkMinutes),
+    maxParkingWalkMinutes: parseOptionalNumber(filters.maxParkingWalkMinutes),
+    maxSchoolWalkMinutes: parseOptionalNumber(filters.maxSchoolWalkMinutes),
+    maxKindergartenWalkMinutes: parseOptionalNumber(filters.maxKindergartenWalkMinutes),
+    maxClinicDriveMinutes: parseOptionalNumber(filters.maxClinicDriveMinutes),
+    maxHospitalDriveMinutes: parseOptionalNumber(filters.maxHospitalDriveMinutes),
+    maxMetroWalkMinutes: parseOptionalNumber(filters.maxMetroWalkMinutes),
+    requireMetroInPrimaryRadius: filters.requireMetroInPrimaryRadius ? true : null,
     boundsMinLatitude: null,
     boundsMinLongitude: null,
     boundsMaxLatitude: null,
@@ -125,6 +158,16 @@ export function ListingsClient() {
   }), [filters]);
   const deferredSearchRequest = useDeferredValue(searchRequest);
   const { data, isLoading, error } = useSearchListingsQuery(api, deferredSearchRequest);
+  const mapSearchRequest = useMemo<SearchListingsRequest>(() => ({
+    ...searchRequest,
+    page: 0,
+    pageSize: Math.max(data?.totalCount ?? searchRequest.pageSize, searchRequest.pageSize),
+  }), [data?.totalCount, searchRequest]);
+  const deferredMapSearchRequest = useDeferredValue(mapSearchRequest);
+  const { data: mapData } = useQuery({
+    queryKey: ["search-listings-map", deferredMapSearchRequest],
+    queryFn: () => searchListings(api, deferredMapSearchRequest),
+  });
 
   async function handleDelete(id: string) {
     try {
@@ -144,7 +187,11 @@ export function ListingsClient() {
       onDelete: handleDelete,
     }),
   );
-  const mapListings = (data?.items ?? [])
+  const mapItemsSource =
+    filters.page === 0 && (data?.totalCount ?? 0) <= filters.pageSize
+      ? (data?.items ?? [])
+      : (mapData?.items ?? data?.items ?? []);
+  const mapListings = mapItemsSource
     .filter((listing) => listing.latitude != null && listing.longitude != null)
     .map((listing) => ({
       id: listing.listingId,
@@ -156,6 +203,10 @@ export function ListingsClient() {
       longitude: listing.longitude as number,
       priceText: `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(listing.priceAmount ?? 0)} ${listing.priceCurrency ?? "BYN"}`,
     }));
+  const listingsWithoutCoordinates = (data?.items ?? []).filter(
+    (listing) => listing.latitude == null || listing.longitude == null,
+  ).length;
+  const mapVisibleCount = mapListings.length;
   const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / filters.pageSize));
   const activeFiltersCount = [
     filters.query.trim(),
@@ -173,6 +224,16 @@ export function ListingsClient() {
     filters.maxTransportNearestMeters,
     filters.maxEducationNearestMeters,
     filters.maxHealthcareNearestMeters,
+    filters.maxStoreWalkMinutes,
+    filters.maxPharmacyWalkMinutes,
+    filters.maxStopWalkMinutes,
+    filters.maxParkingWalkMinutes,
+    filters.maxSchoolWalkMinutes,
+    filters.maxKindergartenWalkMinutes,
+    filters.maxClinicDriveMinutes,
+    filters.maxHospitalDriveMinutes,
+    filters.maxMetroWalkMinutes,
+    filters.requireMetroInPrimaryRadius ? "metro" : "",
     filters.radiusMeters,
     filters.centerLatitude != null && filters.centerLongitude != null ? "point" : "",
     filters.sortBy !== initialState.sortBy ? filters.sortBy : "",
@@ -191,43 +252,34 @@ export function ListingsClient() {
       <main className={listingsPageClasses.main}>
         <section className="surface grid gap-5 rounded-[30px] p-6">
           <div className="grid gap-3">
-            <h1 className="section-title" style={{ marginTop: 0 }}>
+            <h1 className="section-title" style={listingsClientStyles.pageTitle}>
               Каталог и поиск объявлений
             </h1>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gap: 16,
-              gridTemplateColumns: "minmax(0, 1.35fr) minmax(280px, 0.9fr)",
-              alignItems: "stretch",
-            }}
-          >
-            <div
-              style={{
-                borderRadius: 26,
-                padding: 22,
-                background:
-                  "linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 68%, white), color-mix(in srgb, var(--background-elevated) 92%, white))",
-                border: "1px solid color-mix(in srgb, var(--color-primary) 20%, var(--border-color))",
-                display: "grid",
-                gap: 14,
-              }}
-            >
-              <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: "clamp(1.2rem, 2vw, 1.8rem)", fontWeight: 900, lineHeight: 1.05 }}>
-                  Настрой поиск в отдельном окне и вводи параметры там
+          <div style={listingsClientStyles.heroGrid}>
+            <div style={listingsClientStyles.heroPanel}>
+              <div style={listingsClientStyles.heroCopy}>
+                <div style={listingsClientStyles.heroTitle}>
+                  Подберите объявления по нужным параметрам
                 </div>
+                <p style={listingsClientStyles.mutedParagraph}>
+                  Основные параметры поиска и карта доступны в отдельной панели.
+                </p>
               </div>
 
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <div style={listingsClientStyles.heroActions}>
                 <button
                   className="button-primary"
                   type="button"
-                  onClick={() => setIsFiltersModalOpen(true)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    window.setTimeout(() => {
+                      setIsFiltersModalOpen(true);
+                    }, 0);
+                  }}
                 >
-                  Открыть фильтр
+                  Параметры поиска
                   {activeFiltersCount > 0 ? ` · ${activeFiltersCount}` : ""}
                 </button>
                 <button
@@ -249,56 +301,50 @@ export function ListingsClient() {
 
             <div
               className="surface"
-              style={{
-                borderRadius: 26,
-                padding: 20,
-                display: "grid",
-                gap: 12,
-                alignContent: "start",
-              }}
+              style={listingsClientStyles.summaryPanel}
             >
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={listingsClientStyles.summaryTags}>
                 {activeFiltersCount > 0 ? (
                   <>
                     {filters.query.trim() ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Запрос: {filters.query.trim()}
                       </span>
                     ) : null}
                     {filters.listingType ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Сделка: {filters.listingType === "Sale" ? "Продажа" : "Аренда"}
                       </span>
                     ) : null}
                     {filters.minPrice || filters.maxPrice ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Цена: {filters.minPrice || "0"} - {filters.maxPrice || "∞"}
                       </span>
                     ) : null}
                     {filters.minArea || filters.maxArea ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Площадь: {filters.minArea || "0"} - {filters.maxArea || "∞"} м²
                       </span>
                     ) : null}
                     {filters.centerLatitude != null && filters.centerLongitude != null ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Точка на карте
                       </span>
                     ) : null}
                     {filters.radiusMeters && filters.centerLatitude != null && filters.centerLongitude != null ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Радиус: {filters.radiusMeters} м
                       </span>
                     ) : null}
                     {filters.sortBy !== initialState.sortBy ? (
-                      <span className="surface" style={{ borderRadius: 999, padding: "8px 12px", fontSize: 13 }}>
+                      <span className="surface" style={listingsClientStyles.filterTag}>
                         Сортировка: {filters.sortBy}
                       </span>
                     ) : null}
                   </>
                 ) : (
-                  <p style={{ margin: 0, color: "var(--foreground-muted)", lineHeight: 1.6 }}>
-                    Фильтры не заданы. Открой модальное окно и введи нужные параметры поиска.
+                  <p style={listingsClientStyles.mutedParagraph}>
+                    Дополнительные параметры не выбраны.
                   </p>
                 )}
               </div>
@@ -309,11 +355,15 @@ export function ListingsClient() {
         <section className={listingsPageClasses.section}>
           <div className={listingsPageClasses.headingWrap}>
             <div className="grid gap-2">
-              <h2 className="section-title" style={{ marginTop: 8 }}>
+              <h2 className="section-title" style={listingsClientStyles.headingTitle}>
                 Объявлений найдено: {data?.totalCount ?? 0}
               </h2>
-              <p style={{ margin: 0, color: "var(--foreground-muted)" }}>
+              <p style={listingsClientStyles.metaText}>
                 Страница {Math.min((data?.page ?? 0) + 1, totalPages)} из {totalPages}
+              </p>
+              <p style={listingsClientStyles.metaText}>
+                На карте: {mapVisibleCount} из {data?.totalCount ?? 0}
+                {listingsWithoutCoordinates > 0 ? `, без координат на этой странице: ${listingsWithoutCoordinates}` : ""}
               </p>
             </div>
           </div>
@@ -326,17 +376,17 @@ export function ListingsClient() {
 
           <ListingGrid items={items} isLoading={isLoading && items.length === 0} />
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-            <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
+          <div style={listingsClientStyles.footerRow}>
+            <div style={listingsClientStyles.footerMeta}>
               Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
             </div>
 
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={listingsClientStyles.footerActions}>
               <select
                 className="field"
                 value={String(filters.pageSize)}
                 onChange={(event) => updateFilter("pageSize", Number(event.target.value))}
-                style={{ width: 120 }}
+                style={listingsClientStyles.pageSizeSelect}
               >
                 <option value="12">12 / стр.</option>
                 <option value="24">24 / стр.</option>
@@ -367,24 +417,11 @@ export function ListingsClient() {
         type="button"
         onClick={() => setIsMapOverviewOpen(true)}
         className="surface"
-        style={{
-          position: "fixed",
-          right: 22,
-          bottom: 22,
-          zIndex: 24,
-          borderRadius: 24,
-          padding: "18px 16px",
-          display: "grid",
-          gap: 10,
-          justifyItems: "center",
-          minWidth: 96,
-          border: "1px solid var(--border-color)",
-          background: "color-mix(in srgb, var(--background-elevated) 94%, white)",
-        }}
+        style={listingsClientStyles.floatingMapButton}
         title="Обзор объектов на карте"
       >
-        <span style={{ fontSize: "1.9rem", lineHeight: 1 }}>⌖</span>
-        <span style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>На карте</span>
+        <span style={listingsClientStyles.floatingMapIcon}>⌖</span>
+        <span style={listingsClientStyles.floatingMapLabel}>На карте</span>
       </button>
 
       <ListingsMapOverview
@@ -429,204 +466,278 @@ export function ListingsClient() {
         }
       />
 
-      {isFiltersModalOpen ? (
-        <div
-          className="listing-create-modal-backdrop"
-          onClick={() => setIsFiltersModalOpen(false)}
-        >
-          <div
-            className="listing-create-modal surface"
-            onClick={(event) => event.stopPropagation()}
-            style={{ width: "min(1180px, 100%)", maxHeight: "calc(100vh - 48px)", overflow: "auto" }}
-          >
-            <div style={{ display: "flex", gap: 16, justifyContent: "space-between", alignItems: "start", flexWrap: "wrap" }}>
-              <div className="grid gap-2">
-                <h2 className="section-title" style={{ marginTop: 0, marginBottom: 0 }}>
-                  Параметры подбора объявлений
-                </h2>
-                <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 760 }}>
-                  Ввод всех параметров перенесён сюда: цена, площадь, инфраструктура, сортировка и поиск вокруг выбранной точки на карте.
-                </p>
-              </div>
-              <button
-                className="button-secondary"
-                type="button"
-                onClick={() => setIsFiltersModalOpen(false)}
+      {isFiltersModalOpen && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="listing-create-modal-backdrop"
+              onClick={() => setIsFiltersModalOpen(false)}
+            >
+              <div
+                className="listing-create-modal surface"
+                onClick={(event) => event.stopPropagation()}
+                style={listingsClientStyles.modalPanel}
               >
-                Закрыть
-              </button>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <input
-                className="field"
-                value={filters.query}
-                onChange={(event) => updateFilter("query", event.target.value)}
-                placeholder="Поиск по названию, адресу, описанию"
-              />
-              <select
-                className="field"
-                value={filters.listingType}
-                onChange={(event) => updateFilter("listingType", event.target.value)}
-              >
-                <option value="">Все типы сделки</option>
-                <option value="Sale">Продажа</option>
-                <option value="Rent">Аренда</option>
-              </select>
-              <input
-                className="field"
-                value={filters.minPrice}
-                onChange={(event) => updateFilter("minPrice", event.target.value)}
-                placeholder="Цена от"
-                inputMode="decimal"
-              />
-              <input
-                className="field"
-                value={filters.maxPrice}
-                onChange={(event) => updateFilter("maxPrice", event.target.value)}
-                placeholder="Цена до"
-                inputMode="decimal"
-              />
-              <input
-                className="field"
-                value={filters.minArea}
-                onChange={(event) => updateFilter("minArea", event.target.value)}
-                placeholder="Площадь от, м²"
-                inputMode="decimal"
-              />
-              <input
-                className="field"
-                value={filters.maxArea}
-                onChange={(event) => updateFilter("maxArea", event.target.value)}
-                placeholder="Площадь до, м²"
-                inputMode="decimal"
-              />
-              <input
-                className="field"
-                value={filters.minInfrastructureScore}
-                onChange={(event) => updateFilter("minInfrastructureScore", event.target.value)}
-                placeholder="Инфраструктура от"
-                inputMode="decimal"
-              />
-              <select
-                className="field"
-                value={filters.sortBy}
-                onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
-              >
-                <option value="published_desc">Сначала новые</option>
-                <option value="price_asc">Цена по возрастанию</option>
-                <option value="price_desc">Цена по убыванию</option>
-                <option value="infrastructure_desc">Сильная инфраструктура</option>
-              </select>
-              <input
-                className="field"
-                value={filters.minEducationCount}
-                onChange={(event) => updateFilter("minEducationCount", event.target.value)}
-                placeholder="Мин. объектов образования"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.minTransportCount}
-                onChange={(event) => updateFilter("minTransportCount", event.target.value)}
-                placeholder="Мин. транспорта рядом"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.minHealthcareCount}
-                onChange={(event) => updateFilter("minHealthcareCount", event.target.value)}
-                placeholder="Мин. медицины рядом"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.minCommerceCount}
-                onChange={(event) => updateFilter("minCommerceCount", event.target.value)}
-                placeholder="Мин. коммерции рядом"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.minLeisureCount}
-                onChange={(event) => updateFilter("minLeisureCount", event.target.value)}
-                placeholder="Мин. досуга рядом"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.maxTransportNearestMeters}
-                onChange={(event) => updateFilter("maxTransportNearestMeters", event.target.value)}
-                placeholder="Транспорт не дальше, м"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.maxEducationNearestMeters}
-                onChange={(event) => updateFilter("maxEducationNearestMeters", event.target.value)}
-                placeholder="Образование не дальше, м"
-                inputMode="numeric"
-              />
-              <input
-                className="field"
-                value={filters.maxHealthcareNearestMeters}
-                onChange={(event) => updateFilter("maxHealthcareNearestMeters", event.target.value)}
-                placeholder="Медицина не дальше, м"
-                inputMode="numeric"
-              />
-            </div>
-
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-              <input
-                className="field"
-                value={filters.radiusMeters}
-                onChange={(event) => updateFilter("radiusMeters", event.target.value)}
-                placeholder="Радиус вокруг точки, м"
-                inputMode="numeric"
-                style={{ maxWidth: 180 }}
-              />
-              <button
-                className="button-secondary"
-                type="button"
-                onClick={() => setIsMapOverviewOpen(true)}
-              >
-                Выбрать точку на карте
-              </button>
-              {filters.centerLatitude != null && filters.centerLongitude != null ? (
-                <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
-                  Точка: {filters.centerLatitude.toFixed(5)}, {filters.centerLongitude.toFixed(5)}
+                <div style={listingsClientStyles.modalHeader}>
+                  <div className="grid gap-2">
+                    <h2 className="section-title" style={listingsClientStyles.modalHeading}>
+                      Параметры поиска
+                    </h2>
+                    <p style={listingsClientStyles.mutedParagraph}>
+                      Здесь можно уточнить цену, площадь, инфраструктуру, сортировку и поиск вокруг выбранной точки на карте.
+                    </p>
+                  </div>
+                  <button
+                    className="button-secondary"
+                    type="button"
+                    onClick={() => setIsFiltersModalOpen(false)}
+                  >
+                    Закрыть
+                  </button>
                 </div>
-              ) : (
-                <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
-                  Точка не выбрана. Кликни по карте, чтобы искать рядом с меткой.
-                </div>
-              )}
-            </div>
 
-            <div style={{ display: "flex", gap: 12, justifyContent: "space-between", flexWrap: "wrap" }}>
-              <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
-                Активных параметров: {activeFiltersCount}
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <input
+                    className="field"
+                    value={filters.query}
+                    onChange={(event) => updateFilter("query", event.target.value)}
+                    placeholder="Поиск по названию, адресу, описанию"
+                  />
+                  <select
+                    className="field"
+                    value={filters.listingType}
+                    onChange={(event) => updateFilter("listingType", event.target.value)}
+                  >
+                    <option value="">Все типы сделки</option>
+                    <option value="Sale">Продажа</option>
+                    <option value="Rent">Аренда</option>
+                  </select>
+                  <input
+                    className="field"
+                    value={filters.minPrice}
+                    onChange={(event) => updateFilter("minPrice", event.target.value)}
+                    placeholder="Цена от"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxPrice}
+                    onChange={(event) => updateFilter("maxPrice", event.target.value)}
+                    placeholder="Цена до"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minArea}
+                    onChange={(event) => updateFilter("minArea", event.target.value)}
+                    placeholder="Площадь от, м²"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxArea}
+                    onChange={(event) => updateFilter("maxArea", event.target.value)}
+                    placeholder="Площадь до, м²"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minInfrastructureScore}
+                    onChange={(event) => updateFilter("minInfrastructureScore", event.target.value)}
+                    placeholder="Инфраструктура от"
+                    inputMode="decimal"
+                  />
+                  <select
+                    className="field"
+                    value={filters.sortBy}
+                    onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
+                  >
+                    <option value="published_desc">Сначала новые</option>
+                    <option value="price_asc">Цена по возрастанию</option>
+                    <option value="price_desc">Цена по убыванию</option>
+                    <option value="infrastructure_desc">Инфраструктура выше</option>
+                  </select>
+                  <input
+                    className="field"
+                    value={filters.minEducationCount}
+                    onChange={(event) => updateFilter("minEducationCount", event.target.value)}
+                    placeholder="Объекты образования, от"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minTransportCount}
+                    onChange={(event) => updateFilter("minTransportCount", event.target.value)}
+                    placeholder="Транспорт рядом, от"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minHealthcareCount}
+                    onChange={(event) => updateFilter("minHealthcareCount", event.target.value)}
+                    placeholder="Медицина рядом, от"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minCommerceCount}
+                    onChange={(event) => updateFilter("minCommerceCount", event.target.value)}
+                    placeholder="Коммерция рядом, от"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.minLeisureCount}
+                    onChange={(event) => updateFilter("minLeisureCount", event.target.value)}
+                    placeholder="Досуг рядом, от"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxTransportNearestMeters}
+                    onChange={(event) => updateFilter("maxTransportNearestMeters", event.target.value)}
+                    placeholder="Транспорт не дальше, м"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxEducationNearestMeters}
+                    onChange={(event) => updateFilter("maxEducationNearestMeters", event.target.value)}
+                    placeholder="Образование не дальше, м"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxHealthcareNearestMeters}
+                    onChange={(event) => updateFilter("maxHealthcareNearestMeters", event.target.value)}
+                    placeholder="Медицина не дальше, м"
+                    inputMode="numeric"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxStoreWalkMinutes}
+                    onChange={(event) => updateFilter("maxStoreWalkMinutes", event.target.value)}
+                    placeholder="Магазин: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxPharmacyWalkMinutes}
+                    onChange={(event) => updateFilter("maxPharmacyWalkMinutes", event.target.value)}
+                    placeholder="Аптека: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxStopWalkMinutes}
+                    onChange={(event) => updateFilter("maxStopWalkMinutes", event.target.value)}
+                    placeholder="Остановка: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxParkingWalkMinutes}
+                    onChange={(event) => updateFilter("maxParkingWalkMinutes", event.target.value)}
+                    placeholder="Парковка: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxSchoolWalkMinutes}
+                    onChange={(event) => updateFilter("maxSchoolWalkMinutes", event.target.value)}
+                    placeholder="Школа: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxKindergartenWalkMinutes}
+                    onChange={(event) => updateFilter("maxKindergartenWalkMinutes", event.target.value)}
+                    placeholder="Детский сад: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxClinicDriveMinutes}
+                    onChange={(event) => updateFilter("maxClinicDriveMinutes", event.target.value)}
+                    placeholder="Поликлиника: максимум минут на машине"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxHospitalDriveMinutes}
+                    onChange={(event) => updateFilter("maxHospitalDriveMinutes", event.target.value)}
+                    placeholder="Больница: максимум минут на машине"
+                    inputMode="decimal"
+                  />
+                  <input
+                    className="field"
+                    value={filters.maxMetroWalkMinutes}
+                    onChange={(event) => updateFilter("maxMetroWalkMinutes", event.target.value)}
+                    placeholder="Метро: максимум минут пешком"
+                    inputMode="decimal"
+                  />
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.requireMetroInPrimaryRadius}
+                      onChange={(event) => updateFilter("requireMetroInPrimaryRadius", event.target.checked)}
+                    />
+                    Требовать метро в primary radius
+                  </label>
+                </div>
+
+                <div style={listingsClientStyles.mapControls}>
+                  <input
+                    className="field"
+                    value={filters.radiusMeters}
+                    onChange={(event) => updateFilter("radiusMeters", event.target.value)}
+                    placeholder="Радиус вокруг точки, м"
+                    inputMode="numeric"
+                    style={listingsClientStyles.radiusInput}
+                  />
+                  <button
+                    className="button-secondary"
+                    type="button"
+                    onClick={() => setIsMapOverviewOpen(true)}
+                  >
+                    Выбрать точку на карте
+                  </button>
+                  {filters.centerLatitude != null && filters.centerLongitude != null ? (
+                    <div style={listingsClientStyles.footerMeta}>
+                      Точка: {filters.centerLatitude.toFixed(5)}, {filters.centerLongitude.toFixed(5)}
+                    </div>
+                  ) : (
+                    <div style={listingsClientStyles.footerMeta}>
+                      Точка не выбрана.
+                    </div>
+                  )}
+                </div>
+
+                <div style={listingsClientStyles.modalFooter}>
+                  <div style={listingsClientStyles.footerMeta}>
+                    Активных параметров: {activeFiltersCount}
+                  </div>
+                  <div style={listingsClientStyles.modalFooterActions}>
+                    <button
+                      className="button-secondary"
+                      type="button"
+                      onClick={() => setFilters(initialState)}
+                    >
+                      Сбросить
+                    </button>
+                    <button
+                      className="button-primary"
+                      type="button"
+                      onClick={() => setIsFiltersModalOpen(false)}
+                    >
+                      Показать результаты
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <button
-                  className="button-secondary"
-                  type="button"
-                  onClick={() => setFilters(initialState)}
-                >
-                  Сбросить
-                </button>
-                <button
-                  className="button-primary"
-                  type="button"
-                  onClick={() => setIsFiltersModalOpen(false)}
-                >
-                  Показать результаты
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </AppShell>
   );
 }

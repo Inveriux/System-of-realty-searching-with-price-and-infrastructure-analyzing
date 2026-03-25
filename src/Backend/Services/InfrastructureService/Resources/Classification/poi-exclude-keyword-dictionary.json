@@ -1,0 +1,15 @@
+{
+  "version": "2026-03-25",
+  "excludeKeywords": [
+    "храм",
+    "церковь",
+    "church",
+    "mosque",
+    "мечеть",
+    "temple",
+    "кладбище",
+    "cemetery",
+    "warehouse only",
+    "служебный вход"
+  ]
+}

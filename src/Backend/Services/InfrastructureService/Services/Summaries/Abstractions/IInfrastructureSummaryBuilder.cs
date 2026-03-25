@@ -5,6 +5,6 @@ namespace InfrastructureService.Services.Summaries.Abstractions;
 
 public interface IInfrastructureSummaryBuilder
 {
-    string BuildSummary(InfrastructureScore score, IReadOnlyCollection<LocationPoiSnapshotItem> items);
-    IReadOnlyCollection<string> BuildHighlights(InfrastructureScore score, IReadOnlyCollection<LocationPoiSnapshotItem> items);
+    string BuildSummary(InfrastructureScore score, InfrastructureDetailsDto details, IReadOnlyCollection<LocationPoiSnapshotItem> items);
+    IReadOnlyCollection<string> BuildHighlights(InfrastructureScore score, InfrastructureDetailsDto details, IReadOnlyCollection<LocationPoiSnapshotItem> items);
 }

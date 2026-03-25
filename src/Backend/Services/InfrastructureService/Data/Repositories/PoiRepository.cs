@@ -26,6 +26,8 @@ public sealed class PoiRepository(ApplicationDbContext context) : IPoiRepository
             existing.AddressText = poi.AddressText;
             existing.Latitude = poi.Latitude;
             existing.Longitude = poi.Longitude;
+            existing.SubcategoryCode = poi.SubcategoryCode;
+            existing.Source = poi.Source;
             return existing;
         }
 

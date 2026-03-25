@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { listingsMapOverviewStyles } from "./styles/listings-map-overview.styles";
 
 const YANDEX_MAPS_API_KEY =
   process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ??
@@ -67,7 +68,7 @@ function loadYandexMaps() {
   const globalWindow = window as typeof window & { ymaps?: unknown };
 
   if (globalWindow.ymaps) {
-    return Promise.resolve(globalWindow.ymaps as YandexMapsApi);
+    return Promise.resolve(globalWindow.ymaps as unknown as YandexMapsApi);
   }
 
   if (yandexMapsPromise) {
@@ -82,7 +83,7 @@ function loadYandexMaps() {
     script.async = true;
     script.onload = () => {
       if (globalWindow.ymaps) {
-        resolve(globalWindow.ymaps as YandexMapsApi);
+        resolve(globalWindow.ymaps as unknown as YandexMapsApi);
         return;
       }
 
@@ -282,30 +283,17 @@ export function ListingsMapOverview({
   return (
     <div
       onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 80,
-        background: "rgba(10, 7, 20, 0.5)",
-      }}
+      style={listingsMapOverviewStyles.backdrop}
     >
       <div
         className="surface"
         onClick={(event) => event.stopPropagation()}
-        style={{
-          width: "100%",
-          height: "100%",
-          borderRadius: 0,
-          padding: 18,
-          display: "grid",
-          gap: 14,
-          gridTemplateRows: "auto minmax(0, 1fr)",
-        }}
+        style={listingsMapOverviewStyles.panel}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
-          <h2 className="section-title" style={{ margin: 0 }}>Объекты на карте</h2>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <div style={{ color: "var(--foreground-muted)", fontSize: 14, maxWidth: 420, textAlign: "right" }}>
+        <div style={listingsMapOverviewStyles.header}>
+          <h2 className="section-title" style={listingsMapOverviewStyles.title}>Объекты на карте</h2>
+          <div style={listingsMapOverviewStyles.headerActions}>
+            <div style={listingsMapOverviewStyles.helpText}>
               Кликни по карте, чтобы поставить метку. Поиск объявлений будет идти рядом с этой точкой в заданном радиусе.
             </div>
             {onClearCenter ? (
@@ -322,7 +310,7 @@ export function ListingsMapOverview({
         <div
           ref={mapContainerRef}
           className="overflow-hidden rounded-[24px] border border-[var(--border-color)] bg-[var(--background-muted)]"
-          style={{ minHeight: 0 }}
+          style={listingsMapOverviewStyles.mapCanvas}
         />
 
         {mapError ? (

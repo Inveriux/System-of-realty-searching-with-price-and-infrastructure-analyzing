@@ -12,7 +12,7 @@ public sealed class InfrastructureServiceClient(HttpClient httpClient) : IInfras
 
     public async Task<DownstreamInfrastructureSummaryDto?> GetSummaryAsync(Guid locationId, CancellationToken cancellationToken)
     {
-        using var response = await httpClient.GetAsync($"api/infrastructure/{locationId}/summary", cancellationToken);
+        using var response = await httpClient.GetAsync($"api/infrastructure/{locationId}/detailed-summary", cancellationToken);
 
         if (response.StatusCode == HttpStatusCode.NotFound)
             return null;

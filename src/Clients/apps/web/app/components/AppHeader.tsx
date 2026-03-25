@@ -384,7 +384,10 @@ export function AppHeader() {
                 <button
                   aria-label="Аккаунт"
                   className="icon-button"
-                  onClick={() => setDialogMode("signin")}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDialogMode("signin");
+                  }}
                   type="button"
                   style={{
                     width: 42,

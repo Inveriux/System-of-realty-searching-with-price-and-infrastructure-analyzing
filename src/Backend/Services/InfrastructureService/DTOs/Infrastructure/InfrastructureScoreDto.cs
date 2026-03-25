@@ -17,6 +17,7 @@ public sealed class InfrastructureScoreDto
     public int PoiCount { get; init; }
     public DateTime CalculatedAtUtc { get; init; }
     public Dictionary<string, decimal> SearchFeatures { get; init; } = [];
+    public InfrastructureDetailsDto Details { get; init; } = new();
 
     private sealed class Mapping : Profile
     {
@@ -26,7 +27,11 @@ public sealed class InfrastructureScoreDto
                 .ForMember(x => x.SearchFeatures, y => y.MapFrom(s =>
                     string.IsNullOrWhiteSpace(s.SearchFeaturesJson)
                         ? new Dictionary<string, decimal>()
-                        : JsonSerializer.Deserialize<Dictionary<string, decimal>>(s.SearchFeaturesJson) ?? new Dictionary<string, decimal>()));
+                        : JsonSerializer.Deserialize<Dictionary<string, decimal>>(s.SearchFeaturesJson) ?? new Dictionary<string, decimal>()))
+                .ForMember(x => x.Details, y => y.MapFrom(s =>
+                    string.IsNullOrWhiteSpace(s.DetailedSummaryJson)
+                        ? new InfrastructureDetailsDto()
+                        : JsonSerializer.Deserialize<InfrastructureDetailsDto>(s.DetailedSummaryJson) ?? new InfrastructureDetailsDto()));
         }
     }
 }
@@ -47,6 +52,7 @@ public static class InfrastructureScoreDtoExtensions
             LeisureScore = dto.LeisureScore,
             PoiCount = dto.PoiCount,
             CalculatedAtUtc = dto.CalculatedAtUtc,
-            SearchFeaturesJson = JsonSerializer.Serialize(dto.SearchFeatures)
+            SearchFeaturesJson = JsonSerializer.Serialize(dto.SearchFeatures),
+            DetailedSummaryJson = JsonSerializer.Serialize(dto.Details)
         };
 }

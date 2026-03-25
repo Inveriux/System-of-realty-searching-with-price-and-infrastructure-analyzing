@@ -101,6 +101,51 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         if (request.MaxLeisureNearestMeters.HasValue)
             searchQuery = searchQuery.Where(x => x.LeisureNearestMeters != null && x.LeisureNearestMeters <= request.MaxLeisureNearestMeters.Value);
 
+        if (request.MaxStoreWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestStoreWalkMinutes != null && x.NearestStoreWalkMinutes <= request.MaxStoreWalkMinutes.Value);
+
+        if (request.MaxPharmacyWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestPharmacyWalkMinutes != null && x.NearestPharmacyWalkMinutes <= request.MaxPharmacyWalkMinutes.Value);
+
+        if (request.MaxStopWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= request.MaxStopWalkMinutes.Value);
+
+        if (request.MaxParkingWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestParkingWalkMinutes != null && x.NearestParkingWalkMinutes <= request.MaxParkingWalkMinutes.Value);
+
+        if (request.MaxSchoolWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestSchoolWalkMinutes != null && x.NearestSchoolWalkMinutes <= request.MaxSchoolWalkMinutes.Value);
+
+        if (request.MaxKindergartenWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestKindergartenWalkMinutes != null && x.NearestKindergartenWalkMinutes <= request.MaxKindergartenWalkMinutes.Value);
+
+        if (request.MaxClinicDriveMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestClinicDriveMinutes != null && x.NearestClinicDriveMinutes <= request.MaxClinicDriveMinutes.Value);
+
+        if (request.MaxHospitalDriveMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestHospitalDriveMinutes != null && x.NearestHospitalDriveMinutes <= request.MaxHospitalDriveMinutes.Value);
+
+        if (request.MaxParkWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestParkWalkMinutes != null && x.NearestParkWalkMinutes <= request.MaxParkWalkMinutes.Value);
+
+        if (request.MaxFitnessWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestFitnessWalkMinutes != null && x.NearestFitnessWalkMinutes <= request.MaxFitnessWalkMinutes.Value);
+
+        if (request.MaxMuseumDriveMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestMuseumDriveMinutes != null && x.NearestMuseumDriveMinutes <= request.MaxMuseumDriveMinutes.Value);
+
+        if (request.MaxTheaterDriveMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestTheaterDriveMinutes != null && x.NearestTheaterDriveMinutes <= request.MaxTheaterDriveMinutes.Value);
+
+        if (request.MaxCinemaDriveMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestCinemaDriveMinutes != null && x.NearestCinemaDriveMinutes <= request.MaxCinemaDriveMinutes.Value);
+
+        if (request.MaxMetroWalkMinutes.HasValue)
+            searchQuery = searchQuery.Where(x => x.NearestMetroWalkMinutes != null && x.NearestMetroWalkMinutes <= request.MaxMetroWalkMinutes.Value);
+
+        if (request.RequireMetroInPrimaryRadius.HasValue)
+            searchQuery = searchQuery.Where(x => x.MetroFoundInPrimaryRadius == request.RequireMetroInPrimaryRadius.Value);
+
         if (HasBounds(request))
         {
             searchQuery = searchQuery.Where(x =>
@@ -180,6 +225,36 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         existing.TransportNearestMeters = listing.TransportNearestMeters;
         existing.CommerceNearestMeters = listing.CommerceNearestMeters;
         existing.LeisureNearestMeters = listing.LeisureNearestMeters;
+        existing.PharmacyCountPrimary = listing.PharmacyCountPrimary;
+        existing.StoreCountPrimary = listing.StoreCountPrimary;
+        existing.StopsCountPrimary = listing.StopsCountPrimary;
+        existing.ParkingCountPrimary = listing.ParkingCountPrimary;
+        existing.SchoolCountPrimary = listing.SchoolCountPrimary;
+        existing.KindergartenCountPrimary = listing.KindergartenCountPrimary;
+        existing.ClinicCountPrimary = listing.ClinicCountPrimary;
+        existing.HospitalCountPrimary = listing.HospitalCountPrimary;
+        existing.NearestPharmacyWalkMinutes = listing.NearestPharmacyWalkMinutes;
+        existing.NearestStoreWalkMinutes = listing.NearestStoreWalkMinutes;
+        existing.NearestStopWalkMinutes = listing.NearestStopWalkMinutes;
+        existing.NearestParkingWalkMinutes = listing.NearestParkingWalkMinutes;
+        existing.NearestSchoolWalkMinutes = listing.NearestSchoolWalkMinutes;
+        existing.NearestKindergartenWalkMinutes = listing.NearestKindergartenWalkMinutes;
+        existing.NearestClinicDriveMinutes = listing.NearestClinicDriveMinutes;
+        existing.NearestHospitalDriveMinutes = listing.NearestHospitalDriveMinutes;
+        existing.ParksCountPrimary = listing.ParksCountPrimary;
+        existing.NearestParkWalkMinutes = listing.NearestParkWalkMinutes;
+        existing.FitnessCountPrimary = listing.FitnessCountPrimary;
+        existing.NearestFitnessWalkMinutes = listing.NearestFitnessWalkMinutes;
+        existing.NearestFitnessDriveMinutes = listing.NearestFitnessDriveMinutes;
+        existing.MuseumsCountPrimary = listing.MuseumsCountPrimary;
+        existing.NearestMuseumDriveMinutes = listing.NearestMuseumDriveMinutes;
+        existing.TheatersCountPrimary = listing.TheatersCountPrimary;
+        existing.NearestTheaterDriveMinutes = listing.NearestTheaterDriveMinutes;
+        existing.CinemasCountPrimary = listing.CinemasCountPrimary;
+        existing.NearestCinemaDriveMinutes = listing.NearestCinemaDriveMinutes;
+        existing.NearestMetroWalkMinutes = listing.NearestMetroWalkMinutes;
+        existing.NearestMetroName = listing.NearestMetroName;
+        existing.MetroFoundInPrimaryRadius = listing.MetroFoundInPrimaryRadius;
         existing.SearchFeaturesJson = listing.SearchFeaturesJson;
         existing.UpdatedAtUtc = DateTime.UtcNow;
     }

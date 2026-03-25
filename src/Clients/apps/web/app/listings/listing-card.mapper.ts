@@ -21,6 +21,23 @@ function stripNulls<T extends Record<string, unknown>>(value: T) {
   };
 }
 
+function normalizeOfficeDetails(details: OfficeDetailsDto | Record<string, unknown>) {
+  const source = details as Record<string, unknown>;
+
+  return stripNulls({
+    plotArea: (source.plotArea ?? source.PlotArea) as number | null | undefined,
+    floor: (source.floor ?? source.Floor) as number | null | undefined,
+    floorsTotal: (source.floorsTotal ?? source.FloorsTotal) as number | null | undefined,
+    levels: (source.levels ?? source.Levels) as number | null | undefined,
+    parkingSpaces: (source.parkingSpaces ?? source.ParkingSpaces) as number | null | undefined,
+    kitchenette: (source.kitchenette ?? source.Kitchenette) as boolean | null | undefined,
+    officeClass: (source.officeClass ?? source.OfficeClass) as string | null | undefined,
+    layoutType: (source.layoutType ?? source.LayoutType) as string | null | undefined,
+    renovationType: (source.renovationType ?? source.RenovationType ?? source.officeRenovationType) as string | null | undefined,
+    parkingType: (source.parkingType ?? source.ParkingType) as string | null | undefined,
+  });
+}
+
 export function mapApiListingToCard(
   listing: ListingDto,
   options: MapListingOptions,
@@ -98,7 +115,7 @@ export function mapApiListingToCard(
         href,
         details: {
           kind: "office",
-          ...stripNulls(listing.listingDetails as OfficeDetailsDto),
+          ...normalizeOfficeDetails(listing.listingDetails as OfficeDetailsDto),
         },
       };
     case "Warehouse":

@@ -16,4 +16,5 @@ public sealed class InfrastructureScore
     public int PoiCount { get; set; }
     public DateTime CalculatedAtUtc { get; set; }
     public string SearchFeaturesJson { get; set; } = "{}";
+    public string DetailedSummaryJson { get; set; } = "{}";
 }

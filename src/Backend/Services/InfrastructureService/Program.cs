@@ -12,10 +12,16 @@ using InfrastructureService.Services.Places.Geoapify;
 using InfrastructureService.Services.Places.Geoapify.Abstractions;
 using InfrastructureService.Services.Places.Overpass;
 using InfrastructureService.Services.Places.Overpass.Abstractions;
+using InfrastructureService.Services.Classification;
+using InfrastructureService.Services.Classification.Abstractions;
+using InfrastructureService.Services.Routing;
+using InfrastructureService.Services.Routing.Abstractions;
 using InfrastructureService.Services.Scoring;
 using InfrastructureService.Services.Scoring.Abstractions;
 using InfrastructureService.Services.Summaries;
 using InfrastructureService.Services.Summaries.Abstractions;
+using InfrastructureService.Services.TransportGrouping;
+using InfrastructureService.Services.TransportGrouping.Abstractions;
 using InfrastructureService.Services.Yandex;
 using InfrastructureService.Services.Yandex.Abstractions;
 using MediatR;
@@ -64,6 +70,12 @@ builder.Services.AddOptions<InfrastructureScoringOptions>()
     .Validate(x => x.MaxPoiCount > 0, "MaxPoiCount must be positive.")
     .ValidateOnStart();
 
+builder.Services.AddOptions<RouteMetricsOptions>()
+    .BindConfiguration(RouteMetricsOptions.SectionName)
+    .Validate(x => x.WalkSpeedKmPerHour > 0, "WalkSpeedKmPerHour must be positive.")
+    .Validate(x => x.DriveSpeedKmPerHour > 0, "DriveSpeedKmPerHour must be positive.")
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient<IYandexGeocoderClient, YandexGeocoderClient>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<YandexOptions>>().Value;
@@ -90,6 +102,8 @@ builder.Services.AddScoped<IPoiRepository, PoiRepository>();
 builder.Services.AddScoped<IInfrastructureRepository, InfrastructureRepository>();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IPlaceCategoryNormalizer, PlaceCategoryNormalizer>();
+builder.Services.AddSingleton<PoiClassificationDictionaryProvider>();
+builder.Services.AddScoped<IPoiClassificationService, PoiClassificationService>();
 builder.Services.AddScoped<OverpassPlacesProvider>();
 builder.Services.AddScoped<GeoapifyPlacesProvider>();
 builder.Services.AddScoped<IPlacesProvider>(serviceProvider =>
@@ -104,6 +118,8 @@ builder.Services.AddScoped<IPlacesProvider>(serviceProvider =>
 });
 builder.Services.AddScoped<IInfrastructureScoringService, InfrastructureScoringService>();
 builder.Services.AddScoped<IInfrastructureSummaryBuilder, InfrastructureSummaryBuilder>();
+builder.Services.AddScoped<IRouteMetricsService, RouteMetricsService>();
+builder.Services.AddScoped<ITransportStopGroupingService, TransportStopGroupingService>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
 builder.Services.AddProblemDetails();

@@ -22,15 +22,23 @@ const CurrentUserResultSchema = z.object({
   errors: z.array(z.unknown()),
 });
 
+const BooleanResultSchema = z.object({
+  isSuccess: z.boolean(),
+  message: z.string().nullable(),
+  statusCode: z.number(),
+  data: z.boolean(),
+  errors: z.array(z.unknown()),
+});
+
 export async function signUp(api: ApiClient, payload: SignUpDto) {
-  await api.postVoid("/api/users/signup", payload, { authMode: "none" });
+  await api.post("/api/users/signup", payload, BooleanResultSchema, { authMode: "none" });
 }
 
 export async function signUpWithAvatar(api: ApiClient, payload: SignUpDto, image: File) {
   const formData = new FormData();
   formData.append("user", JSON.stringify(payload));
   formData.append("image", image);
-  await api.postFormVoid("/api/users/signup-with-avatar", formData, { authMode: "none" });
+  await api.post("/api/users/signup-with-avatar", formData, BooleanResultSchema, { authMode: "none" });
 }
 
 export async function signIn(api: ApiClient, payload: SignInDto) {

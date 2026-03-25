@@ -37,6 +37,47 @@ public sealed class SearchListing
     public decimal? TransportNearestMeters { get; set; }
     public decimal? CommerceNearestMeters { get; set; }
     public decimal? LeisureNearestMeters { get; set; }
+    public int? PharmacyCountPrimary { get; set; }
+    public int? StoreCountPrimary { get; set; }
+    public int? StopsCountPrimary { get; set; }
+    public int? StopGroupsCountPrimary { get; set; }
+    public int? StopPlatformsCountPrimary { get; set; }
+    public int? ParkingCountPrimary { get; set; }
+    public int? SchoolCountPrimary { get; set; }
+    public int? KindergartenCountPrimary { get; set; }
+    public int? ClinicCountPrimary { get; set; }
+    public int? HospitalCountPrimary { get; set; }
+    public decimal? NearestPharmacyWalkMinutes { get; set; }
+    public decimal? NearestStoreWalkMinutes { get; set; }
+    public decimal? NearestStopWalkMinutes { get; set; }
+    public decimal? NearestStopGroupWalkMinutes { get; set; }
+    public decimal? NearestStopGroupDriveMinutes { get; set; }
+    public bool NearestStopGroupDriveMinutesEstimated { get; set; }
+    public string? NearestStopGroupName { get; set; }
+    public int? NearestStopGroupPlatformCount { get; set; }
+    public decimal? NearestParkingWalkMinutes { get; set; }
+    public decimal? NearestParkingDriveMinutes { get; set; }
+    public bool NearestParkingDriveMinutesEstimated { get; set; }
+    public decimal? NearestSchoolWalkMinutes { get; set; }
+    public decimal? NearestKindergartenWalkMinutes { get; set; }
+    public decimal? NearestClinicDriveMinutes { get; set; }
+    public bool NearestClinicDriveMinutesEstimated { get; set; }
+    public decimal? NearestHospitalDriveMinutes { get; set; }
+    public bool NearestHospitalDriveMinutesEstimated { get; set; }
+    public int? ParksCountPrimary { get; set; }
+    public decimal? NearestParkWalkMinutes { get; set; }
+    public int? FitnessCountPrimary { get; set; }
+    public decimal? NearestFitnessWalkMinutes { get; set; }
+    public decimal? NearestFitnessDriveMinutes { get; set; }
+    public int? MuseumsCountPrimary { get; set; }
+    public decimal? NearestMuseumDriveMinutes { get; set; }
+    public int? TheatersCountPrimary { get; set; }
+    public decimal? NearestTheaterDriveMinutes { get; set; }
+    public int? CinemasCountPrimary { get; set; }
+    public decimal? NearestCinemaDriveMinutes { get; set; }
+    public decimal? NearestMetroWalkMinutes { get; set; }
+    public string? NearestMetroName { get; set; }
+    public bool MetroFoundInPrimaryRadius { get; set; }
     public string SearchFeaturesJson { get; set; } = "{}";
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }

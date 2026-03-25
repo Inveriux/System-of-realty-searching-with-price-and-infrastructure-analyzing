@@ -41,9 +41,12 @@ public sealed class OverpassPlacesProvider(
             ],
             ["leisure"] =
             [
-                new() { Key = "leisure", Values = ["park", "fitness_centre", "sports_centre", "playground", "stadium", "garden"] },
-                new() { Key = "amenity", Values = ["cinema", "cafe", "theatre", "restaurant", "fast_food"] },
-                new() { Key = "tourism", Values = ["museum", "attraction"] }
+                new() { Key = "leisure", Values = ["park", "fitness_centre", "sports_centre", "playground", "stadium", "garden", "swimming_pool", "pitch", "fitness_station"] },
+                new() { Key = "amenity", Values = ["cinema", "cafe", "theatre", "restaurant", "fast_food", "bar", "pub", "library", "arts_centre"] },
+                new() { Key = "tourism", Values = ["museum", "attraction", "gallery"] },
+                new() { Key = "building", Values = ["sports_hall", "stadium", "museum", "theatre"] },
+                new() { Key = "natural", Values = ["beach"] },
+                new() { Key = "place", Values = ["square"] }
             ]
         };
 

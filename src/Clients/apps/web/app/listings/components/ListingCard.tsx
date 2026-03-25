@@ -67,6 +67,13 @@ export function ListingCard({ item }: ListingCardProps) {
     : null;
   const infrastructureScore = formatInfrastructureScore(item.infrastructureScore);
   const transportNearest = formatMeters(item.transportNearestMeters);
+  const compactTransportSummary = [
+    item.nearestParkingWalkMinutes != null
+      ? `Парковка • ${Math.round(item.nearestParkingWalkMinutes)} мин пешком`
+      : item.nearestParkingDriveMinutes != null
+        ? `Парковка • ${item.nearestParkingDriveMinutesEstimated ? "~" : ""}${Math.round(item.nearestParkingDriveMinutes)} мин на машине`
+        : null,
+  ].filter((value): value is string => Boolean(value));
 
   async function handleDelete(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -245,6 +252,11 @@ export function ListingCard({ item }: ListingCardProps) {
                   До транспорта: {transportNearest}
                 </span>
               ) : null}
+              {item.hasCoordinates === false ? (
+                <span className="rounded-full border border-[color:color-mix(in_srgb,#c2410c_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ffedd5_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#9a3412]">
+                  На карте пока недоступно
+                </span>
+              ) : null}
               {bottomFeatures.map((feature) => (
                 <span
                   key={feature.label}
@@ -257,6 +269,28 @@ export function ListingCard({ item }: ListingCardProps) {
                 {getBuildingTypeLabel(item.buildingType)}
               </span>
             </div>
+
+            {compactTransportSummary.length > 0 ? (
+              <div className="mt-3 grid gap-1.5 text-[11.5px] leading-5 text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]">
+                {compactTransportSummary.map((itemText) => (
+                  <div key={itemText}>{itemText}</div>
+                ))}
+              </div>
+            ) : null}
+
+            {item.nearestMetroName ? (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#dc2626_20%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee2e2_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#b91c1c]">
+                <Image
+                  src="/map-markers/minsk-metro.svg"
+                  alt=""
+                  width={14}
+                  height={14}
+                  unoptimized
+                  aria-hidden="true"
+                />
+                <span>{item.nearestMetroName}</span>
+              </div>
+            ) : null}
           </div>
         </div>
 

@@ -37,6 +37,22 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.Property(x => x.TransportNearestMeters).HasPrecision(10, 2);
         builder.Property(x => x.CommerceNearestMeters).HasPrecision(10, 2);
         builder.Property(x => x.LeisureNearestMeters).HasPrecision(10, 2);
+        builder.Property(x => x.NearestPharmacyWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestStoreWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestStopWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestParkingWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestSchoolWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestKindergartenWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestClinicDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestHospitalDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestParkWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestFitnessWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestFitnessDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestMuseumDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestTheaterDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestCinemaDriveMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestMetroWalkMinutes).HasPrecision(10, 2);
+        builder.Property(x => x.NearestMetroName).HasMaxLength(300);
         builder.Property(x => x.SearchFeaturesJson).HasColumnType("jsonb");
 
         builder.HasIndex(x => x.ListingId).IsUnique();
@@ -47,5 +63,20 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.HasIndex(x => x.PriceAmount);
         builder.HasIndex(x => x.PublishedDate);
         builder.HasIndex(x => x.InfrastructureScore);
+        builder.HasIndex(x => x.NearestStoreWalkMinutes);
+        builder.HasIndex(x => x.NearestPharmacyWalkMinutes);
+        builder.HasIndex(x => x.NearestStopWalkMinutes);
+        builder.HasIndex(x => x.NearestParkingWalkMinutes);
+        builder.HasIndex(x => x.NearestSchoolWalkMinutes);
+        builder.HasIndex(x => x.NearestKindergartenWalkMinutes);
+        builder.HasIndex(x => x.NearestClinicDriveMinutes);
+        builder.HasIndex(x => x.NearestHospitalDriveMinutes);
+        builder.HasIndex(x => x.NearestParkWalkMinutes);
+        builder.HasIndex(x => x.NearestFitnessWalkMinutes);
+        builder.HasIndex(x => x.NearestMuseumDriveMinutes);
+        builder.HasIndex(x => x.NearestTheaterDriveMinutes);
+        builder.HasIndex(x => x.NearestCinemaDriveMinutes);
+        builder.HasIndex(x => x.NearestMetroWalkMinutes);
+        builder.HasIndex(x => x.MetroFoundInPrimaryRadius);
     }
 }
