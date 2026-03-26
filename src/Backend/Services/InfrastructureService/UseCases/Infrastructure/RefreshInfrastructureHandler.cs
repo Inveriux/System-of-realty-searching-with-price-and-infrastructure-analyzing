@@ -10,6 +10,7 @@ using InfrastructureService.Services.Places;
 using InfrastructureService.Services.Places.Abstractions;
 using InfrastructureService.Services.Routing.Abstractions;
 using InfrastructureService.Services.Scoring.Abstractions;
+using InfrastructureService.Services.Sanitization.Abstractions;
 using InfrastructureService.Services.Summaries.Abstractions;
 using InfrastructureService.Services.TransportGrouping;
 using InfrastructureService.Services.TransportGrouping.Abstractions;
@@ -28,6 +29,7 @@ public sealed class RefreshInfrastructureHandler(
     IInfrastructureRepository infrastructureRepository,
     IPlacesProvider placesProvider,
     IPoiClassificationService poiClassificationService,
+    IPoiSanitizationService poiSanitizationService,
     IInfrastructureScoringService scoringService,
     IInfrastructureSummaryBuilder summaryBuilder,
     IRouteMetricsService routeMetricsService,
@@ -108,8 +110,20 @@ public sealed class RefreshInfrastructureHandler(
             limit: scoringOptions.Value.MaxPoiCount,
             cancellationToken: cancellationToken);
 
+        var excludedPoiReasons = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var externalPoi in nearbyPois)
         {
+            var sanitization = poiSanitizationService.Evaluate(externalPoi);
+            if (sanitization.ShouldExclude)
+            {
+                if (!string.IsNullOrWhiteSpace(sanitization.Reason))
+                {
+                    excludedPoiReasons[sanitization.Reason] = excludedPoiReasons.GetValueOrDefault(sanitization.Reason) + 1;
+                }
+
+                continue;
+            }
+
             var classification = poiClassificationService.Classify(externalPoi);
             if (classification is null || string.IsNullOrWhiteSpace(classification.CategoryCode))
                 continue;
@@ -141,7 +155,7 @@ public sealed class RefreshInfrastructureHandler(
         }
 
         var sortedItems = snapshot.Items.OrderBy(x => x.DistanceMeters).ToArray();
-        var detailsBase = await BuildDetailsAsync(location, sortedItems, cancellationToken);
+        var detailsBase = await BuildDetailsAsync(location, sortedItems, excludedPoiReasons, cancellationToken);
         var preliminaryScore = scoringService.Calculate(location, snapshot, detailsBase);
         var highlights = summaryBuilder.BuildHighlights(preliminaryScore, detailsBase, sortedItems);
         var summary = summaryBuilder.BuildSummary(preliminaryScore, detailsBase, sortedItems);
@@ -150,6 +164,8 @@ public sealed class RefreshInfrastructureHandler(
             NearbyCategories = detailsBase.NearbyCategories,
             TransportDetails = detailsBase.TransportDetails,
             SearchFeatures = detailsBase.SearchFeatures,
+            FilteredAddressLikePoiCount = detailsBase.FilteredAddressLikePoiCount,
+            ExcludedPoiReasons = detailsBase.ExcludedPoiReasons,
             PrimaryRadiusConfig = detailsBase.PrimaryRadiusConfig,
             FallbackRadiusConfig = detailsBase.FallbackRadiusConfig,
             MissingPrimaryCategories = detailsBase.MissingPrimaryCategories,
@@ -188,6 +204,7 @@ public sealed class RefreshInfrastructureHandler(
     private async Task<InfrastructureDetailsDto> BuildDetailsAsync(
         Location location,
         IReadOnlyCollection<LocationPoiSnapshotItem> items,
+        IReadOnlyDictionary<string, int> excludedPoiReasons,
         CancellationToken cancellationToken)
     {
         var stopGroups = transportStopGroupingService.Group(items);
@@ -281,6 +298,8 @@ public sealed class RefreshInfrastructureHandler(
             NearbyCategories = subcategoryDtos,
             TransportDetails = transportDetails,
             SearchFeatures = searchFeatures,
+            FilteredAddressLikePoiCount = excludedPoiReasons.Values.Sum(),
+            ExcludedPoiReasons = new Dictionary<string, int>(excludedPoiReasons, StringComparer.OrdinalIgnoreCase),
             PrimaryRadiusConfig = InfrastructureMetadata.SupportedSubcategories.ToDictionary(
                 static x => $"{x.CategoryCode}.{x.SubcategoryCode}",
                 static x => x.PrimaryRadiusMeters,

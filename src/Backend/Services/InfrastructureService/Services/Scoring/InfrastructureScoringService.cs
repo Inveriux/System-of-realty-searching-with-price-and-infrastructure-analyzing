@@ -1,76 +1,122 @@
 using InfrastructureService.DTOs.Infrastructure;
 using InfrastructureService.Models;
-using InfrastructureService.Services.Configuration;
 using InfrastructureService.Services.Places;
 using InfrastructureService.Services.Scoring.Abstractions;
+using InfrastructureService.Services.Scoring.Configuration;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace InfrastructureService.Services.Scoring;
 
-public sealed class InfrastructureScoringService(IOptions<InfrastructureScoringOptions> options) : IInfrastructureScoringService
+public sealed class InfrastructureScoringService(
+    IOptions<InfrastructureScoringOptions> options,
+    IInfrastructureScoringInputBuilder scoringInputBuilder,
+    IEnumerable<IInfrastructureCategoryScoringPolicy> categoryPolicies) : IInfrastructureScoringService
 {
-    private static readonly IReadOnlyDictionary<string, decimal> CategoryWeights = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["education"] = 1.10m,
-        ["healthcare"] = 1.05m,
-        ["transport"] = 1.20m,
-        ["commerce"] = 0.95m,
-        ["leisure"] = 0.85m
-    };
-
-    private static readonly IReadOnlyDictionary<string, decimal> TargetCounts = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["education"] = 5m,
-        ["healthcare"] = 6m,
-        ["transport"] = 8m,
-        ["commerce"] = 10m,
-        ["leisure"] = 7m
-    };
-
-    private static readonly IReadOnlyDictionary<string, decimal> TargetSubcategoryDiversity = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
-    {
-        ["education"] = 3m,
-        ["healthcare"] = 4m,
-        ["transport"] = 4m,
-        ["commerce"] = 5m,
-        ["leisure"] = 6m
-    };
+    private readonly IReadOnlyDictionary<string, IInfrastructureCategoryScoringPolicy> _categoryPolicies = categoryPolicies
+        .ToDictionary(static policy => policy.CategoryCode, StringComparer.OrdinalIgnoreCase);
 
     public InfrastructureScore Calculate(Location location, LocationPoiSnapshot snapshot, InfrastructureDetailsDto details)
     {
-        var primaryItems = snapshot.Items
-            .Where(x => x.Poi?.Category is not null)
-            .Where(IsInsidePrimaryRadius)
-            .ToArray();
+        var profile = options.Value.GetActiveProfile();
+        var scoringInput = scoringInputBuilder.Build(snapshot, details);
 
-        var grouped = primaryItems
-            .GroupBy(x => x.Poi!.Category!.Name)
-            .ToDictionary(static x => x.Key, x => x.OrderBy(static item => item.DistanceMeters).ToArray(), StringComparer.OrdinalIgnoreCase);
-        var subcategoryDiversity = primaryItems
-            .Where(static x => !string.IsNullOrWhiteSpace(x.Poi?.SubcategoryCode))
-            .GroupBy(x => x.Poi!.Category!.Name)
-            .ToDictionary(
-                static x => x.Key,
-                x => x.Select(item => item.Poi!.SubcategoryCode!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .Count(),
-                StringComparer.OrdinalIgnoreCase);
+        var education = ScoreCategory(location, "education", scoringInput, details, profile);
+        var healthcare = ScoreCategory(location, "healthcare", scoringInput, details, profile);
+        var transport = ScoreCategory(location, "transport", scoringInput, details, profile);
+        var commerce = ScoreCategory(location, "commerce", scoringInput, details, profile);
+        var leisure = ScoreCategory(location, "leisure", scoringInput, details, profile);
+        var total = CalculateTotalScore(profile.TotalWeights, education.Score, healthcare.Score, transport.Score, commerce.Score, leisure.Score);
 
-        var education = CalculateCategoryScore(grouped, subcategoryDiversity, "education");
-        var healthcare = CalculateCategoryScore(grouped, subcategoryDiversity, "healthcare");
-        var transport = CalculateTransportScore(details, subcategoryDiversity);
-        var commerce = CalculateCategoryScore(grouped, subcategoryDiversity, "commerce");
-        var leisure = CalculateLeisureScore(details, grouped, subcategoryDiversity);
-        var total = CalculateTotalScore(education, healthcare, transport, commerce, leisure);
+        var updatedDetails = new InfrastructureDetailsDto
+        {
+            NearbyCategories = details.NearbyCategories,
+            TransportDetails = details.TransportDetails,
+            SearchFeatures = details.SearchFeatures,
+            CategoryScoreBreakdowns = new Dictionary<string, CategoryScoreBreakdownDto>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["education"] = education,
+                ["healthcare"] = healthcare,
+                ["transport"] = transport,
+                ["commerce"] = commerce,
+                ["leisure"] = leisure
+            },
+            FilteredAddressLikePoiCount = details.FilteredAddressLikePoiCount,
+            ExcludedPoiReasons = details.ExcludedPoiReasons,
+            PrimaryRadiusConfig = details.PrimaryRadiusConfig,
+            FallbackRadiusConfig = details.FallbackRadiusConfig,
+            Highlights = details.Highlights,
+            MissingPrimaryCategories = details.MissingPrimaryCategories,
+            ClassificationVersions = details.ClassificationVersions,
+            ScoringProfile = options.Value.ActiveProfile
+        };
 
+        var searchFeatures = BuildSearchFeaturesDictionary(scoringInput, updatedDetails, education, healthcare, transport, commerce, leisure);
+
+        return new InfrastructureScore
+        {
+            Id = Guid.NewGuid(),
+            LocationId = location.Id,
+            SnapshotId = snapshot.Id,
+            TotalScore = total,
+            EducationScore = education.Score,
+            HealthcareScore = healthcare.Score,
+            TransportScore = transport.Score,
+            CommerceScore = commerce.Score,
+            LeisureScore = leisure.Score,
+            PoiCount = snapshot.Items.Count,
+            CalculatedAtUtc = DateTime.UtcNow,
+            SearchFeaturesJson = JsonSerializer.Serialize(searchFeatures),
+            DetailedSummaryJson = JsonSerializer.Serialize(updatedDetails)
+        };
+    }
+
+    private CategoryScoreBreakdownDto ScoreCategory(
+        Location location,
+        string categoryCode,
+        ScoringEntities.InfrastructureScoringInput scoringInput,
+        InfrastructureDetailsDto details,
+        InfrastructureScoringProfileOptions profile)
+    {
+        if (!_categoryPolicies.TryGetValue(categoryCode, out var policy))
+        {
+            return new CategoryScoreBreakdownDto();
+        }
+
+        return policy.Score(location, scoringInput.GetEntities(categoryCode), details, profile);
+    }
+
+    private Dictionary<string, decimal> BuildSearchFeaturesDictionary(
+        ScoringEntities.InfrastructureScoringInput scoringInput,
+        InfrastructureDetailsDto details,
+        CategoryScoreBreakdownDto education,
+        CategoryScoreBreakdownDto healthcare,
+        CategoryScoreBreakdownDto transport,
+        CategoryScoreBreakdownDto commerce,
+        CategoryScoreBreakdownDto leisure)
+    {
         var searchFeatures = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
         {
-            ["education_score"] = education,
-            ["healthcare_score"] = healthcare,
-            ["transport_score"] = transport,
-            ["commerce_score"] = commerce,
-            ["leisure_score"] = leisure,
+            ["education_score"] = education.Score,
+            ["healthcare_score"] = healthcare.Score,
+            ["transport_score"] = transport.Score,
+            ["commerce_score"] = commerce.Score,
+            ["leisure_score"] = leisure.Score,
+            ["education_diversity_score"] = education.DiversityScore,
+            ["healthcare_diversity_score"] = healthcare.DiversityScore,
+            ["transport_diversity_score"] = transport.DiversityScore,
+            ["commerce_diversity_score"] = commerce.DiversityScore,
+            ["leisure_diversity_score"] = leisure.DiversityScore,
+            ["education_density_score"] = education.DensityScore,
+            ["healthcare_density_score"] = healthcare.DensityScore,
+            ["transport_density_score"] = transport.DensityScore,
+            ["commerce_density_score"] = commerce.DensityScore,
+            ["leisure_density_score"] = leisure.DensityScore,
+            ["education_proximity_score"] = education.ProximityScore,
+            ["healthcare_proximity_score"] = healthcare.ProximityScore,
+            ["transport_proximity_score"] = transport.ProximityScore,
+            ["commerce_proximity_score"] = commerce.ProximityScore,
+            ["leisure_proximity_score"] = leisure.ProximityScore,
             ["store_count_primary"] = details.SearchFeatures.StoreCountPrimary,
             ["pharmacy_count_primary"] = details.SearchFeatures.PharmacyCountPrimary,
             ["stops_count_primary"] = details.SearchFeatures.StopsCountPrimary,
@@ -90,18 +136,26 @@ public sealed class InfrastructureScoringService(IOptions<InfrastructureScoringO
             ["cafes_count_primary"] = details.SearchFeatures.CafesCountPrimary,
             ["restaurants_count_primary"] = details.SearchFeatures.RestaurantsCountPrimary,
             ["metro_found_in_primary_radius"] = details.SearchFeatures.MetroFoundInPrimaryRadius ? 1m : 0m,
-            ["education_subcategory_diversity_primary"] = GetSubcategoryDiversity(subcategoryDiversity, "education"),
-            ["healthcare_subcategory_diversity_primary"] = GetSubcategoryDiversity(subcategoryDiversity, "healthcare"),
-            ["transport_subcategory_diversity_primary"] = GetSubcategoryDiversity(subcategoryDiversity, "transport"),
-            ["commerce_subcategory_diversity_primary"] = GetSubcategoryDiversity(subcategoryDiversity, "commerce"),
-            ["leisure_subcategory_diversity_primary"] = GetSubcategoryDiversity(subcategoryDiversity, "leisure")
+            ["filtered_address_like_poi_count"] = details.FilteredAddressLikePoiCount
         };
 
-        foreach (var (category, items) in grouped)
+        foreach (var category in new[] { "education", "healthcare", "transport", "commerce", "leisure" })
         {
-            searchFeatures[$"{category}_count"] = items.Length;
-            searchFeatures[$"{category}_nearest_m"] = items.Length == 0 ? 0m : items[0].DistanceMeters;
+            var entities = scoringInput.GetEntities(category)
+                .OrderBy(static entity => entity.DistanceMeters)
+                .ToArray();
+            searchFeatures[$"{category}_count"] = entities.Length;
+            if (entities.Length > 0)
+            {
+                searchFeatures[$"{category}_nearest_m"] = entities[0].DistanceMeters;
+            }
         }
+
+        AddGroupedCounts(searchFeatures, "education", education);
+        AddGroupedCounts(searchFeatures, "healthcare", healthcare);
+        AddGroupedCounts(searchFeatures, "transport", transport);
+        AddGroupedCounts(searchFeatures, "commerce", commerce);
+        AddGroupedCounts(searchFeatures, "leisure", leisure);
 
         AddIfValue(searchFeatures, "nearest_store_walk_minutes", details.SearchFeatures.NearestStoreWalkMinutes);
         AddIfValue(searchFeatures, "nearest_pharmacy_walk_minutes", details.SearchFeatures.NearestPharmacyWalkMinutes);
@@ -129,156 +183,19 @@ public sealed class InfrastructureScoringService(IOptions<InfrastructureScoringO
         AddIfValue(searchFeatures, "nearest_cinema_drive_minutes", details.SearchFeatures.NearestCinemaDriveMinutes);
         AddIfValue(searchFeatures, "nearest_cinema_distance_m", details.SearchFeatures.NearestCinemaDistanceM);
 
-        return new InfrastructureScore
-        {
-            Id = Guid.NewGuid(),
-            LocationId = location.Id,
-            SnapshotId = snapshot.Id,
-            TotalScore = total,
-            EducationScore = education,
-            HealthcareScore = healthcare,
-            TransportScore = transport,
-            CommerceScore = commerce,
-            LeisureScore = leisure,
-            PoiCount = snapshot.Items.Count,
-            CalculatedAtUtc = DateTime.UtcNow,
-            SearchFeaturesJson = JsonSerializer.Serialize(searchFeatures),
-            DetailedSummaryJson = JsonSerializer.Serialize(details)
-        };
+        return searchFeatures;
     }
 
-    private decimal CalculateCategoryScore(
-        IReadOnlyDictionary<string, LocationPoiSnapshotItem[]> grouped,
-        IReadOnlyDictionary<string, int> subcategoryDiversity,
-        string category)
+    private static void AddGroupedCounts(IDictionary<string, decimal> target, string categoryCode, CategoryScoreBreakdownDto breakdown)
     {
-        if (!grouped.TryGetValue(category, out var items) || items.Length == 0)
-            return 0m;
-
-        var radiusMeters = Math.Max(100m, options.Value.DefaultRadiusMeters);
-        var nearest = items[0].DistanceMeters;
-        var nearestScore = Math.Clamp((radiusMeters - nearest) / radiusMeters, 0m, 1m) * 55m;
-
-        var targetCount = TargetCounts.TryGetValue(category, out var countTarget) ? countTarget : 6m;
-        var densityRatio = Math.Min(items.Length / targetCount, 1m);
-        var densityScore = densityRatio * 30m;
-        var diversityTarget = TargetSubcategoryDiversity.TryGetValue(category, out var diversityTargetValue) ? diversityTargetValue : 3m;
-        var diversityRatio = Math.Min(GetSubcategoryDiversity(subcategoryDiversity, category) / diversityTarget, 1m);
-        var diversityScore = diversityRatio * 15m;
-        var richnessRatio = (densityRatio * 0.45m) + (diversityRatio * 0.55m);
-        var scoreCap = 58m + (42m * richnessRatio);
-
-        return Math.Round(Math.Min(scoreCap, nearestScore + densityScore + diversityScore), 2);
-    }
-
-    private static decimal CalculateTransportScore(
-        InfrastructureDetailsDto details,
-        IReadOnlyDictionary<string, int> subcategoryDiversity)
-    {
-        var walkMinutes = details.SearchFeatures.NearestStopGroupWalkMinutes;
-        var distanceMeters = details.SearchFeatures.NearestStopGroupDistanceM;
-        var stopGroupsCountPrimary = details.SearchFeatures.StopGroupsCountPrimary;
-        var stopPlatformsCountPrimary = details.SearchFeatures.StopPlatformsCountPrimary;
-
-        decimal nearestScore;
-        if (walkMinutes.HasValue)
+        foreach (var (subcategory, count) in breakdown.GroupedCounts)
         {
-            nearestScore = Math.Clamp((12m - walkMinutes.Value) / 12m, 0m, 1m) * 45m;
+            target[$"{categoryCode}_{subcategory}_grouped_count"] = count;
         }
-        else if (distanceMeters.HasValue)
-        {
-            nearestScore = Math.Clamp((800m - distanceMeters.Value) / 800m, 0m, 1m) * 45m;
-        }
-        else
-        {
-            nearestScore = 0m;
-        }
-
-        var groupsRatio = Math.Min(stopGroupsCountPrimary / 4m, 1m);
-        var groupsScore = groupsRatio * 30m;
-        var platformRatio = Math.Min(stopPlatformsCountPrimary / 8m, 1m);
-        var platformScore = platformRatio * 10m;
-        var diversityRatio = Math.Min(GetSubcategoryDiversity(subcategoryDiversity, "transport") / 4m, 1m);
-        var diversityScore = diversityRatio * 15m;
-        var richnessRatio = (groupsRatio * 0.4m) + (platformRatio * 0.2m) + (diversityRatio * 0.4m);
-        var scoreCap = 60m + (40m * richnessRatio);
-
-        return Math.Round(Math.Min(scoreCap, nearestScore + groupsScore + platformScore + diversityScore), 2);
-    }
-
-    private static decimal CalculateLeisureScore(
-        InfrastructureDetailsDto details,
-        IReadOnlyDictionary<string, LocationPoiSnapshotItem[]> grouped,
-        IReadOnlyDictionary<string, int> subcategoryDiversity)
-    {
-        var parkAccess = CalculateAccessScore(details.SearchFeatures.NearestParkDistanceM, details.SearchFeatures.ParksCountPrimary, 1500m, 3m);
-        var fitnessAccess = CalculateAccessScore(details.SearchFeatures.NearestFitnessDistanceM, details.SearchFeatures.FitnessCountPrimary, 2000m, 3m);
-
-        var cultureDistances = new[]
-        {
-            details.SearchFeatures.NearestMuseumDistanceM,
-            details.SearchFeatures.NearestTheaterDistanceM,
-            details.SearchFeatures.NearestCinemaDistanceM
-        }
-        .Where(static value => value.HasValue)
-        .Select(static value => value!.Value)
-        .OrderBy(static value => value)
-        .ToArray();
-
-        var culturePrimaryCount =
-            details.SearchFeatures.MuseumsCountPrimary +
-            details.SearchFeatures.TheatersCountPrimary +
-            details.SearchFeatures.CinemasCountPrimary;
-
-        var cultureAccess = cultureDistances.Length == 0
-            ? 0m
-            : CalculateAccessScore(cultureDistances[0], culturePrimaryCount, 3000m, 3m);
-
-        var leisurePrimaryCount = grouped
-            .Where(static pair => pair.Key.Equals("leisure", StringComparison.OrdinalIgnoreCase))
-            .SelectMany(static pair => pair.Value)
-            .Count();
-        var densityRatio = Math.Min(leisurePrimaryCount / 8m, 1m);
-        var densityScore = densityRatio * 15m;
-        var diversityRatio = Math.Min(GetSubcategoryDiversity(subcategoryDiversity, "leisure") / 6m, 1m);
-        var diversityScore = diversityRatio * 10m;
-        var pillarCoverage =
-            (parkAccess > 0m ? 1m : 0m) +
-            (fitnessAccess > 0m ? 1m : 0m) +
-            (cultureAccess > 0m ? 1m : 0m);
-        var pillarRatio = pillarCoverage / 3m;
-
-        var rawScore =
-            parkAccess * 0.35m +
-            fitnessAccess * 0.20m +
-            cultureAccess * 0.20m +
-            densityScore +
-            diversityScore;
-        var richnessRatio =
-            pillarRatio * 0.45m +
-            diversityRatio * 0.35m +
-            densityRatio * 0.20m;
-        var scoreCap = 55m + (45m * richnessRatio);
-
-        return Math.Round(Math.Min(scoreCap, rawScore), 2);
-    }
-
-    private static decimal GetSubcategoryDiversity(IReadOnlyDictionary<string, int> diversity, string category)
-        => diversity.TryGetValue(category, out var value) ? value : 0m;
-
-    private static decimal CalculateAccessScore(decimal? nearestDistanceMeters, int countPrimary, decimal radiusMeters, decimal targetCount)
-    {
-        if (!nearestDistanceMeters.HasValue && countPrimary <= 0)
-            return 0m;
-
-        var proximityScore = nearestDistanceMeters.HasValue
-            ? Math.Clamp((radiusMeters - nearestDistanceMeters.Value) / radiusMeters, 0m, 1m) * 75m
-            : 0m;
-        var densityScore = Math.Min(countPrimary / targetCount, 1m) * 25m;
-        return Math.Min(100m, proximityScore + densityScore);
     }
 
     private static decimal CalculateTotalScore(
+        CategoryWeightOptions weights,
         decimal education,
         decimal healthcare,
         decimal transport,
@@ -286,29 +203,21 @@ public sealed class InfrastructureScoringService(IOptions<InfrastructureScoringO
         decimal leisure)
     {
         var weightedSum =
-            education * CategoryWeights["education"] +
-            healthcare * CategoryWeights["healthcare"] +
-            transport * CategoryWeights["transport"] +
-            commerce * CategoryWeights["commerce"] +
-            leisure * CategoryWeights["leisure"];
+            education * weights.Education +
+            healthcare * weights.Healthcare +
+            transport * weights.Transport +
+            commerce * weights.Commerce +
+            leisure * weights.Leisure;
 
-        var totalWeight = CategoryWeights.Values.Sum();
-        return Math.Round(weightedSum / totalWeight, 2);
-    }
-
-    private static bool IsInsidePrimaryRadius(LocationPoiSnapshotItem item)
-    {
-        var subcategoryCode = item.Poi?.SubcategoryCode;
-        if (string.IsNullOrWhiteSpace(subcategoryCode))
-            return item.DistanceMeters <= 1500m;
-
-        var definition = InfrastructureMetadata.TryGetSubcategory(subcategoryCode);
-        return definition is null || item.DistanceMeters <= definition.PrimaryRadiusMeters;
+        var totalWeight = weights.Education + weights.Healthcare + weights.Transport + weights.Commerce + weights.Leisure;
+        return Math.Round(weightedSum / totalWeight, 2, MidpointRounding.AwayFromZero);
     }
 
     private static void AddIfValue(IDictionary<string, decimal> target, string key, decimal? value)
     {
         if (value.HasValue)
+        {
             target[key] = value.Value;
+        }
     }
 }
