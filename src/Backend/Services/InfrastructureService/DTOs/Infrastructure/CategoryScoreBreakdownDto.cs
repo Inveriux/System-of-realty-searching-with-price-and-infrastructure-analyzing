@@ -12,6 +12,9 @@ public sealed class CategoryScoreBreakdownDto
     public bool CompletenessAchieved { get; init; }
     public IReadOnlyCollection<string> PresentSubcategories { get; init; } = [];
     public IReadOnlyCollection<string> MissingImportantSubcategories { get; init; } = [];
+    public IReadOnlyCollection<string> PresentBlocks { get; init; } = [];
+    public IReadOnlyCollection<string> MissingBlocks { get; init; } = [];
+    public Dictionary<string, decimal> ScoreByBlock { get; init; } = [];
     public Dictionary<string, decimal> ScoreBySubcategory { get; init; } = [];
     public Dictionary<string, int> GroupedCounts { get; init; } = [];
     public Dictionary<string, string> DebugInfo { get; init; } = [];

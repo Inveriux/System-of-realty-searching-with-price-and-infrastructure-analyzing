@@ -1,16 +1,49 @@
 export type SearchSortBy =
+  | "relevance"
   | "price_asc"
   | "price_desc"
+  | "newest"
+  | "area_desc"
   | "published_desc"
   | "infrastructure_desc";
+
+export type SearchProfile = "default" | "family" | "urban" | "investment" | "student";
+
+export type SearchRankingWeights = {
+  transportWeight: number;
+  educationWeight: number;
+  healthcareWeight: number;
+  commerceWeight: number;
+  leisureWeight: number;
+  priceWeight: number;
+  locationWeight: number;
+  areaWeight: number;
+};
+
+export type SearchRelevanceBreakdown = {
+  baseMatchScore: number;
+  priceFitScore: number;
+  areaFitScore: number;
+  locationFitScore: number;
+  infrastructureFitScore: number;
+  preferenceAlignmentScore: number;
+  freshnessScore: number;
+  finalScore: number;
+};
 
 export type SearchListingsRequest = {
   query?: string | null;
   locationId?: string | null;
+  operationType?: string | null;
+  propertyType?: string | null;
   listingType?: string | null;
   buildingType?: string | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
+  areaMin?: number | null;
+  areaMax?: number | null;
   minArea?: number | null;
   maxArea?: number | null;
   minInfrastructureScore?: number | null;
@@ -44,6 +77,8 @@ export type SearchListingsRequest = {
   maxCinemaDriveMinutes?: number | null;
   maxMetroWalkMinutes?: number | null;
   requireMetroInPrimaryRadius?: boolean | null;
+  latitude?: number | null;
+  longitude?: number | null;
   centerLatitude?: number | null;
   centerLongitude?: number | null;
   radiusMeters?: number | null;
@@ -51,6 +86,18 @@ export type SearchListingsRequest = {
   boundsMinLongitude?: number | null;
   boundsMaxLatitude?: number | null;
   boundsMaxLongitude?: number | null;
+  searchProfile?: SearchProfile | null;
+  transportWeight?: number | null;
+  educationWeight?: number | null;
+  healthcareWeight?: number | null;
+  commerceWeight?: number | null;
+  leisureWeight?: number | null;
+  priceWeight?: number | null;
+  locationWeight?: number | null;
+  areaWeight?: number | null;
+  includeRelevanceBreakdown?: boolean | null;
+  includeHighlights?: boolean | null;
+  sort?: SearchSortBy | null;
   sortBy?: SearchSortBy | null;
   page: number;
   pageSize: number;
@@ -132,11 +179,17 @@ export type SearchListingDto = {
   nearestMetroWalkMinutes: number | null;
   nearestMetroName: string | null;
   metroFoundInPrimaryRadius: boolean;
+  relevanceScore: number | null;
+  relevanceBreakdown: SearchRelevanceBreakdown | null;
+  highlights: string[];
   searchFeatures: Record<string, number>;
 };
 
 export type SearchListingsResponse = {
   items: SearchListingDto[];
+  sort: SearchSortBy;
+  searchProfile: SearchProfile | string | null;
+  appliedWeights: SearchRankingWeights | null;
   page: number;
   pageSize: number;
   totalCount: number;

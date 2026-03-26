@@ -4,10 +4,16 @@ public sealed class SearchListingsRequestDto
 {
     public string? Query { get; init; }
     public Guid? LocationId { get; init; }
+    public string? OperationType { get; init; }
+    public string? PropertyType { get; init; }
     public string? ListingType { get; init; }
     public string? BuildingType { get; init; }
+    public decimal? PriceMin { get; init; }
+    public decimal? PriceMax { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
+    public decimal? AreaMin { get; init; }
+    public decimal? AreaMax { get; init; }
     public decimal? MinArea { get; init; }
     public decimal? MaxArea { get; init; }
     public decimal? MinInfrastructureScore { get; init; }
@@ -41,6 +47,8 @@ public sealed class SearchListingsRequestDto
     public decimal? MaxCinemaDriveMinutes { get; init; }
     public decimal? MaxMetroWalkMinutes { get; init; }
     public bool? RequireMetroInPrimaryRadius { get; init; }
+    public decimal? Latitude { get; init; }
+    public decimal? Longitude { get; init; }
     public decimal? CenterLatitude { get; init; }
     public decimal? CenterLongitude { get; init; }
     public decimal? RadiusMeters { get; init; }
@@ -48,6 +56,18 @@ public sealed class SearchListingsRequestDto
     public decimal? BoundsMinLongitude { get; init; }
     public decimal? BoundsMaxLatitude { get; init; }
     public decimal? BoundsMaxLongitude { get; init; }
+    public string? SearchProfile { get; init; }
+    public decimal? TransportWeight { get; init; }
+    public decimal? EducationWeight { get; init; }
+    public decimal? HealthcareWeight { get; init; }
+    public decimal? CommerceWeight { get; init; }
+    public decimal? LeisureWeight { get; init; }
+    public decimal? PriceWeight { get; init; }
+    public decimal? LocationWeight { get; init; }
+    public decimal? AreaWeight { get; init; }
+    public bool IncludeRelevanceBreakdown { get; init; }
+    public bool IncludeHighlights { get; init; } = true;
+    public string? Sort { get; init; }
     public string? SortBy { get; init; }
     public int Page { get; init; } = 0;
     public int PageSize { get; init; } = 20;

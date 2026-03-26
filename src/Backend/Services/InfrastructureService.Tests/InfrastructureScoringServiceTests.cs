@@ -247,6 +247,32 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
+    public void Healthcare_ManyPharmaciesAndHospital_ShouldBeStrongerThanBefore()
+    {
+        var pharmacies = Enumerable.Range(1, 13)
+            .Select(index => CreatePoi(
+                "healthcare",
+                "pharmacy",
+                $"Аптека {index}",
+                55m + (index * 18m),
+                53.9000m + (index * 0.0001m),
+                27.5600m + (index * 0.0001m)));
+
+        var snapshot = CreateSnapshot(
+        [
+            ..pharmacies,
+            CreatePoi("healthcare", "hospital", "Больница", 680m, 53.9050m, 27.5650m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["healthcare"];
+
+        Assert.InRange(score.HealthcareScore, 55m, 75m);
+        Assert.Equal(13, breakdown.GroupedCounts["pharmacy"]);
+        Assert.True(breakdown.ScoreBySubcategory["hospital"] > 0m);
+    }
+
+    [Fact]
     public void Commerce_ManySupermarketsOnly_ShouldBeCapped()
     {
         var snapshot = CreateSnapshot(
@@ -306,33 +332,143 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
-    public void Leisure_OnlyCafes_ShouldNotBeMaximum()
+    public void Leisure_FiveCafesAndCinema_ShouldBeSignificantlyHigherThanLegacyLowScore()
     {
         var snapshot = CreateSnapshot(
         [
             CreatePoi("leisure", "cafe", "Кафе 1", 45m, 53.9000m, 27.5600m),
             CreatePoi("leisure", "cafe", "Кафе 2", 70m, 53.9001m, 27.5601m),
-            CreatePoi("leisure", "cafe", "Кафе 3", 90m, 53.9002m, 27.5602m)
+            CreatePoi("leisure", "cafe", "Кафе 3", 90m, 53.9002m, 27.5602m),
+            CreatePoi("leisure", "cafe", "Кафе 4", 120m, 53.9003m, 27.5603m),
+            CreatePoi("leisure", "cafe", "Кафе 5", 155m, 53.9004m, 27.5604m),
+            CreatePoi("leisure", "cinema", "Кинотеатр", 240m, 53.9013m, 27.5611m)
         ]);
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
 
-        Assert.True(score.LeisureScore <= 45m);
+        Assert.InRange(score.LeisureScore, 45m, 60m);
+        Assert.True(breakdown.ScoreByBlock["daily_leisure"] >= 30m);
+        Assert.True(breakdown.ScoreByBlock["culture"] >= 10m);
+        Assert.Equal("45", breakdown.DebugInfo["DailyLeisureNearestDistance"]);
+        Assert.Equal("2", breakdown.DebugInfo["PresentLeisureBlocks"].Split(',', StringSplitOptions.RemoveEmptyEntries).Length.ToString());
     }
 
     [Fact]
-    public void Leisure_ParkFitnessMuseum_ShouldBeHigh()
+    public void Leisure_FiveCafesAndTheaterAtHalfKilometer_ShouldStillScoreWell()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("leisure", "cafe", "Кафе 1", 45m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Кафе 2", 70m, 53.9001m, 27.5601m),
+            CreatePoi("leisure", "cafe", "Кафе 3", 90m, 53.9002m, 27.5602m),
+            CreatePoi("leisure", "cafe", "Кафе 4", 120m, 53.9003m, 27.5603m),
+            CreatePoi("leisure", "cafe", "Кафе 5", 155m, 53.9004m, 27.5604m),
+            CreatePoi("leisure", "theater", "Театр", 500m, 53.9030m, 27.5630m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
+
+        Assert.InRange(score.LeisureScore, 48m, 65m);
+        Assert.True(breakdown.ScoreByBlock["culture"] >= 12m);
+    }
+
+    [Fact]
+    public void Leisure_FiveCafesOnly_ShouldBeModerateButNotMax()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("leisure", "cafe", "Кафе 1", 45m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Кафе 2", 70m, 53.9001m, 27.5601m),
+            CreatePoi("leisure", "cafe", "Кафе 3", 90m, 53.9002m, 27.5602m),
+            CreatePoi("leisure", "cafe", "Кафе 4", 120m, 53.9003m, 27.5603m),
+            CreatePoi("leisure", "cafe", "Кафе 5", 155m, 53.9004m, 27.5604m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
+
+        Assert.InRange(score.LeisureScore, 30m, 45m);
+        Assert.True(breakdown.ScoreByBlock["daily_leisure"] >= 30m);
+        Assert.Equal(0m, breakdown.ScoreByBlock["culture"]);
+        Assert.Equal("single_subcategory", breakdown.AppliedCapReason);
+    }
+
+    [Fact]
+    public void Leisure_FourCafesRestaurantAndCinema_ShouldScoreAsGoodUrbanLeisure()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("leisure", "cafe", "Кафе 1", 45m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Кафе 2", 70m, 53.9001m, 27.5601m),
+            CreatePoi("leisure", "cafe", "Кафе 3", 90m, 53.9002m, 27.5602m),
+            CreatePoi("leisure", "cafe", "Кафе 4", 120m, 53.9003m, 27.5603m),
+            CreatePoi("leisure", "restaurant", "Ресторан", 140m, 53.9005m, 27.5606m),
+            CreatePoi("leisure", "cinema", "Кинотеатр", 260m, 53.9015m, 27.5611m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
+
+        Assert.InRange(score.LeisureScore, 48m, 65m);
+        Assert.True(breakdown.ScoreByBlock["daily_leisure"] >= 31m);
+        Assert.True(breakdown.ScoreByBlock["culture"] >= 10m);
+    }
+
+    [Fact]
+    public void Leisure_ParkFitnessCinema_ShouldBeHigh()
     {
         var snapshot = CreateSnapshot(
         [
             CreatePoi("leisure", "park", "Парк", 120m, 53.9000m, 27.5600m),
             CreatePoi("leisure", "fitness", "Фитнес", 210m, 53.9009m, 27.5608m),
-            CreatePoi("leisure", "museum", "Музей", 650m, 53.9030m, 27.5630m)
+            CreatePoi("leisure", "cinema", "Кинотеатр", 380m, 53.9030m, 27.5630m)
         ]);
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
 
-        Assert.True(score.LeisureScore >= 55m);
+        Assert.InRange(score.LeisureScore, 58m, 80m);
+        Assert.Contains("green_recreation", breakdown.PresentBlocks);
+        Assert.Contains("active_leisure", breakdown.PresentBlocks);
+        Assert.Contains("culture", breakdown.PresentBlocks);
+    }
+
+    [Fact]
+    public void Leisure_DuplicatedCafes_ShouldNotInflateScoreTooMuch()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("leisure", "cafe", "Surf Coffee", 80m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Surf Coffee", 82m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Surf Coffee", 84m, 53.9000m, 27.5600m),
+            CreatePoi("leisure", "cafe", "Why Knot", 130m, 53.9008m, 27.5608m),
+            CreatePoi("leisure", "cinema", "Кинотеатр", 260m, 53.9015m, 27.5611m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
+
+        Assert.InRange(score.LeisureScore, 30m, 55m);
+        Assert.Equal(2, breakdown.GroupedCounts["cafe"]);
+        Assert.True(breakdown.ScoreByBlock["daily_leisure"] < 30m);
+    }
+
+    [Fact]
+    public void Leisure_SingleDistantMuseum_ShouldRemainLowToModerate()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("leisure", "museum", "Музей", 2200m, 53.9200m, 27.5800m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
+
+        Assert.InRange(score.LeisureScore, 1m, 20m);
+        Assert.True(breakdown.ScoreByBlock["culture"] > 0m);
+        Assert.Equal("culture", Assert.Single(breakdown.PresentBlocks));
     }
 
     private InfrastructureDetailsDto BuildDetails(LocationPoiSnapshot snapshot)

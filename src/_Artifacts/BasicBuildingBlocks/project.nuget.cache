@@ -1,24 +1,109 @@
 {
   "version": 2,
-  "dgSpecHash": "feaxlimPVJI=",
-  "success": true,
+  "dgSpecHash": "wC1lYlkcxdk=",
+  "success": false,
   "projectFilePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
-  "expectedPackageFiles": [
-    "/home/Admin/.nuget/packages/automapper/16.1.1/automapper.16.1.1.nupkg.sha512",
-    "/home/Admin/.nuget/packages/fluentvalidation/12.1.1/fluentvalidation.12.1.1.nupkg.sha512",
-    "/home/Admin/.nuget/packages/mediatr/14.0.0/mediatr.14.0.0.nupkg.sha512",
-    "/home/Admin/.nuget/packages/mediatr.contracts/2.0.1/mediatr.contracts.2.0.1.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.3/microsoft.aspnetcore.authentication.jwtbearer.10.0.3.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.entityframeworkcore/10.0.3/microsoft.entityframeworkcore.10.0.3.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.entityframeworkcore.abstractions/10.0.3/microsoft.entityframeworkcore.abstractions.10.0.3.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.entityframeworkcore.analyzers/10.0.3/microsoft.entityframeworkcore.analyzers.10.0.3.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.abstractions/8.14.0/microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.jsonwebtokens/8.14.0/microsoft.identitymodel.jsonwebtokens.8.14.0.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.logging/8.14.0/microsoft.identitymodel.logging.8.14.0.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.protocols/8.0.1/microsoft.identitymodel.protocols.8.0.1.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.protocols.openidconnect/8.0.1/microsoft.identitymodel.protocols.openidconnect.8.0.1.nupkg.sha512",
-    "/home/Admin/.nuget/packages/microsoft.identitymodel.tokens/8.14.0/microsoft.identitymodel.tokens.8.14.0.nupkg.sha512",
-    "/home/Admin/.nuget/packages/system.identitymodel.tokens.jwt/8.0.1/system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512"
-  ],
-  "logs": []
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "warningLevel": 1,
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "targetGraphs": []
+    },
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "warningLevel": 1,
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "targetGraphs": []
+    },
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "warningLevel": 1,
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "targetGraphs": []
+    },
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "warningLevel": 1,
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "targetGraphs": []
+    },
+    {
+      "code": "NU1801",
+      "level": "Warning",
+      "message": "Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "warningLevel": 1,
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "targetGraphs": []
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package AutoMapper. No packages exist with this id in source(s): nuget.org",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "libraryId": "AutoMapper",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package FluentValidation. No packages exist with this id in source(s): nuget.org",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "libraryId": "FluentValidation",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package MediatR. No packages exist with this id in source(s): nuget.org",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "libraryId": "MediatR",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.EntityFrameworkCore. No packages exist with this id in source(s): nuget.org",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "libraryId": "Microsoft.EntityFrameworkCore",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1101",
+      "level": "Error",
+      "message": "Unable to find package Microsoft.AspNetCore.Authentication.JwtBearer. No packages exist with this id in source(s): nuget.org",
+      "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "filePath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
+      "libraryId": "Microsoft.AspNetCore.Authentication.JwtBearer",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

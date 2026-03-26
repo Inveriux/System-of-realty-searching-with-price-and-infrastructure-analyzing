@@ -53,6 +53,8 @@ export function mapSearchListingToCard(
     nearestParkWalkMinutes: listing.nearestParkWalkMinutes,
     nearestFitnessWalkMinutes: listing.nearestFitnessWalkMinutes,
     nearestFitnessDriveMinutes: listing.nearestFitnessDriveMinutes,
+    relevanceScore: listing.relevanceScore,
+    highlights: listing.highlights,
     hasCoordinates: listing.latitude != null && listing.longitude != null,
     nearestMetroName: listing.nearestMetroName,
   };

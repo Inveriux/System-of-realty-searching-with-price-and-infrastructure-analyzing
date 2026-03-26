@@ -1,23 +1,69 @@
 import { z } from "zod";
-import type { SearchListingDto, SearchListingsRequest, SearchListingsResponse } from "@diploma/contracts/search";
+import type {
+  SearchListingDto,
+  SearchListingsRequest,
+  SearchListingsResponse,
+  SearchProfile,
+  SearchRankingWeights,
+  SearchRelevanceBreakdown,
+} from "@diploma/contracts/search";
 
 const nullableString = z.string().nullable();
 const nullableNumber = z.number().nullable();
 
 export const SearchSortBySchema = z.enum([
+  "relevance",
   "price_asc",
   "price_desc",
+  "newest",
+  "area_desc",
   "published_desc",
   "infrastructure_desc",
 ]);
 
+export const SearchProfileSchema: z.ZodType<SearchProfile> = z.enum([
+  "default",
+  "family",
+  "urban",
+  "investment",
+  "student",
+]);
+
+export const SearchRankingWeightsSchema: z.ZodType<SearchRankingWeights> = z.object({
+  transportWeight: z.number(),
+  educationWeight: z.number(),
+  healthcareWeight: z.number(),
+  commerceWeight: z.number(),
+  leisureWeight: z.number(),
+  priceWeight: z.number(),
+  locationWeight: z.number(),
+  areaWeight: z.number(),
+});
+
+export const SearchRelevanceBreakdownSchema: z.ZodType<SearchRelevanceBreakdown> = z.object({
+  baseMatchScore: z.number(),
+  priceFitScore: z.number(),
+  areaFitScore: z.number(),
+  locationFitScore: z.number(),
+  infrastructureFitScore: z.number(),
+  preferenceAlignmentScore: z.number(),
+  freshnessScore: z.number(),
+  finalScore: z.number(),
+});
+
 export const SearchListingsRequestSchema: z.ZodType<SearchListingsRequest> = z.object({
   query: nullableString.optional(),
   locationId: nullableString.optional(),
+  operationType: nullableString.optional(),
+  propertyType: nullableString.optional(),
   listingType: nullableString.optional(),
   buildingType: nullableString.optional(),
+  priceMin: nullableNumber.optional(),
+  priceMax: nullableNumber.optional(),
   minPrice: nullableNumber.optional(),
   maxPrice: nullableNumber.optional(),
+  areaMin: nullableNumber.optional(),
+  areaMax: nullableNumber.optional(),
   minArea: nullableNumber.optional(),
   maxArea: nullableNumber.optional(),
   minInfrastructureScore: nullableNumber.optional(),
@@ -51,6 +97,8 @@ export const SearchListingsRequestSchema: z.ZodType<SearchListingsRequest> = z.o
   maxCinemaDriveMinutes: nullableNumber.optional(),
   maxMetroWalkMinutes: nullableNumber.optional(),
   requireMetroInPrimaryRadius: z.boolean().nullable().optional(),
+  latitude: nullableNumber.optional(),
+  longitude: nullableNumber.optional(),
   centerLatitude: nullableNumber.optional(),
   centerLongitude: nullableNumber.optional(),
   radiusMeters: nullableNumber.optional(),
@@ -58,6 +106,18 @@ export const SearchListingsRequestSchema: z.ZodType<SearchListingsRequest> = z.o
   boundsMinLongitude: nullableNumber.optional(),
   boundsMaxLatitude: nullableNumber.optional(),
   boundsMaxLongitude: nullableNumber.optional(),
+  searchProfile: SearchProfileSchema.nullable().optional(),
+  transportWeight: nullableNumber.optional(),
+  educationWeight: nullableNumber.optional(),
+  healthcareWeight: nullableNumber.optional(),
+  commerceWeight: nullableNumber.optional(),
+  leisureWeight: nullableNumber.optional(),
+  priceWeight: nullableNumber.optional(),
+  locationWeight: nullableNumber.optional(),
+  areaWeight: nullableNumber.optional(),
+  includeRelevanceBreakdown: z.boolean().nullable().optional(),
+  includeHighlights: z.boolean().nullable().optional(),
+  sort: SearchSortBySchema.nullable().optional(),
   sortBy: SearchSortBySchema.nullable().optional(),
   page: z.number(),
   pageSize: z.number(),
@@ -139,11 +199,17 @@ export const SearchListingDtoSchema: z.ZodType<SearchListingDto> = z.object({
   nearestMetroWalkMinutes: nullableNumber,
   nearestMetroName: nullableString,
   metroFoundInPrimaryRadius: z.boolean(),
+  relevanceScore: nullableNumber,
+  relevanceBreakdown: SearchRelevanceBreakdownSchema.nullable(),
+  highlights: z.array(z.string()),
   searchFeatures: z.record(z.string(), z.number()),
 });
 
 export const SearchListingsResponseSchema: z.ZodType<SearchListingsResponse> = z.object({
   items: z.array(SearchListingDtoSchema),
+  sort: SearchSortBySchema,
+  searchProfile: nullableString,
+  appliedWeights: SearchRankingWeightsSchema.nullable(),
   page: z.number(),
   pageSize: z.number(),
   totalCount: z.number(),

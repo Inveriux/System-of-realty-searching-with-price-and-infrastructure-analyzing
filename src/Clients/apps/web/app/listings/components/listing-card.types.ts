@@ -45,6 +45,8 @@ export type ListingCardBase = {
   nearestParkWalkMinutes?: number | null;
   nearestFitnessWalkMinutes?: number | null;
   nearestFitnessDriveMinutes?: number | null;
+  relevanceScore?: number | null;
+  highlights?: string[];
   hasCoordinates?: boolean;
   nearestMetroName?: string | null;
   onDelete?: (id: string) => void | Promise<void>;

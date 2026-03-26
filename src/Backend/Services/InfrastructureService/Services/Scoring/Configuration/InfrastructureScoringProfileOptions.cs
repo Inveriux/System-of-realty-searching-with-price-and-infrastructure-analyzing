@@ -54,14 +54,14 @@ public sealed class GenericCategoryScoringRulesOptions : CategoryScoringRulesOpt
             DiversityAnyOfGroups = [["hospital", "dentistry", "laboratory"]],
             CompletenessRequiredSubcategories = ["pharmacy", "clinic"],
             CompletenessAnyOfGroups = [["hospital", "dentistry", "laboratory"]],
-            DensityTargetUsefulCount = 6m,
+            DensityTargetUsefulCount = 8m,
             Subcategories = new(StringComparer.OrdinalIgnoreCase)
             {
-                ["pharmacy"] = new(1400m, 3, 0.28m, 0.24m),
-                ["clinic"] = new(2200m, 2, 0.27m, 0.26m),
-                ["hospital"] = new(3200m, 1, 0.23m, 0.20m),
-                ["dentistry"] = new(2200m, 2, 0.12m, 0.15m),
-                ["laboratory"] = new(2200m, 2, 0.10m, 0.15m)
+                ["pharmacy"] = new(1600m, 6, 0.31m, 0.31m),
+                ["clinic"] = new(2400m, 2, 0.24m, 0.20m),
+                ["hospital"] = new(3800m, 1, 0.25m, 0.12m),
+                ["dentistry"] = new(2400m, 2, 0.11m, 0.12m),
+                ["laboratory"] = new(2400m, 2, 0.09m, 0.10m)
             }
         };
 

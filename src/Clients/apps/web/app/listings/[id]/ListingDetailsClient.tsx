@@ -425,6 +425,36 @@ function getDetailEntries(details: Record<string, unknown> | null | undefined) {
     }));
 }
 
+function buildUniqueListKey(
+  baseKey: string,
+  usedKeys: Set<string>,
+  fallbackParts: Array<string | number | null | undefined>,
+) {
+  if (!usedKeys.has(baseKey)) {
+    usedKeys.add(baseKey);
+    return baseKey;
+  }
+
+  const fallbackKey = `${baseKey}-${fallbackParts
+    .filter((part): part is string | number => part !== null && part !== undefined && part !== "")
+    .join("-")}`;
+
+  if (!usedKeys.has(fallbackKey)) {
+    usedKeys.add(fallbackKey);
+    return fallbackKey;
+  }
+
+  let suffix = 2;
+  let candidate = `${fallbackKey}-${suffix}`;
+  while (usedKeys.has(candidate)) {
+    suffix += 1;
+    candidate = `${fallbackKey}-${suffix}`;
+  }
+
+  usedKeys.add(candidate);
+  return candidate;
+}
+
 const bynIconStyle: CSSProperties = {
   WebkitMaskImage: "url('/byn.svg')",
   maskImage: "url('/byn.svg')",
@@ -456,6 +486,81 @@ export function ListingDetailsClient({ listingId }: Props) {
   const { data, isLoading, error } = useListingPageQuery(api, listingId);
   const [activeInfrastructureCategory, setActiveInfrastructureCategory] = useState<string | null>(null);
   const [isInfrastructurePanelCollapsed, setIsInfrastructurePanelCollapsed] = useState(false);
+  const infrastructure = data?.infrastructure;
+  const groupedInfrastructurePois = useMemo(() => infrastructure?.groupedPois ?? [], [infrastructure?.groupedPois]);
+  const groupedInfrastructureCategories = useMemo(() => {
+    if (!infrastructure) {
+      return [];
+    }
+
+    return groupedInfrastructurePois.map((group) => {
+      if (group.category !== "Транспорт") {
+        return {
+          category: group.category,
+          count: group.count,
+          items: group.pois.map((poi) => ({
+            key: poi.id,
+            title: normalizePoiName(poi.name) ?? "Объект инфраструктуры",
+            subtitle: poi.subcategoryCode
+              ? (getPoiSubcategoryLabel(poi.subcategoryCode) ?? "Инфраструктурный объект")
+              : null,
+            distanceMeters: poi.distanceMeters,
+            addressText: poi.addressText,
+          })),
+        };
+      }
+
+      const usedTransportKeys = new Set<string>();
+      const stopGroupItems = infrastructure.transportDetails.stopGroups
+        .slice()
+        .sort((left, right) => left.nearestDistanceMeters - right.nearestDistanceMeters)
+        .map((groupItem) => ({
+          key: buildUniqueListKey(
+            `stop-group-${groupItem.groupId}`,
+            usedTransportKeys,
+            [
+              groupItem.normalizedName,
+              groupItem.nearestDistanceMeters,
+              groupItem.platformCount,
+              groupItem.pointCount,
+              groupItem.sourcePoiIds.slice().sort().join("-"),
+            ],
+          ),
+          title: groupItem.displayName,
+          subtitle: [
+            formatStopTypes(groupItem.stopTypes),
+            groupItem.platformCount > 1 ? `${groupItem.platformCount} платформы` : null,
+          ].filter((value): value is string => Boolean(value)).join(" • ") || "Остановочная группа",
+          distanceMeters: groupItem.nearestDistanceMeters,
+          addressText: groupItem.pointCount > 1
+            ? `Объединено точек остановки: ${groupItem.pointCount}`
+            : null,
+        }));
+
+      const nonGroupedTransportItems = (infrastructure.rawMapPois ?? infrastructure.nearbyPois)
+        .filter((poi) => poi.category === "Транспорт")
+        .filter((poi) => !["bus_stop", "tram_stop", "trolleybus_stop"].includes(poi.subcategoryCode ?? ""))
+        .sort((left, right) => left.distanceMeters - right.distanceMeters)
+        .map((poi) => ({
+          key: buildUniqueListKey(`poi-${poi.id}`, usedTransportKeys, [poi.name, poi.distanceMeters, poi.addressText]),
+          title: normalizePoiName(poi.name) ?? "Транспортный объект",
+          subtitle: poi.subcategoryCode
+            ? (getPoiSubcategoryLabel(poi.subcategoryCode) ?? "Транспортный объект")
+            : "Транспортный объект",
+          distanceMeters: poi.distanceMeters,
+          addressText: poi.addressText,
+        }));
+
+      const transportItems = [...stopGroupItems, ...nonGroupedTransportItems]
+        .sort((left, right) => left.distanceMeters - right.distanceMeters);
+
+      return {
+        category: group.category,
+        count: transportItems.length,
+        items: transportItems,
+      };
+    });
+  }, [groupedInfrastructurePois, infrastructure]);
 
   if (isLoading) {
     return (
@@ -479,7 +584,7 @@ export function ListingDetailsClient({ listingId }: Props) {
     );
   }
 
-  const { listing, seller, infrastructure, derived } = data;
+  const { listing, seller, derived } = data;
   const galleryMedia = [
     listing.mainMedia,
     ...listing.media.map((item) => item.url),
@@ -506,69 +611,6 @@ export function ListingDetailsClient({ listingId }: Props) {
     { key: "leisure", label: "Досуг", value: infrastructure.leisureScore, color: "#15803d", icon: <Trees className="h-6 w-6" /> },
     { key: "total", label: "Общая оценка", value: infrastructure.totalScore, color: "#111827", icon: <ChartPie className="h-6 w-6" /> },
   ] : [];
-  const groupedInfrastructurePois = useMemo(() => infrastructure?.groupedPois ?? [], [infrastructure?.groupedPois]);
-  const groupedInfrastructureCategories = useMemo(() => {
-    if (!infrastructure) {
-      return [];
-    }
-
-    return groupedInfrastructurePois.map((group) => {
-      if (group.category !== "Транспорт") {
-        return {
-          category: group.category,
-          count: group.count,
-          items: group.pois.map((poi) => ({
-            key: poi.id,
-            title: normalizePoiName(poi.name) ?? "Объект инфраструктуры",
-            subtitle: poi.subcategoryCode
-              ? (getPoiSubcategoryLabel(poi.subcategoryCode) ?? "Инфраструктурный объект")
-              : null,
-            distanceMeters: poi.distanceMeters,
-            addressText: poi.addressText,
-          })),
-        };
-      }
-
-      const stopGroupItems = infrastructure.transportDetails.stopGroups
-        .slice()
-        .sort((left, right) => left.nearestDistanceMeters - right.nearestDistanceMeters)
-        .map((groupItem) => ({
-          key: `stop-group-${groupItem.groupId}`,
-          title: groupItem.displayName,
-          subtitle: [
-            formatStopTypes(groupItem.stopTypes),
-            groupItem.platformCount > 1 ? `${groupItem.platformCount} платформы` : null,
-          ].filter((value): value is string => Boolean(value)).join(" • ") || "Остановочная группа",
-          distanceMeters: groupItem.nearestDistanceMeters,
-          addressText: groupItem.pointCount > 1
-            ? `Объединено точек остановки: ${groupItem.pointCount}`
-            : null,
-        }));
-
-      const nonGroupedTransportItems = (infrastructure.rawMapPois ?? infrastructure.nearbyPois)
-        .filter((poi) => poi.category === "Транспорт")
-        .filter((poi) => !["bus_stop", "tram_stop", "trolleybus_stop"].includes(poi.subcategoryCode ?? ""))
-        .sort((left, right) => left.distanceMeters - right.distanceMeters)
-        .map((poi) => ({
-          key: poi.id,
-          title: normalizePoiName(poi.name) ?? "Транспортный объект",
-          subtitle: poi.subcategoryCode
-            ? (getPoiSubcategoryLabel(poi.subcategoryCode) ?? "Транспортный объект")
-            : "Транспортный объект",
-          distanceMeters: poi.distanceMeters,
-          addressText: poi.addressText,
-        }));
-
-      const transportItems = [...stopGroupItems, ...nonGroupedTransportItems]
-        .sort((left, right) => left.distanceMeters - right.distanceMeters);
-
-      return {
-        category: group.category,
-        count: transportItems.length,
-        items: transportItems,
-      };
-    });
-  }, [groupedInfrastructurePois, infrastructure]);
   const selectedInfrastructureCategory = groupedInfrastructureCategories.find((group) => group.category === activeInfrastructureCategory)
     ?? groupedInfrastructureCategories[0]
     ?? null;

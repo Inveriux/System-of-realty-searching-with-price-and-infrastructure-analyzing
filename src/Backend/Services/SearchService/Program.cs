@@ -10,6 +10,7 @@ using SearchService.Data.Repositories;
 using SearchService.Data.Repositories.Abstractions;
 using SearchService.Services.InternalClients;
 using SearchService.Services.InternalClients.Abstractions;
+using SearchService.Services.Ranking;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +49,8 @@ builder.Services.AddHttpClient<IInfrastructureServiceClient, InfrastructureServi
 });
 
 builder.Services.AddScoped<ISearchListingRepository, SearchListingRepository>();
+builder.Services.AddScoped<ISearchProfileProvider, SearchProfileProvider>();
+builder.Services.AddScoped<ISearchRankingService, SearchRankingService>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
 builder.Services.AddProblemDetails();

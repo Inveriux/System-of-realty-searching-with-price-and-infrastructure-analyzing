@@ -81,6 +81,9 @@ public sealed class SearchListingDto
     public decimal? NearestMetroWalkMinutes { get; init; }
     public string? NearestMetroName { get; init; }
     public bool MetroFoundInPrimaryRadius { get; init; }
+    public decimal? RelevanceScore { get; set; }
+    public SearchRelevanceBreakdownDto? RelevanceBreakdown { get; set; }
+    public IReadOnlyCollection<string> Highlights { get; set; } = [];
     public Dictionary<string, decimal> SearchFeatures { get; init; } = [];
 
     private sealed class Mapping : Profile

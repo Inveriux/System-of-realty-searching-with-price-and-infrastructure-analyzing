@@ -152,6 +152,9 @@ export function ListingsClient() {
       filters.centerLatitude != null && filters.centerLongitude != null
         ? parseOptionalNumber(filters.radiusMeters)
         : null,
+    includeHighlights: true,
+    includeRelevanceBreakdown: false,
+    sort: filters.sortBy,
     sortBy: filters.sortBy,
     page: filters.page,
     pageSize: filters.pageSize,
@@ -551,7 +554,9 @@ export function ListingsClient() {
                     value={filters.sortBy}
                     onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
                   >
+                    <option value="relevance">По релевантности</option>
                     <option value="published_desc">Сначала новые</option>
+                    <option value="area_desc">Площадь больше</option>
                     <option value="price_asc">Цена по возрастанию</option>
                     <option value="price_desc">Цена по убыванию</option>
                     <option value="infrastructure_desc">Инфраструктура выше</option>
