@@ -40,13 +40,30 @@ type ListingCardProps = {
   item: ListingCardItem;
 };
 
+function formatPublishedDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("ru-BY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+}
+
 export function ListingCard({ item }: ListingCardProps) {
   const primarySpecs = getPrimarySpecs(item);
   const secondaryFeatures = getSecondaryFeatures(item);
   const href = item.href ?? `/listings/${item.id}`;
   const typeLabel = getTypeLabel(item);
   const isSale = item.listingType === "Продажа";
-  const photosCount = item.mediaCount ?? (item.mainMedia ? 1 : 0);
+  const photosCount = item.mediaCount ?? 0;
   const materialLabel =
     item.details.kind === "apartment"
       ? getMaterialLabel(item.details.buildingMaterial)
@@ -67,13 +84,13 @@ export function ListingCard({ item }: ListingCardProps) {
     : null;
   const infrastructureScore = formatInfrastructureScore(item.infrastructureScore);
   const transportNearest = formatMeters(item.transportNearestMeters);
-  const compactTransportSummary = [
-    item.nearestParkingWalkMinutes != null
-      ? `Парковка • ${Math.round(item.nearestParkingWalkMinutes)} мин пешком`
-      : item.nearestParkingDriveMinutes != null
-        ? `Парковка • ${item.nearestParkingDriveMinutesEstimated ? "~" : ""}${Math.round(item.nearestParkingDriveMinutes)} мин на машине`
-        : null,
-  ].filter((value): value is string => Boolean(value));
+  const compactTransportSummary: string[] = [];
+  const publishedDateLabel = formatPublishedDate(item.publishedDate);
+  const parkingLabel = item.nearestParkingWalkMinutes != null
+    ? `${Math.round(item.nearestParkingWalkMinutes)} мин пешком`
+    : item.nearestParkingDriveMinutes != null
+      ? `${item.nearestParkingDriveMinutesEstimated ? "~" : ""}${Math.round(item.nearestParkingDriveMinutes)} мин на машине`
+      : null;
 
   async function handleDelete(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -211,6 +228,14 @@ export function ListingCard({ item }: ListingCardProps) {
             <p className="line-clamp-2 min-w-0">{item.addressText ?? "Адрес уточняется"}</p>
           </div>
 
+          {publishedDateLabel ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-elevated)_94%,var(--color-primary-soft))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]">
+                Опубликовано: {publishedDateLabel}
+              </span>
+            </div>
+          ) : null}
+
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11.5px] leading-5 text-[color:color-mix(in_srgb,var(--foreground-muted)_78%,var(--foreground))]">
             {primarySpecs.map((spec) => {
               const Icon = getSpecIcon(spec.label);
@@ -224,6 +249,19 @@ export function ListingCard({ item }: ListingCardProps) {
               );
             })}
           </div>
+
+          {bottomFeatures.length > 0 ? (
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {bottomFeatures.slice(0, 4).map((feature) => (
+                <span
+                  key={feature.label}
+                  className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,var(--color-primary-soft))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]"
+                >
+                  {feature.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           <div className="mt-3 border-t border-[color:color-mix(in_srgb,var(--color-primary)_14%,var(--border-color))] pt-2.5">
             <div className="flex flex-wrap gap-2">
@@ -257,14 +295,6 @@ export function ListingCard({ item }: ListingCardProps) {
                   На карте пока недоступно
                 </span>
               ) : null}
-              {bottomFeatures.map((feature) => (
-                <span
-                  key={feature.label}
-                  className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_58%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]"
-                >
-                  {feature.label}
-                </span>
-              ))}
               <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_58%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]">
                 {getBuildingTypeLabel(item.buildingType)}
               </span>
@@ -278,17 +308,34 @@ export function ListingCard({ item }: ListingCardProps) {
               </div>
             ) : null}
 
-            {item.nearestMetroName ? (
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#dc2626_20%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee2e2_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#b91c1c]">
-                <Image
-                  src="/map-markers/minsk-metro.svg"
-                  alt=""
-                  width={14}
-                  height={14}
-                  unoptimized
-                  aria-hidden="true"
-                />
-                <span>{item.nearestMetroName}</span>
+            {item.nearestMetroName || parkingLabel ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.nearestMetroName ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#dc2626_20%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee2e2_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#b91c1c]">
+                    <Image
+                      src="/map-markers/minsk-metro.svg"
+                      alt=""
+                      width={14}
+                      height={14}
+                      unoptimized
+                      aria-hidden="true"
+                    />
+                    <span>{item.nearestMetroName}</span>
+                  </div>
+                ) : null}
+                {parkingLabel ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#1d4ed8_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#1d4ed8]">
+                    <Image
+                      src="/map-markers/parking.svg"
+                      alt=""
+                      width={14}
+                      height={14}
+                      unoptimized
+                      aria-hidden="true"
+                    />
+                    <span>Парковка • {parkingLabel}</span>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>

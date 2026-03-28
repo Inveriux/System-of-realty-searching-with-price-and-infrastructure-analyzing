@@ -85,6 +85,13 @@ const gasMap: Record<string, string> = {
   None: "Нет",
 };
 
+const sewerMap: Record<string, string> = {
+  Central: "Центральная",
+  Septic: "Септик",
+  Local: "Локальная",
+  None: "Нет",
+};
+
 const landCategoryMap: Record<string, string> = {
   "Residential (IЖС)": "ИЖС",
   "Personal subsidiary plot (ЛПХ)": "ЛПХ",
@@ -290,7 +297,10 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
           { label: "Комнаты", value: item.details.rooms === 0 ? "Студия" : item.details.rooms ? `${item.details.rooms}` : "—" },
+          { label: "Спальни", value: item.details.bedrooms ? `${item.details.bedrooms}` : "—" },
           { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
+          { label: "Жилая", value: formatArea(item.details.areaLiving) },
+          { label: "Кухня", value: formatArea(item.details.areaKitchen) },
           { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
         ];
       case "house":
@@ -298,6 +308,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
           { label: "Дом", value: formatArea(item.details.houseArea ?? item.areaTotal) },
           { label: "Участок", value: formatArea(item.details.plotArea) },
           { label: "Комнаты", value: item.details.rooms ? `${item.details.rooms}` : "—" },
+          { label: "Спальни", value: item.details.bedrooms ? `${item.details.bedrooms}` : "—" },
           { label: "Этажей", value: item.details.floors ? `${item.details.floors}` : "—" },
         ];
       case "land":
@@ -311,15 +322,18 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
           { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
+          { label: "Уровней", value: item.details.levels ? `${item.details.levels}` : "—" },
           { label: "Класс", value: item.details.officeClass ?? "—" },
           { label: "Парковка", value: item.details.parkingSpaces ? `${item.details.parkingSpaces} м.` : item.details.parkingType ?? "—" },
         ];
       case "warehouse":
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Участок", value: formatArea(item.details.plotArea) },
           { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
           { label: "Класс", value: item.details.classType ?? "—" },
           { label: "Ворота", value: item.details.gateCount ? `${item.details.gateCount}` : "—" },
+          { label: "Нагрузка", value: item.details.floorLoadTonsPerSquareMeter ? `${item.details.floorLoadTonsPerSquareMeter} т/м²` : "—" },
         ];
     }
   })();
@@ -341,13 +355,16 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         ),
         formatBooleanFeature(item.details.hasBalcony, "Балкон"),
         formatBooleanFeature(item.details.hasLoggia, "Лоджия"),
+        formatBooleanFeature(item.details.hasElevator, "Лифт"),
       ]
         .filter(Boolean)
-        .slice(0, 4)
+        .slice(0, 6)
         .map((label) => ({ label: String(label) }));
     case "house":
       return [
         formatBooleanFeature(item.details.hasGarage, "Гараж", "Без гаража"),
+        formatBooleanFeature(item.details.hasBasement, "Подвал"),
+        formatBooleanFeature(item.details.hasFence, "Огорожен"),
         prefixedLabel(
           "Отопление",
           heatingMap[item.details.heatingType ?? ""] ?? item.details.heatingType,
@@ -360,9 +377,15 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
           "Газ",
           gasMap[item.details.gasType ?? ""] ?? item.details.gasType,
         ),
+        prefixedLabel(
+          "Канализация",
+          sewerMap[item.details.sewerType ?? ""] ?? item.details.sewerType,
+        ),
+        formatBooleanFeature(item.details.hasElectricity, "Электричество"),
+        prefixedLabel("Крыша", item.details.roofMaterial),
       ]
         .filter(Boolean)
-        .slice(0, 4)
+        .slice(0, 6)
         .map((label) => ({ label: String(label) }));
     case "land":
       return [
@@ -370,9 +393,10 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         formatBooleanFeature(item.details.hasGas, "Газ"),
         formatBooleanFeature(item.details.hasWater, "Вода"),
         formatBooleanFeature(item.details.hasSewer, "Канализация"),
+        formatBooleanFeature(item.details.hasBuildings, "Есть постройки"),
       ]
         .filter(Boolean)
-        .slice(0, 4)
+        .slice(0, 6)
         .map((label, index) => ({ label: String(label), tone: index < 2 ? "accent" : "neutral" }));
     case "office":
       return [
@@ -386,23 +410,26 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         ),
         formatBooleanFeature(item.details.kitchenette, "Мини-кухня"),
         prefixedLabel("Парковка", item.details.parkingType),
+        item.details.parkingSpaces ? `Мест: ${item.details.parkingSpaces}` : null,
       ]
         .filter(Boolean)
-        .slice(0, 4)
+        .slice(0, 6)
         .map((label) => ({ label: String(label) }));
     case "warehouse":
       return [
         item.details.dockCount ? `Доков: ${item.details.dockCount}` : null,
         formatBooleanFeature(item.details.hasRamps, "Рампы"),
+        formatBooleanFeature(item.details.hasDockLevelers, "Доклевеллеры"),
         item.details.powerKw ? `Мощность: ${item.details.powerKw} кВт` : null,
         formatBooleanFeature(item.details.hasOffice, "Офисная зона"),
+        item.details.officeArea ? `Офис: ${formatArea(item.details.officeArea)}` : null,
         prefixedLabel(
           "Отопление",
           heatingMap[item.details.heatingType ?? ""] ?? item.details.heatingType,
         ),
       ]
         .filter(Boolean)
-        .slice(0, 4)
+        .slice(0, 6)
         .map((label) => ({ label: String(label) }));
   }
 }

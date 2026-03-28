@@ -88,9 +88,11 @@ public abstract class GenericCategoryScoringPolicyBase : CategoryScoringPolicyBa
             rules.TwoSubcategoryCap,
             rules.ThreeSubcategoryCap);
 
+        var normalizedScore = Math.Min(score, 100m);
+
         return new CategoryScoreBreakdownDto
         {
-            Score = score,
+            Score = Round(normalizedScore),
             ProximityScore = Round(proximityScore),
             DensityScore = Round(densityScore),
             DiversityScore = Round(diversityScore),

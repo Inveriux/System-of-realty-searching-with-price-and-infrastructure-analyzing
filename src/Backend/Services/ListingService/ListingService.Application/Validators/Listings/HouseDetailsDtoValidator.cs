@@ -14,7 +14,10 @@ public class HouseDetailsDtoValidator : AbstractValidator<HouseDetailsDto>
             .MustExistInLookup<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
 
         RuleFor(x => x.RoofMaterial)
-            .MustExistInLookup<HouseDetailsDto, WallMaterial>(lookupCache, nameof(WallMaterial));
+            .MustExistInLookup<HouseDetailsDto, WallMaterial>(
+                lookupCache,
+                nameof(WallMaterial),
+                nameof(HouseDetailsDto.RoofMaterial));
 
         RuleFor(x => x.HeatingType)
             .MustExistInLookup<HouseDetailsDto, HeatingType>(lookupCache, nameof(HeatingType));

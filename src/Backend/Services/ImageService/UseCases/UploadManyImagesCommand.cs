@@ -1,6 +1,6 @@
 using BasicBuildingBlocks.BusinessResults;
+using ImageService.Configuration;
 using ImageService.DTOs;
-using ImageService.Services;
 using ImageService.Services.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -10,11 +10,11 @@ namespace ImageService.UseCases;
 public sealed record UploadManyImagesCommand(UploadManyImagesRequest Request) : IRequest<Result<IReadOnlyCollection<ImageUploadResponseDto>>>;
 
 public sealed class UploadManyImagesCommandHandler(
-    IImageBbService imageBbService,
-    IOptions<ImageBbOptions> options)
+    IImageUploadService imageUploadService,
+    IOptions<ImageKitOptions> options)
     : IRequestHandler<UploadManyImagesCommand, Result<IReadOnlyCollection<ImageUploadResponseDto>>>
 {
-    private readonly ImageBbOptions _options = options.Value;
+    private readonly ImageKitOptions _options = options.Value;
 
     public async Task<Result<IReadOnlyCollection<ImageUploadResponseDto>>> Handle(
         UploadManyImagesCommand request,
@@ -41,7 +41,7 @@ public sealed class UploadManyImagesCommandHandler(
 
         foreach (var image in images)
         {
-            var result = await imageBbService.UploadFileAsync(
+            var result = await imageUploadService.UploadFileAsync(
                 image,
                 name: null,
                 request.Request.Expiration,

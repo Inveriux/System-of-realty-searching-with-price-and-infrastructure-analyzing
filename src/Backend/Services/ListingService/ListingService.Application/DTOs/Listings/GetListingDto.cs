@@ -21,6 +21,7 @@ public class GetListingDto
     public required decimal AreaTotal { get; init; }//TODO implement
     public int? BuildYear { get; set; }
     public string? MainMedia { get; set; }
+    public int MediaCount { get; set; }
     public DateTimeOffset? PublishedDate { get; set; }
     public string? BuildingType { get; set; }
     public required string ListingType { get; init; }
@@ -41,7 +42,8 @@ public class GetListingDto
                         ? null
                         : s.Media.Where(m => m.IsMainMedia)
                                 .Select(m => m.Url)
-                                .FirstOrDefault()));
+                                .FirstOrDefault()))
+                .ForMember(x => x.MediaCount, y => y.MapFrom(s => s.Media == null ? 0 : s.Media.Count));
         }
     }
 }

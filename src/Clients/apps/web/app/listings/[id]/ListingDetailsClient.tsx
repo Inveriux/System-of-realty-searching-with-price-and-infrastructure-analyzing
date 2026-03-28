@@ -1,6 +1,7 @@
 "use client";
 
 import { useListingPageQuery } from "@diploma/features";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ChartPie,
   ChevronDown,
@@ -11,7 +12,8 @@ import {
   TramFront,
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
 import { ListingGallery } from "./ListingGallery";
@@ -37,6 +39,23 @@ function formatDealType(value?: string | null) {
   if (!value) return "Сделка не указана";
   if (value === "Продажа" || value === "Аренда") return value;
   return value;
+}
+
+function formatPublishedDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("ru-BY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
 }
 
 const detailLabelMap: Record<string, string> = {
@@ -155,6 +174,8 @@ function getPoiSubcategoryLabel(value?: string | null) {
       return "Мебель";
     case "building_store":
       return "Стройтовары";
+    case "beauty_service":
+      return "Красота и уход";
     case "drogerie":
       return "Товары для дома";
     case "pharmacy":
@@ -179,6 +200,10 @@ function getPoiSubcategoryLabel(value?: string | null) {
       return "Железнодорожная станция";
     case "parking":
       return "Парковка";
+    case "fuel_station":
+      return "Заправка";
+    case "service_station":
+      return "СТО / автомойка";
     case "kindergarten":
       return "Детский сад";
     case "school":
@@ -221,6 +246,8 @@ function getPoiSubcategoryLabel(value?: string | null) {
       return "Выставочный зал";
     case "library":
       return "Библиотека";
+    case "landmark":
+      return "Достопримечательность";
     case "recreation_zone":
       return "Зона отдыха";
     default:
@@ -455,6 +482,28 @@ function buildUniqueListKey(
   return candidate;
 }
 
+type InfrastructureListItem = {
+  key: string;
+  title: string;
+  subtitle: string | null;
+  distanceMeters: number;
+  addressText: string | null | undefined;
+  subcategoryKey: string;
+};
+
+type InfrastructureSubcategoryGroup = {
+  key: string;
+  label: string;
+  count: number;
+  items: InfrastructureListItem[];
+};
+
+type InfrastructureCategoryGroup = {
+  category: string;
+  count: number;
+  subcategories: InfrastructureSubcategoryGroup[];
+};
+
 const bynIconStyle: CSSProperties = {
   WebkitMaskImage: "url('/byn.svg')",
   maskImage: "url('/byn.svg')",
@@ -483,22 +532,41 @@ type Props = {
 
 export function ListingDetailsClient({ listingId }: Props) {
   const { api } = useAuth();
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useListingPageQuery(api, listingId);
   const [activeInfrastructureCategory, setActiveInfrastructureCategory] = useState<string | null>(null);
+  const [activeInfrastructureSubcategory, setActiveInfrastructureSubcategory] = useState<string | null>(null);
   const [isInfrastructurePanelCollapsed, setIsInfrastructurePanelCollapsed] = useState(false);
+  const isMissingListingError = error instanceof Error && error.message.includes("404");
+
+  useEffect(() => {
+    if (!isMissingListingError) {
+      return;
+    }
+
+    void queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+    void queryClient.invalidateQueries({ queryKey: ["listings"] });
+  }, [isMissingListingError, queryClient]);
+
   const infrastructure = data?.infrastructure;
   const groupedInfrastructurePois = useMemo(() => infrastructure?.groupedPois ?? [], [infrastructure?.groupedPois]);
-  const groupedInfrastructureCategories = useMemo(() => {
+  const groupedInfrastructureCategories = useMemo<InfrastructureCategoryGroup[]>(() => {
     if (!infrastructure) {
       return [];
     }
 
     return groupedInfrastructurePois.map((group) => {
       if (group.category !== "Транспорт") {
-        return {
-          category: group.category,
-          count: group.count,
-          items: group.pois.map((poi) => ({
+        const groupedItems = group.pois.reduce<Record<string, InfrastructureSubcategoryGroup>>((accumulator, poi) => {
+          const subcategoryKey = poi.subcategoryCode ?? "other";
+          const bucket = accumulator[subcategoryKey] ?? {
+            key: subcategoryKey,
+            label: getPoiSubcategoryLabel(poi.subcategoryCode) ?? "Прочее",
+            count: 0,
+            items: [],
+          };
+
+          bucket.items.push({
             key: poi.id,
             title: normalizePoiName(poi.name) ?? "Объект инфраструктуры",
             subtitle: poi.subcategoryCode
@@ -506,12 +574,27 @@ export function ListingDetailsClient({ listingId }: Props) {
               : null,
             distanceMeters: poi.distanceMeters,
             addressText: poi.addressText,
-          })),
+            subcategoryKey,
+          });
+          bucket.count += 1;
+          accumulator[subcategoryKey] = bucket;
+          return accumulator;
+        }, {});
+
+        return {
+          category: group.category,
+          count: group.count,
+          subcategories: Object.values(groupedItems)
+            .map((entry) => ({
+              ...entry,
+              items: entry.items.sort((left, right) => left.distanceMeters - right.distanceMeters),
+            }))
+            .sort((left, right) => left.items[0]!.distanceMeters - right.items[0]!.distanceMeters),
         };
       }
 
       const usedTransportKeys = new Set<string>();
-      const stopGroupItems = infrastructure.transportDetails.stopGroups
+      const stopGroupItems: InfrastructureListItem[] = infrastructure.transportDetails.stopGroups
         .slice()
         .sort((left, right) => left.nearestDistanceMeters - right.nearestDistanceMeters)
         .map((groupItem) => ({
@@ -535,9 +618,10 @@ export function ListingDetailsClient({ listingId }: Props) {
           addressText: groupItem.pointCount > 1
             ? `Объединено точек остановки: ${groupItem.pointCount}`
             : null,
+          subcategoryKey: "stop_group",
         }));
 
-      const nonGroupedTransportItems = (infrastructure.rawMapPois ?? infrastructure.nearbyPois)
+      const nonGroupedTransportItems: InfrastructureListItem[] = (infrastructure.rawMapPois ?? infrastructure.nearbyPois)
         .filter((poi) => poi.category === "Транспорт")
         .filter((poi) => !["bus_stop", "tram_stop", "trolleybus_stop"].includes(poi.subcategoryCode ?? ""))
         .sort((left, right) => left.distanceMeters - right.distanceMeters)
@@ -549,18 +633,62 @@ export function ListingDetailsClient({ listingId }: Props) {
             : "Транспортный объект",
           distanceMeters: poi.distanceMeters,
           addressText: poi.addressText,
+          subcategoryKey: poi.subcategoryCode ?? "other",
         }));
 
-      const transportItems = [...stopGroupItems, ...nonGroupedTransportItems]
-        .sort((left, right) => left.distanceMeters - right.distanceMeters);
+      const transportSubcategories = [...stopGroupItems, ...nonGroupedTransportItems]
+        .reduce<Record<string, InfrastructureSubcategoryGroup>>((accumulator, item) => {
+          const bucket = accumulator[item.subcategoryKey] ?? {
+            key: item.subcategoryKey,
+            label: item.subcategoryKey === "stop_group"
+              ? "Остановки"
+              : (getPoiSubcategoryLabel(item.subcategoryKey) ?? "Транспорт"),
+            count: 0,
+            items: [],
+          };
+
+          bucket.items.push(item);
+          bucket.count += 1;
+          accumulator[item.subcategoryKey] = bucket;
+          return accumulator;
+        }, {});
 
       return {
         category: group.category,
-        count: transportItems.length,
-        items: transportItems,
+        count: stopGroupItems.length + nonGroupedTransportItems.length,
+        subcategories: Object.values(transportSubcategories)
+          .map((entry) => ({
+            ...entry,
+            items: entry.items.sort((left, right) => left.distanceMeters - right.distanceMeters),
+          }))
+          .sort((left, right) => left.items[0]!.distanceMeters - right.items[0]!.distanceMeters),
       };
     });
   }, [groupedInfrastructurePois, infrastructure]);
+
+  const selectedInfrastructureCategory = groupedInfrastructureCategories.find((group) => group.category === activeInfrastructureCategory)
+    ?? groupedInfrastructureCategories[0]
+    ?? null;
+  const selectedInfrastructureSubcategory = selectedInfrastructureCategory?.subcategories.find(
+    (subcategory) => subcategory.key === activeInfrastructureSubcategory,
+  ) ?? selectedInfrastructureCategory?.subcategories[0] ?? null;
+
+  useEffect(() => {
+    if (!selectedInfrastructureCategory) {
+      if (activeInfrastructureSubcategory !== null) {
+        setActiveInfrastructureSubcategory(null);
+      }
+      return;
+    }
+
+    const hasActiveSubcategory = selectedInfrastructureCategory.subcategories.some(
+      (subcategory) => subcategory.key === activeInfrastructureSubcategory,
+    );
+
+    if (!hasActiveSubcategory) {
+      setActiveInfrastructureSubcategory(selectedInfrastructureCategory.subcategories[0]?.key ?? null);
+    }
+  }, [activeInfrastructureSubcategory, selectedInfrastructureCategory]);
 
   if (isLoading) {
     return (
@@ -576,8 +704,19 @@ export function ListingDetailsClient({ listingId }: Props) {
     return (
       <AppShell>
         <main className="grid gap-6 pb-10">
-          <section className="surface rounded-[28px] p-8 text-[#d04b73]">
-            Не удалось загрузить страницу объявления.
+          <section className="surface grid gap-4 rounded-[28px] p-8 text-[#d04b73]">
+            <div>
+              {isMissingListingError
+                ? "Объявление удалено или больше не существует."
+                : "Не удалось загрузить страницу объявления."}
+            </div>
+            {isMissingListingError ? (
+              <div>
+                <Link className="button-secondary" href="/listings">
+                  Вернуться в каталог
+                </Link>
+              </div>
+            ) : null}
           </section>
         </main>
       </AppShell>
@@ -593,6 +732,7 @@ export function ListingDetailsClient({ listingId }: Props) {
     .filter((item, index, array) => array.indexOf(item) === index);
   const media = galleryMedia.length > 0 ? galleryMedia : [fallbackImage];
   const detailEntries = getDetailEntries(listing.listingDetails);
+  const publishedDateLabel = formatPublishedDate(listing.publishedDate);
   const bynPricePerSquareMeter = formatNumericPricePerSquareMeter(
     listing.priceAmountByn ?? listing.priceAmount,
     listing.areaTotal,
@@ -611,9 +751,6 @@ export function ListingDetailsClient({ listingId }: Props) {
     { key: "leisure", label: "Досуг", value: infrastructure.leisureScore, color: "#15803d", icon: <Trees className="h-6 w-6" /> },
     { key: "total", label: "Общая оценка", value: infrastructure.totalScore, color: "#111827", icon: <ChartPie className="h-6 w-6" /> },
   ] : [];
-  const selectedInfrastructureCategory = groupedInfrastructureCategories.find((group) => group.category === activeInfrastructureCategory)
-    ?? groupedInfrastructureCategories[0]
-    ?? null;
   const infoCardClass = "rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4";
 
   return (
@@ -689,6 +826,11 @@ export function ListingDetailsClient({ listingId }: Props) {
                   <span className="rounded-full bg-[var(--background-muted)] px-3 py-1.5">
                     {formatDealType(derived.quickStats.find((item) => item.key === "dealType")?.value)}
                   </span>
+                  {publishedDateLabel ? (
+                    <span className="rounded-full bg-[var(--background-muted)] px-3 py-1.5">
+                      Опубликовано: {publishedDateLabel}
+                    </span>
+                  ) : null}
                   {listing.buildYear ? (
                     <span className="rounded-full bg-[var(--background-muted)] px-3 py-1.5">
                       Год постройки: {listing.buildYear}
@@ -915,6 +1057,30 @@ export function ListingDetailsClient({ listingId }: Props) {
                                 {selectedInfrastructureCategory.category}
                               </h3>
                             </div>
+                            {selectedInfrastructureCategory.subcategories.length > 1 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {selectedInfrastructureCategory.subcategories.map((subcategory) => {
+                                  const isActive = selectedInfrastructureSubcategory?.key === subcategory.key;
+                                  return (
+                                    <button
+                                      key={subcategory.key}
+                                      type="button"
+                                      onClick={() => setActiveInfrastructureSubcategory(subcategory.key)}
+                                      className="rounded-full border px-3 py-1.5 text-sm font-semibold transition"
+                                      style={{
+                                        borderColor: isActive ? "var(--color-primary)" : "var(--border-color)",
+                                        background: isActive
+                                          ? "color-mix(in srgb, var(--color-primary-soft) 58%, var(--background-elevated))"
+                                          : "var(--background-elevated)",
+                                        color: "var(--foreground)",
+                                      }}
+                                    >
+                                      {subcategory.label} · {subcategory.count}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
                             <div
                               className="grid gap-2"
                               style={{
@@ -923,7 +1089,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                                 paddingRight: 4,
                               }}
                             >
-                              {selectedInfrastructureCategory.items.map((item) => (
+                              {(selectedInfrastructureSubcategory?.items ?? []).map((item) => (
                                 <div key={item.key} className={infoCardClass}>
                                   <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div>
@@ -1041,7 +1207,9 @@ export function ListingDetailsClient({ listingId }: Props) {
                             <div>
                               {groupedTransportSummary.metroFoundInPrimaryRadius && groupedTransportSummary.nearestMetroWalkMinutes != null
                                 ? `Метро — ${formatMinutesLabel(groupedTransportSummary.nearestMetroWalkMinutes)} пешком`
-                                : "Станции метро в пределах заданного радиуса не обнаружены."}
+                                : groupedTransportSummary.nearestMetroWalkMinutes != null
+                                  ? `Ближайшее метро вне основной зоны — ${formatMinutesLabel(groupedTransportSummary.nearestMetroWalkMinutes)} пешком`
+                                  : "Станции метро в пределах заданного радиуса не обнаружены."}
                             </div>
                             <div>
                               {groupedTransportSummary.parkingFoundInPrimaryRadius && groupedTransportSummary.nearestParkingWalkMinutes != null

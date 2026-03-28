@@ -47,6 +47,13 @@ public sealed class SearchListingsRequestDto
     public decimal? MaxCinemaDriveMinutes { get; init; }
     public decimal? MaxMetroWalkMinutes { get; init; }
     public bool? RequireMetroInPrimaryRadius { get; init; }
+    public string? InfrastructureLevel { get; init; }
+    public string? TransportLevel { get; init; }
+    public string? CommerceLevel { get; init; }
+    public bool? NeedDailyCommerce { get; init; }
+    public bool? NeedStrongSurfaceTransport { get; init; }
+    public bool? NeedFamilyInfrastructure { get; init; }
+    public bool? NeedWalkableInfrastructure { get; init; }
     public decimal? Latitude { get; init; }
     public decimal? Longitude { get; init; }
     public decimal? CenterLatitude { get; init; }

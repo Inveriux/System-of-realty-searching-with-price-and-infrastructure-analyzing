@@ -6,7 +6,12 @@ metadata:
 data:
   SERVICE_NAME: IMAGE_SERVICE
   ENV_ASPNETCORE_URLS: http://+:8080
-  ImageBb__Endpoint: https://api.imgbb.com/1/upload
-  ImageBb__ApiKey: 497e3bb7c14b3b90409c6292522ecb78
-  ImageBb__MaxFileSizeInBytes: "10485760"
-  ImageBb__MaxFilesPerRequest: "10"
+  ImageKit__PublicKey: ""
+  ImageKit__PrivateKey: "private_jg+mI7IpAs9jf8toOXtYYHEQzuw="
+  ImageKit__UrlEndpoint: https://ik.imagekit.io/your_imagekit_id
+  ImageKit__UploadEndpoint: https://upload.imagekit.io/api/v1/files/upload
+  ImageKit__BaseFolder: /diploma
+  ImageKit__UseUniqueFileName: "true"
+  ImageKit__TimeoutSeconds: "30"
+  ImageKit__MaxFileSizeInBytes: "10485760"
+  ImageKit__MaxFilesPerRequest: "10"

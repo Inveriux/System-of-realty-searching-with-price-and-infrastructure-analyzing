@@ -10,11 +10,11 @@
         "projectUniqueName": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
         "projectName": "BasicBuildingBlocks",
         "projectPath": "/home/Admin/Projects/Diploma/src/Backend/BasicBuildingBlocks/BasicBuildingBlocks.csproj",
-        "packagesPath": "/tmp/.nuget/packages/",
+        "packagesPath": "/home/Admin/.nuget/packages/",
         "outputPath": "/home/Admin/Projects/Diploma/src/_Artifacts/BasicBuildingBlocks/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/tmp/.nuget/NuGet/NuGet.Config"
+          "/home/Admin/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -34,7 +34,7 @@
           ]
         },
         "restoreAuditProperties": {
-          "enableAudit": "false",
+          "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "all"
         },

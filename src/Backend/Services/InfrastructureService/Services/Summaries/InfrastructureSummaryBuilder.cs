@@ -106,6 +106,7 @@ public sealed class InfrastructureSummaryBuilder : IInfrastructureSummaryBuilder
         "park" => "парки",
         "fitness" => "фитнес",
         "museum" => "музеи",
+        "landmark" => "достопримечательности",
         "theater" => "театры",
         "cinema" => "кинотеатры",
         "metro_station" => "метро",

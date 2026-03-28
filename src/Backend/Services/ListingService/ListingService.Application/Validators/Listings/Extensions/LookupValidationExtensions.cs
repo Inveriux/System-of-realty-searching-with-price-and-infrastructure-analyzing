@@ -9,7 +9,8 @@ public static class LookupValidationExtensions
     public static IRuleBuilder<T, string?> MustExistInLookup<T, TLookup>(
         this IRuleBuilder<T, string?> ruleBuilder,
         ILookupCache lookupCache,
-        string lookupName)
+        string lookupName,
+        string? propertyName = null)
         where TLookup : class, ILookupEntity
     {
         return ruleBuilder.MustAsync(async (value, cancellationToken) =>
@@ -25,7 +26,10 @@ public static class LookupValidationExtensions
             {
                 return false;
             }
-        }).WithMessage("'{PropertyName}' has unknown value.");
+        }).WithMessage(_ =>
+            string.IsNullOrWhiteSpace(propertyName)
+                ? "'{PropertyName}' has unknown value."
+                : $"'{propertyName}' has unknown value.");
     }
 
     public static IRuleBuilder<T, string?> MustExistInLookupRequired<T, TLookup>(

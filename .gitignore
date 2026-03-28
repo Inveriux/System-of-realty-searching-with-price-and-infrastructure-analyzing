@@ -14,6 +14,9 @@ dist/
 bin/
 obj/
 TestResults/
+_Artifacts/
+src/_Artifacts/
+src/Backend/_Artifacts/
 
 # Editors
 .vscode/
@@ -22,8 +25,12 @@ TestResults/
 # Logs and archives
 *.log
 *.zip
+tmp/
 
 # Local configs and certs
 *.Development.json
 Directory.Build.props
 /src/Backend/certs/
+
+# Local runtime data
+src/.local/

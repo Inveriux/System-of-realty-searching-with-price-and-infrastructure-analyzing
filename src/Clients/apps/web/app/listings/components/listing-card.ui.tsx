@@ -58,10 +58,16 @@ export function getInlineSpecLabel(label: string) {
       return "Площадь";
     case "Комнаты":
       return "Комнат";
+    case "Спальни":
+      return "Спален";
     case "Этаж":
       return "Этаж";
     case "Этажей":
       return "Этажей";
+    case "Жилая":
+      return "Жилая";
+    case "Кухня":
+      return "Кухня";
     case "Участок":
       return "Участок";
     case "Потолки":
@@ -74,10 +80,14 @@ export function getInlineSpecLabel(label: string) {
       return "Подъезд";
     case "Класс":
       return "Класс";
+    case "Уровней":
+      return "Уровней";
     case "Парковка":
       return "Парковка";
     case "Ворота":
       return "Ворота";
+    case "Нагрузка":
+      return "Нагрузка";
     default:
       return label;
   }

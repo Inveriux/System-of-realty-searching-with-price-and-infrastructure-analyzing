@@ -71,6 +71,11 @@ public sealed class PoiClassificationService(
             return Create(InfrastructureCategoryCodes.Commerce, "building_store", "provider-tags", 0.95m);
         if (IsOneOf(tags, "shop", "chemist", "beauty"))
             return Create(InfrastructureCategoryCodes.Commerce, "drogerie", "provider-tags", 0.94m);
+        if (IsOneOf(tags, "shop", "hairdresser", "cosmetics") ||
+            IsOneOf(tags, "amenity", "beauty_salon", "hairdresser", "barber") ||
+            IsOneOf(tags, "beauty", "hairdresser", "beautician", "nails", "spa", "massage") ||
+            ContainsAny(searchableText, ["парикмахер", "барбершоп", "barbershop", "hairdresser", "beauty salon", "салон красоты", "маникюр", "nails"]))
+            return Create(InfrastructureCategoryCodes.Commerce, "beauty_service", "provider-tags", 0.90m);
 
         if (IsOneOf(tags, "amenity", "pharmacy") || IsOneOf(tags, "healthcare", "pharmacy"))
             return Create(InfrastructureCategoryCodes.Healthcare, "pharmacy", "provider-tags", 0.98m);
@@ -93,6 +98,10 @@ public sealed class PoiClassificationService(
             return Create(InfrastructureCategoryCodes.Transport, "railway_station", "provider-tags", 0.94m);
         if (IsOneOf(tags, "amenity", "parking", "parking_entrance"))
             return Create(InfrastructureCategoryCodes.Transport, "parking", "provider-tags", 0.98m);
+        if (IsOneOf(tags, "amenity", "fuel"))
+            return Create(InfrastructureCategoryCodes.Transport, "fuel_station", "provider-tags", 0.96m);
+        if (IsOneOf(tags, "shop", "car_repair") || IsOneOf(tags, "craft", "car_repair") || IsOneOf(tags, "amenity", "car_wash"))
+            return Create(InfrastructureCategoryCodes.Transport, "service_station", "provider-tags", 0.96m);
         if (ContainsAny(searchableText, _resources.StopKeywordDictionary.StopKeywords))
         {
             if (Contains(searchableText, "трамвай") || Contains(searchableText, "tram"))
@@ -113,6 +122,11 @@ public sealed class PoiClassificationService(
 
         if (IsOneOf(tags, "leisure", "park", "garden"))
             return Create(InfrastructureCategoryCodes.Leisure, "park", "provider-tags", 0.97m);
+        if (IsOneOf(tags, "leisure", "nature_reserve", "common", "recreation_ground", "dog_park") ||
+            IsOneOf(tags, "natural", "wood", "beach", "grassland", "scrub", "heath", "wetland") ||
+            IsOneOf(tags, "landuse", "forest", "village_green", "recreation_ground", "meadow") ||
+            IsOneOf(tags, "boundary", "national_park", "protected_area"))
+            return Create(InfrastructureCategoryCodes.Leisure, "recreation_zone", "provider-tags", 0.96m);
         if (IsOneOf(tags, "place", "square"))
             return Create(InfrastructureCategoryCodes.Leisure, "square", "provider-tags", 0.97m);
         if (IsOneOf(tags, "natural", "beach"))
@@ -139,6 +153,11 @@ public sealed class PoiClassificationService(
             return Create(InfrastructureCategoryCodes.Leisure, "museum", "provider-tags", 0.97m);
         if (IsOneOf(tags, "tourism", "gallery"))
             return Create(InfrastructureCategoryCodes.Leisure, "gallery", "provider-tags", 0.97m);
+        if (IsOneOf(tags, "tourism", "attraction", "artwork", "viewpoint") ||
+            IsOneOf(tags, "historic", "memorial", "monument", "castle", "ruins") ||
+            IsOneOf(tags, "amenity", "place_of_worship") ||
+            IsOneOf(tags, "building", "church", "cathedral", "chapel", "mosque", "synagogue", "temple"))
+            return Create(InfrastructureCategoryCodes.Leisure, "landmark", "provider-tags", 0.96m);
         if (IsOneOf(tags, "amenity", "theatre") || IsOneOf(tags, "building", "theatre"))
             return Create(InfrastructureCategoryCodes.Leisure, "theater", "provider-tags", 0.98m);
         if (IsOneOf(tags, "amenity", "library"))
@@ -177,6 +196,10 @@ public sealed class PoiClassificationService(
                 return Create(InfrastructureCategoryCodes.Transport, "railway_station", "raw-category", 0.93m);
             if (rawCategory.Contains("public_transport", StringComparison.OrdinalIgnoreCase))
                 return Create(InfrastructureCategoryCodes.Transport, "bus_stop", "raw-category", 0.89m);
+            if (rawCategory.Contains("fuel", StringComparison.OrdinalIgnoreCase))
+                return Create(InfrastructureCategoryCodes.Transport, "fuel_station", "raw-category", 0.90m);
+            if (rawCategory.Contains("car_repair", StringComparison.OrdinalIgnoreCase) || rawCategory.Contains("car_service", StringComparison.OrdinalIgnoreCase) || rawCategory.Contains("car_wash", StringComparison.OrdinalIgnoreCase))
+                return Create(InfrastructureCategoryCodes.Transport, "service_station", "raw-category", 0.90m);
 
             if (rawCategory.Contains("kindergarten", StringComparison.OrdinalIgnoreCase))
                 return Create(InfrastructureCategoryCodes.Education, "kindergarten", "raw-category", 0.93m);
@@ -217,6 +240,19 @@ public sealed class PoiClassificationService(
                 return Create(InfrastructureCategoryCodes.Leisure, "theater", "raw-category", 0.91m);
             if (rawCategory.Contains("gallery", StringComparison.OrdinalIgnoreCase))
                 return Create(InfrastructureCategoryCodes.Leisure, "gallery", "raw-category", 0.91m);
+            if (rawCategory.Contains("attraction", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("monument", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("memorial", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("viewpoint", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("artwork", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("castle", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("place_of_worship", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("church", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("cathedral", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("mosque", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("synagogue", StringComparison.OrdinalIgnoreCase) ||
+                rawCategory.Contains("temple", StringComparison.OrdinalIgnoreCase))
+                return Create(InfrastructureCategoryCodes.Leisure, "landmark", "raw-category", 0.91m);
             if (rawCategory.Contains("exhibition", StringComparison.OrdinalIgnoreCase) || rawCategory.Contains("arts_centre", StringComparison.OrdinalIgnoreCase))
                 return Create(InfrastructureCategoryCodes.Leisure, "exhibition_hall", "raw-category", 0.91m);
             if (rawCategory.Contains("library", StringComparison.OrdinalIgnoreCase))

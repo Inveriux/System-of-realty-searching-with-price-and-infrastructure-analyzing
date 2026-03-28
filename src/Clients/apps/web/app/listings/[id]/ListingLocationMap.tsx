@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ListingPagePoiDto } from "@diploma/contracts/listingPage";
-
-const YANDEX_MAPS_API_KEY =
-  process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ??
-  "3225bb0b-e2a7-455f-9c95-ce49d86acbcb";
+import {
+  loadYandexMaps,
+  type YandexMapInstance,
+  type YandexMapsApi,
+  type YandexPlacemark,
+} from "../lib/loadYandexMaps";
 
 const knownMetroStationNames = new Set([
   "малиновка",
@@ -45,73 +47,12 @@ const knownMetroStationNames = new Set([
   "аэродромная",
 ]);
 
-type YandexMapsApi = {
-  ready(callback: () => void): void;
-  Map: new (container: HTMLElement, state: unknown, options?: unknown) => YandexMapInstance;
-  Placemark: new (geometry: [number, number], properties?: unknown, options?: unknown) => YandexPlacemark;
-};
-
-type YandexMapInstance = {
-  geoObjects: {
-    add(object: unknown): void;
-    getBounds(): [[number, number], [number, number]] | null;
-  };
-  getZoom(): number;
-  setBounds(
-    bounds: [[number, number], [number, number]],
-    options?: { checkZoomRange?: boolean; zoomMargin?: number | number[]; useMapMargin?: boolean },
-  ): void;
-  setZoom(zoom: number, options?: { checkZoomRange?: boolean }): void;
-  destroy(): void;
-};
-
-type YandexPlacemark = unknown;
-let yandexMapsPromise: Promise<YandexMapsApi> | null = null;
-
-function loadYandexMaps() {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("Yandex Maps доступны только в браузере."));
-  }
-
-  const globalWindow = window as typeof window & {
-    ymaps?: unknown;
-  };
-
-  if (globalWindow.ymaps) {
-    return Promise.resolve(globalWindow.ymaps as unknown as YandexMapsApi);
-  }
-
-  if (yandexMapsPromise) {
-    return yandexMapsPromise;
-  }
-
-  yandexMapsPromise = new Promise<YandexMapsApi>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${encodeURIComponent(
-      YANDEX_MAPS_API_KEY,
-    )}&lang=ru_RU`;
-    script.async = true;
-    script.onload = () => {
-      if (globalWindow.ymaps) {
-        resolve(globalWindow.ymaps as unknown as YandexMapsApi);
-        return;
-      }
-
-      reject(new Error("Yandex Maps API не инициализировался."));
-    };
-    script.onerror = () => reject(new Error("Не удалось загрузить Yandex Maps API."));
-    document.head.appendChild(script);
-  });
-
-  return yandexMapsPromise;
-}
-
 function getListingMarkerOptions() {
   return {
     iconLayout: "default#image",
     iconImageHref: "/map-markers/listing-home.svg",
-    iconImageSize: [48, 60],
-    iconImageOffset: [-24, -56],
+    iconImageSize: [38, 48],
+    iconImageOffset: [-19, -44],
   };
 }
 
@@ -123,6 +64,8 @@ type MarkerKind =
   | "tram_stop"
   | "railway_station"
   | "parking"
+  | "fuel_station"
+  | "service_station"
   | "pharmacy"
   | "clinic"
   | "hospital"
@@ -142,11 +85,49 @@ type MarkerKind =
   | "gallery"
   | "library"
   | "supermarket"
+  | "beauty_service"
+  | "landmark"
   | "commerce"
   | "education"
   | "healthcare"
   | "leisure"
   | "transport";
+
+const MARKER_KIND_ORDER: MarkerKind[] = [
+  "metro_station",
+  "bus_stop",
+  "tram_stop",
+  "railway_station",
+  "parking",
+  "fuel_station",
+  "service_station",
+  "pharmacy",
+  "clinic",
+  "hospital",
+  "kindergarten",
+  "school",
+  "park",
+  "waterfront",
+  "fitness",
+  "pool",
+  "stadium",
+  "museum",
+  "theater",
+  "cinema",
+  "gallery",
+  "library",
+  "landmark",
+  "cafe",
+  "restaurant",
+  "bar",
+  "supermarket",
+  "beauty_service",
+  "commerce",
+  "education",
+  "healthcare",
+  "leisure",
+  "transport",
+];
 
 function isLikelyMetroPoi(poi: ListingPagePoiDto) {
   const normalizedName = poi.name.trim().toLowerCase();
@@ -159,13 +140,24 @@ function isLikelyMetroPoi(poi: ListingPagePoiDto) {
 
 function getPoiMarkerKind(poi: ListingPagePoiDto): MarkerKind {
   const subcategoryCode = poi.subcategoryCode ?? (isLikelyMetroPoi(poi) ? "metro_station" : null);
+  const normalizedName = poi.name.trim().toLowerCase();
+  const looksLikeMetro = subcategoryCode === "metro_station"
+    || isLikelyMetroPoi(poi)
+    || normalizedName.includes("метро")
+    || normalizedName.includes("metro")
+    || knownMetroStationNames.has(normalizedName);
+
+  if (looksLikeMetro) {
+    return "metro_station";
+  }
 
   switch (subcategoryCode) {
-    case "metro_station":
     case "bus_stop":
     case "tram_stop":
     case "railway_station":
     case "parking":
+    case "fuel_station":
+    case "service_station":
     case "pharmacy":
     case "clinic":
     case "hospital":
@@ -184,6 +176,8 @@ function getPoiMarkerKind(poi: ListingPagePoiDto): MarkerKind {
     case "bar":
     case "gallery":
     case "library":
+    case "beauty_service":
+    case "landmark":
       return subcategoryCode;
     case "trolleybus_stop":
       return "bus_stop";
@@ -243,6 +237,10 @@ function getMarkerMeta(markerKind: MarkerKind) {
       return { iconHref: "/map-markers/railway-station.svg", label: "Ж/д" };
     case "parking":
       return { iconHref: "/map-markers/parking.svg", label: "Парковка" };
+    case "fuel_station":
+      return { iconHref: "/map-markers/fuel-station.svg", label: "АЗС" };
+    case "service_station":
+      return { iconHref: "/map-markers/service-station.svg", label: "СТО / мойка" };
     case "pharmacy":
       return { iconHref: "/map-markers/pharmacy.svg", label: "Аптека" };
     case "clinic":
@@ -279,6 +277,10 @@ function getMarkerMeta(markerKind: MarkerKind) {
       return { iconHref: "/map-markers/gallery.svg", label: "Галерея" };
     case "library":
       return { iconHref: "/map-markers/library.svg", label: "Библиотека" };
+    case "beauty_service":
+      return { iconHref: "/map-markers/beauty-service.svg", label: "Красота" };
+    case "landmark":
+      return { iconHref: "/map-markers/landmark.svg", label: "Место" };
     case "supermarket":
       return { iconHref: "/map-markers/supermarket.svg", label: "Магазины" };
     case "commerce":
@@ -295,14 +297,59 @@ function getMarkerMeta(markerKind: MarkerKind) {
   }
 }
 
-function getPoiMarkerOptions(poi: ListingPagePoiDto) {
+function normalizeMarkerTitle(value: string | null | undefined) {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function truncateMarkerText(value: string, maxLength = 22) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getPoiMarkerTitle(poi: ListingPagePoiDto) {
+  const explicitName = normalizeMarkerTitle(poi.name);
+  if (explicitName) {
+    return truncateMarkerText(explicitName);
+  }
+
+  return getMarkerMeta(getPoiMarkerKind(poi)).label;
+}
+
+function getPoiMarkerDistance(poi: ListingPagePoiDto) {
+  return `${poi.distanceMeters.toFixed(0)} м`;
+}
+
+function getPoiMarkerLayoutTemplate() {
+  return "";
+}
+
+function getPoiMarkerOptions(ymaps: YandexMapsApi, poi: ListingPagePoiDto) {
   const { iconHref } = getMarkerMeta(getPoiMarkerKind(poi));
+  void ymaps;
+  void getPoiMarkerLayoutTemplate;
 
   return {
     iconLayout: "default#image",
     iconImageHref: iconHref,
-    iconImageSize: [48, 60],
-    iconImageOffset: [-24, -56],
+    iconImageSize: [30, 38],
+    iconImageOffset: [-15, -34],
   };
 }
 
@@ -324,7 +371,9 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
       seen.add(getPoiMarkerKind(poi));
     }
 
-    return Array.from(seen);
+    return Array.from(seen).sort(
+      (left, right) => MARKER_KIND_ORDER.indexOf(left) - MARKER_KIND_ORDER.indexOf(right),
+    );
   }, [nearbyPois]);
   const [enabledMarkerKinds, setEnabledMarkerKinds] = useState<MarkerKind[] | null>(null);
 
@@ -353,6 +402,30 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
       (current ?? availableMarkerKinds).includes(markerKind)
         ? (current ?? availableMarkerKinds).filter((item) => item !== markerKind)
         : [...(current ?? availableMarkerKinds), markerKind]);
+  }
+
+  function enableAllMarkerKinds() {
+    setEnabledMarkerKinds(availableMarkerKinds);
+  }
+
+  function disableAllMarkerKinds() {
+    setEnabledMarkerKinds([]);
+  }
+
+  function focusListingLocation() {
+    setMapError(null);
+
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const nextZoom = Math.max(map.getZoom?.() ?? MIN_DETAIL_VIEW_ZOOM, 15);
+    map.setCenter(
+      [latitude, longitude],
+      nextZoom,
+      { checkZoomRange: true, duration: 220 },
+    );
   }
 
   useEffect(() => {
@@ -404,14 +477,23 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
           );
 
           for (const poi of visiblePois) {
+            const markerMeta = getMarkerMeta(getPoiMarkerKind(poi));
             map.geoObjects.add(
               new ymaps.Placemark(
-                [poi.latitude, poi.longitude],
+              [poi.latitude, poi.longitude],
                 {
-                  balloonContentHeader: poi.name,
-                  balloonContentBody: poi.addressText ?? `${poi.category}, ${poi.distanceMeters.toFixed(0)} м`,
+                  balloonContentHeader: getPoiMarkerTitle(poi),
+                  balloonContentBody: [
+                    poi.addressText,
+                    `${getMarkerMeta(getPoiMarkerKind(poi)).label}, ${poi.distanceMeters.toFixed(0)} м`,
+                  ]
+                    .filter(Boolean)
+                    .join("<br/>"),
+                  iconHref: markerMeta.iconHref,
+                  iconTitle: escapeHtml(getPoiMarkerTitle(poi)),
+                  iconDistance: escapeHtml(getPoiMarkerDistance(poi)),
                 },
-                getPoiMarkerOptions(poi),
+                getPoiMarkerOptions(ymaps, poi),
               ),
             );
           }
@@ -450,39 +532,67 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
   return (
     <div className="grid h-full min-h-[420px] gap-3 xl:min-h-[560px]">
       {availableMarkerKinds.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {availableMarkerKinds.map((markerKind) => {
-            const meta = getMarkerMeta(markerKind);
-            const isActive = (enabledMarkerKinds ?? availableMarkerKinds).includes(markerKind);
+        <div className="grid gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={enableAllMarkerKinds}
+              className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_28%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_72%,white)] px-3 py-1.5 text-[11.5px] font-bold text-[color:var(--foreground)] transition"
+            >
+              Включить всё
+            </button>
+            <button
+              type="button"
+              onClick={disableAllMarkerKinds}
+              className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--border-color)_90%,white)] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,white)] px-3 py-1.5 text-[11.5px] font-bold text-[color:var(--foreground-muted)] transition"
+            >
+              Убрать всё
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {availableMarkerKinds.map((markerKind) => {
+              const meta = getMarkerMeta(markerKind);
+              const isActive = (enabledMarkerKinds ?? availableMarkerKinds).includes(markerKind);
 
-            return (
-              <button
-                key={markerKind}
-                type="button"
-                onClick={() => toggleMarkerKind(markerKind)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition ${
-                  isActive
-                    ? "border-[color:color-mix(in_srgb,var(--color-primary)_28%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_72%,white)] text-[color:var(--foreground)]"
-                    : "border-[color:color-mix(in_srgb,var(--border-color)_90%,white)] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,white)] text-[color:var(--foreground-muted)] opacity-70"
-                }`}
-              >
-                <Image
-                  src={meta.iconHref}
-                  alt=""
-                  width={16}
-                  height={16}
-                  unoptimized
-                  aria-hidden="true"
-                  className={isActive ? "" : "grayscale"}
-                />
-                <span>{meta.label}</span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={markerKind}
+                  type="button"
+                  onClick={() => toggleMarkerKind(markerKind)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11.5px] font-bold transition ${
+                    isActive
+                      ? "border-[color:color-mix(in_srgb,var(--color-primary)_28%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_72%,white)] text-[color:var(--foreground)]"
+                      : "border-[color:color-mix(in_srgb,var(--border-color)_90%,white)] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,white)] text-[color:var(--foreground-muted)] opacity-70"
+                  }`}
+                >
+                  <Image
+                    src={meta.iconHref}
+                    alt=""
+                    width={14}
+                    height={14}
+                    unoptimized
+                    aria-hidden="true"
+                    className={isActive ? "" : "grayscale"}
+                  />
+                  <span>{meta.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : null}
 
       <div className="relative h-full min-h-[420px] overflow-hidden rounded-[28px] border border-[var(--border-color)] bg-[var(--background-muted)] xl:min-h-[560px]">
+        <div className="pointer-events-none absolute right-3 top-3 z-10 flex justify-end">
+          <button
+            type="button"
+            onClick={focusListingLocation}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_22%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,white)] px-3 py-2 text-[11.5px] font-bold text-[color:var(--foreground)] shadow-[0_10px_30px_rgba(15,23,42,0.12)] transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
+          >
+            <span aria-hidden="true">◎</span>
+            <span>К объекту</span>
+          </button>
+        </div>
         <div
           ref={mapContainerRef}
           className="h-full min-h-[420px] xl:min-h-[560px]"

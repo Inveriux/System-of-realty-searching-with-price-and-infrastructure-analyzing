@@ -20,6 +20,7 @@ public sealed class SearchListing
     public string? PriceCurrency { get; set; }
     public decimal AreaTotal { get; set; }
     public string? MainMediaUrl { get; set; }
+    public int MediaCount { get; set; }
     public DateTimeOffset? PublishedDate { get; set; }
     public decimal? InfrastructureScore { get; set; }
     public decimal? EducationScore { get; set; }

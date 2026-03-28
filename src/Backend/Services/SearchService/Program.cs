@@ -69,6 +69,10 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+    await dbContext.Database.ExecuteSqlRawAsync("""
+        ALTER TABLE search_listing
+        ADD COLUMN IF NOT EXISTS media_count integer NOT NULL DEFAULT 0;
+        """);
 }
 
 app.MapOpenApi();

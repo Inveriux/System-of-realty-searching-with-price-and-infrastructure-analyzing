@@ -128,6 +128,9 @@ public sealed class RefreshInfrastructureHandler(
             if (classification is null || string.IsNullOrWhiteSpace(classification.CategoryCode))
                 continue;
 
+            if (!ShouldIncludePoi(classification.CategoryCode, classification.SubcategoryCode, externalPoi.DistanceMeters))
+                continue;
+
             var category = categories.FirstOrDefault(x => x.Name.Equals(classification.CategoryCode, StringComparison.OrdinalIgnoreCase));
             if (category is null)
                 continue;
@@ -199,6 +202,25 @@ public sealed class RefreshInfrastructureHandler(
             MissingPrimaryCategories = details.MissingPrimaryCategories,
             ClassificationVersions = details.ClassificationVersions
         });
+    }
+
+    private static bool ShouldIncludePoi(string categoryCode, string? subcategoryCode, decimal distanceMeters)
+    {
+        if (!categoryCode.Equals(InfrastructureCategoryCodes.Healthcare, StringComparison.OrdinalIgnoreCase))
+        {
+            if (categoryCode.Equals(InfrastructureCategoryCodes.Transport, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(subcategoryCode, "parking", StringComparison.OrdinalIgnoreCase))
+            {
+                return distanceMeters <= 500m;
+            }
+
+            return true;
+        }
+
+        if (string.Equals(subcategoryCode, "hospital", StringComparison.OrdinalIgnoreCase))
+            return distanceMeters <= 5000m;
+
+        return distanceMeters <= 1500m;
     }
 
     private async Task<InfrastructureDetailsDto> BuildDetailsAsync(

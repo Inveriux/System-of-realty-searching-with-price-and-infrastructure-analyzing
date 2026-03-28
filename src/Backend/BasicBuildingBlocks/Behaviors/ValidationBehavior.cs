@@ -23,8 +23,21 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
         if(!errors.Any())
             return await next();
 
-        return TResponse.Fail(ResultStatusCode.Validation, "Validation failed.", 
-            errors.Select(e => new ResultError(e.ErrorMessage, null, NormalizePropertyName(e.PropertyName))));
+        var resultErrors = errors
+            .Select(e => new ResultError(e.ErrorMessage, null, NormalizePropertyName(e.PropertyName)))
+            .ToList();
+
+        var summary = string.Join("; ", resultErrors
+            .Take(3)
+            .Select(static error => string.IsNullOrWhiteSpace(error.PropertyName)
+                ? error.ErrorMessage
+                : $"{error.PropertyName}: {error.ErrorMessage}"));
+
+        var message = string.IsNullOrWhiteSpace(summary)
+            ? "Validation failed."
+            : $"Validation failed. {summary}";
+
+        return TResponse.Fail(ResultStatusCode.Validation, message, resultErrors);
     }
 
     private static string? NormalizePropertyName(string? propertyName)

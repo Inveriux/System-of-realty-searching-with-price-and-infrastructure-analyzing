@@ -92,6 +92,98 @@ public sealed class SearchListingRepositoryTests
         Assert.All(candidates.Items, item => Assert.True(item.NearestStoreWalkMinutes <= 10m));
     }
 
+    [Fact]
+    public async Task SearchAsync_ShouldApplyHighLevelTransportAndFamilyFilters()
+    {
+        await using var context = CreateContext();
+        context.SearchListings.AddRange(
+            CreateListing(
+                "strong-family",
+                parkWalk: 8m,
+                fitnessWalk: 9m,
+                museumDrive: 12m,
+                theaterDrive: 14m,
+                cinemaDrive: 16m,
+                storeWalk: 7m,
+                stopWalk: 5m,
+                transportScore: 78m,
+                stopGroupsCountPrimary: 4,
+                schoolCountPrimary: 1,
+                kindergartenCountPrimary: 1,
+                educationScore: 66m),
+            CreateListing(
+                "weak-family",
+                parkWalk: 8m,
+                fitnessWalk: 9m,
+                museumDrive: 12m,
+                theaterDrive: 14m,
+                cinemaDrive: 16m,
+                storeWalk: 7m,
+                stopWalk: 14m,
+                transportScore: 48m,
+                stopGroupsCountPrimary: 1,
+                schoolCountPrimary: 1,
+                kindergartenCountPrimary: 0,
+                educationScore: 52m));
+        await context.SaveChangesAsync();
+
+        var repository = new SearchListingRepository(context);
+        var result = await repository.SearchAsync(new SearchListingsRequestDto
+        {
+            TransportLevel = "good",
+            NeedFamilyInfrastructure = true,
+            Page = 0,
+            PageSize = 20
+        }, CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal("strong-family", result.Items.Single().Title);
+    }
+
+    [Fact]
+    public async Task SearchAsync_ShouldApplyDailyCommerceAndWalkableFilters()
+    {
+        await using var context = CreateContext();
+        context.SearchListings.AddRange(
+            CreateListing(
+                "walkable",
+                parkWalk: 10m,
+                fitnessWalk: 9m,
+                museumDrive: 12m,
+                theaterDrive: 14m,
+                cinemaDrive: 16m,
+                storeWalk: 8m,
+                stopWalk: 6m,
+                pharmacyWalk: 9m,
+                commerceScore: 62m,
+                storeCountPrimary: 2),
+            CreateListing(
+                "not-walkable",
+                parkWalk: 18m,
+                fitnessWalk: 9m,
+                museumDrive: 12m,
+                theaterDrive: 14m,
+                cinemaDrive: 16m,
+                storeWalk: 15m,
+                stopWalk: 11m,
+                pharmacyWalk: 16m,
+                commerceScore: 49m,
+                storeCountPrimary: 1));
+        await context.SaveChangesAsync();
+
+        var repository = new SearchListingRepository(context);
+        var result = await repository.SearchAsync(new SearchListingsRequestDto
+        {
+            NeedDailyCommerce = true,
+            NeedWalkableInfrastructure = true,
+            Page = 0,
+            PageSize = 20
+        }, CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal("walkable", result.Items.Single().Title);
+    }
+
     private static ApplicationDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -108,8 +200,17 @@ public sealed class SearchListingRepositoryTests
         decimal theaterDrive,
         decimal cinemaDrive,
         decimal storeWalk = 5m,
+        decimal stopWalk = 5m,
+        decimal pharmacyWalk = 5m,
         string? listingType = null,
-        string? buildingType = null)
+        string? buildingType = null,
+        decimal? transportScore = null,
+        int? stopGroupsCountPrimary = null,
+        int? schoolCountPrimary = null,
+        int? kindergartenCountPrimary = null,
+        decimal? educationScore = null,
+        decimal? commerceScore = null,
+        int? storeCountPrimary = null)
         => new()
         {
             Id = Guid.NewGuid(),
@@ -122,7 +223,16 @@ public sealed class SearchListingRepositoryTests
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow,
             PublishedDate = DateTimeOffset.UtcNow,
+            TransportScore = transportScore,
+            EducationScore = educationScore,
+            CommerceScore = commerceScore,
+            StopGroupsCountPrimary = stopGroupsCountPrimary,
+            SchoolCountPrimary = schoolCountPrimary,
+            KindergartenCountPrimary = kindergartenCountPrimary,
+            StoreCountPrimary = storeCountPrimary,
             NearestStoreWalkMinutes = storeWalk,
+            NearestPharmacyWalkMinutes = pharmacyWalk,
+            NearestStopWalkMinutes = stopWalk,
             NearestParkWalkMinutes = parkWalk,
             NearestFitnessWalkMinutes = fitnessWalk,
             NearestMuseumDriveMinutes = museumDrive,

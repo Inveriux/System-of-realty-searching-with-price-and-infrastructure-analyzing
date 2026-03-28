@@ -7,13 +7,13 @@ namespace ImageService.UseCases;
 
 public sealed record UploadImageByUrlCommand(UploadImageByUrlRequest Request) : IRequest<Result<ImageUploadResponseDto>>;
 
-public sealed class UploadImageByUrlCommandHandler(IImageBbService imageBbService)
+public sealed class UploadImageByUrlCommandHandler(IImageUploadService imageUploadService)
     : IRequestHandler<UploadImageByUrlCommand, Result<ImageUploadResponseDto>>
 {
     public Task<Result<ImageUploadResponseDto>> Handle(
         UploadImageByUrlCommand request,
         CancellationToken cancellationToken)
-        => imageBbService.UploadUrlAsync(
+        => imageUploadService.UploadUrlAsync(
             request.Request.ImageUrl,
             request.Request.Name,
             request.Request.Expiration,

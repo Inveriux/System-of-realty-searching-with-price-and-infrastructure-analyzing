@@ -18,6 +18,16 @@ public class DeleteListingHandler(
 
         if (listing is null)
         {
+            var removedFromSearchIndex = await searchServiceClient.DeleteListingAsync(request.Id, cancellationToken);
+            if (removedFromSearchIndex)
+            {
+                logger.LogInformation(
+                    "Listing {ListingId} was not found in ListingService, but stale search index entry was removed.",
+                    request.Id);
+
+                return Result.Ok("Listing was already removed from the main store. Stale search entry deleted.");
+            }
+
             return Result.NotFound(
                 "Listing not found.",
                 [new ResultError("Listing not found.", 0, nameof(request.Id))]);

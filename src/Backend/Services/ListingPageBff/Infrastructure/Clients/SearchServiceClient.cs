@@ -22,4 +22,15 @@ public sealed class SearchServiceClient(HttpClient httpClient) : ISearchServiceC
         var wrapped = await JsonSerializer.DeserializeAsync<ApiEnvelope<DownstreamSearchListingDto>>(stream, JsonOptions, cancellationToken);
         return wrapped?.IsSuccess == true ? wrapped.Data : null;
     }
+
+    public async Task<bool> DeleteListingAsync(Guid listingId, CancellationToken cancellationToken)
+    {
+        using var response = await httpClient.DeleteAsync($"internal/search/listings/{listingId}", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return false;
+
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
 }

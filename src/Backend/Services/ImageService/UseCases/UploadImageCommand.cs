@@ -7,7 +7,7 @@ namespace ImageService.UseCases;
 
 public sealed record UploadImageCommand(UploadImageRequest Request) : IRequest<Result<ImageUploadResponseDto>>;
 
-public sealed class UploadImageCommandHandler(IImageBbService imageBbService)
+public sealed class UploadImageCommandHandler(IImageUploadService imageUploadService)
     : IRequestHandler<UploadImageCommand, Result<ImageUploadResponseDto>>
 {
     public async Task<Result<ImageUploadResponseDto>> Handle(UploadImageCommand request, CancellationToken cancellationToken)
@@ -21,7 +21,7 @@ public sealed class UploadImageCommandHandler(IImageBbService imageBbService)
         if (request.Request.Image is null)
             return Result.Validation<ImageUploadResponseDto>("Image file is required.");
 
-        return await imageBbService.UploadFileAsync(
+        return await imageUploadService.UploadFileAsync(
             request.Request.Image,
             request.Request.Name,
             request.Request.Expiration,

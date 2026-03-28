@@ -8,6 +8,9 @@ export type SearchSortBy =
   | "infrastructure_desc";
 
 export type SearchProfile = "default" | "family" | "urban" | "investment" | "student";
+export type InfrastructureLevel = "basic" | "good" | "high" | "premium";
+export type TransportLevel = "any" | "basic" | "good" | "excellent";
+export type CommerceLevel = "any" | "basic" | "good" | "rich";
 
 export type SearchRankingWeights = {
   transportWeight: number;
@@ -77,6 +80,13 @@ export type SearchListingsRequest = {
   maxCinemaDriveMinutes?: number | null;
   maxMetroWalkMinutes?: number | null;
   requireMetroInPrimaryRadius?: boolean | null;
+  infrastructureLevel?: InfrastructureLevel | null;
+  transportLevel?: TransportLevel | null;
+  commerceLevel?: CommerceLevel | null;
+  needDailyCommerce?: boolean | null;
+  needStrongSurfaceTransport?: boolean | null;
+  needFamilyInfrastructure?: boolean | null;
+  needWalkableInfrastructure?: boolean | null;
   latitude?: number | null;
   longitude?: number | null;
   centerLatitude?: number | null;
@@ -121,6 +131,7 @@ export type SearchListingDto = {
   priceCurrency: string | null;
   areaTotal: number;
   mainMediaUrl: string | null;
+  mediaCount?: number | null;
   publishedDate: string | null;
   infrastructureScore: number | null;
   educationScore: number | null;

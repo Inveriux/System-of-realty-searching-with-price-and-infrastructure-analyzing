@@ -1,0 +1,26 @@
+name: diploma.overpass
+
+services:
+  overpass-belarus:
+    image: wiktorn/overpass-api:0.7.62.7
+    container_name: overpass-belarus-local
+    restart: unless-stopped
+    ports:
+      - "12345:80"
+    environment:
+      OVERPASS_MODE: init
+      OVERPASS_META: "no"
+      OVERPASS_PLANET_URL: https://download.geofabrik.de/europe/belarus-260327.osm.pbf
+      OVERPASS_DIFF_URL: https://download.geofabrik.de/europe/belarus-updates/
+      OVERPASS_COMPRESSION: gz
+      OVERPASS_RULES_LOAD: "20"
+      OVERPASS_UPDATE_SLEEP: "3600"
+      OVERPASS_PLANET_PREPROCESS: >-
+        mv /db/planet.osm.bz2 /db/planet.osm.pbf &&
+        osmium cat -o /db/planet.osm.bz2 /db/planet.osm.pbf &&
+        rm /db/planet.osm.pbf
+      OVERPASS_FASTCGI_PROCESSES: "2"
+      OVERPASS_RATE_LIMIT: "4"
+      OVERPASS_TIME: "120"
+    volumes:
+      - ../.local/overpass-belarus-db:/db

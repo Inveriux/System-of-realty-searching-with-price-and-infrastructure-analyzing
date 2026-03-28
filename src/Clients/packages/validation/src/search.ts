@@ -141,6 +141,7 @@ export const SearchListingDtoSchema: z.ZodType<SearchListingDto> = z.object({
   priceCurrency: nullableString,
   areaTotal: z.number(),
   mainMediaUrl: nullableString,
+  mediaCount: nullableNumber.optional(),
   publishedDate: nullableString,
   infrastructureScore: nullableNumber,
   educationScore: nullableNumber,

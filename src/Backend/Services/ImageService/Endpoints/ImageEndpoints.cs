@@ -16,21 +16,21 @@ public sealed class ImageEndpoints : IEndpointRegistrar
 
         group.MapPost("/upload", UploadSingleAsync)
             .WithName("UploadSingleImage")
-            .WithSummary("Uploads a single image file to ImageBB.")
+            .WithSummary("Uploads a single image file to external image storage.")
             .WithDescription("Accepts multipart/form-data with one file in the `image` field.")
             .Accepts<UploadImageRequest>("multipart/form-data")
             .DisableAntiforgery();
 
         group.MapPost("/upload-many", UploadManyAsync)
             .WithName("UploadManyImages")
-            .WithSummary("Uploads up to 10 image files to ImageBB.")
+            .WithSummary("Uploads up to 10 image files to external image storage.")
             .WithDescription("Accepts multipart/form-data with files in the `images` field.")
             .Accepts<UploadManyImagesRequest>("multipart/form-data")
             .DisableAntiforgery();
 
         group.MapPost("/upload-by-url", UploadByUrlAsync)
             .WithName("UploadImageByUrl")
-            .WithSummary("Uploads an image to ImageBB by public URL.")
+            .WithSummary("Uploads an image to external image storage by public URL.")
             .WithDescription("Accepts JSON with `imageUrl` and optional `name` and `expiration`.");
 
         return group;

@@ -22,6 +22,8 @@ export function ProfileListingsClient() {
       setDeletingId(id);
       await deleteListing(api, id);
       await queryClient.invalidateQueries({ queryKey: ["listings"] });
+      await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+      await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
     } finally {
       setDeletingId(null);
     }

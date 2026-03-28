@@ -39,6 +39,7 @@ public sealed class IndexListingHandler(
             PriceCurrency = request.Request.PriceCurrency,
             AreaTotal = request.Request.AreaTotal,
             MainMediaUrl = request.Request.MainMediaUrl,
+            MediaCount = request.Request.MediaCount,
             PublishedDate = request.Request.PublishedDate,
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow

@@ -26,6 +26,7 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.Property(x => x.PriceAmountByn).HasPrecision(18, 2);
         builder.Property(x => x.PriceAmountUsd).HasPrecision(18, 2);
         builder.Property(x => x.AreaTotal).HasPrecision(18, 2);
+        builder.Property(x => x.MediaCount).HasDefaultValue(0);
         builder.Property(x => x.InfrastructureScore).HasPrecision(10, 4);
         builder.Property(x => x.EducationScore).HasPrecision(10, 4);
         builder.Property(x => x.HealthcareScore).HasPrecision(10, 4);

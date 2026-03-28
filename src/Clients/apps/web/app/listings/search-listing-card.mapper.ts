@@ -22,6 +22,7 @@ export function mapSearchListingToCard(
     priceCurrency: (listing.priceCurrency ?? "BYN") as "BYN",
     areaTotal: listing.areaTotal,
     mainMedia: listing.mainMediaUrl,
+    mediaCount: listing.mediaCount,
     listingType,
     buildingType: listing.buildingType,
     publishedDate: listing.publishedDate,

@@ -3,7 +3,13 @@
 import { searchListings } from "@diploma/api/search";
 import { deleteListing } from "@diploma/api/listings";
 import { useSearchListingsQuery } from "@diploma/features";
-import type { SearchListingsRequest, SearchSortBy } from "@diploma/contracts/search";
+import type {
+  CommerceLevel,
+  InfrastructureLevel,
+  SearchListingsRequest,
+  SearchSortBy,
+  TransportLevel,
+} from "@diploma/contracts/search";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,6 +21,9 @@ import { getSearchPropertyTypeLabel, mapSearchListingToCard } from "./search-lis
 import { listingsClientStyles } from "./styles/listings-client.styles";
 import { listingsPageClasses } from "./styles/listings-page.styles";
 
+const LISTINGS_PAGE_SIZE = 10;
+const PAGINATION_WINDOW = 9;
+
 type SearchFormState = {
   query: string;
   listingType: string;
@@ -22,6 +31,13 @@ type SearchFormState = {
   maxPrice: string;
   minArea: string;
   maxArea: string;
+  infrastructureLevel: InfrastructureLevel | "";
+  transportLevel: TransportLevel;
+  commerceLevel: CommerceLevel | "";
+  needDailyCommerce: boolean;
+  needStrongSurfaceTransport: boolean;
+  needFamilyInfrastructure: boolean;
+  needWalkableInfrastructure: boolean;
   minInfrastructureScore: string;
   minEducationCount: string;
   minTransportCount: string;
@@ -43,7 +59,6 @@ type SearchFormState = {
   requireMetroInPrimaryRadius: boolean;
   sortBy: SearchSortBy;
   page: number;
-  pageSize: number;
   searchInMapArea: boolean;
   boundsMinLatitude: number | null;
   boundsMinLongitude: number | null;
@@ -61,6 +76,13 @@ const initialState: SearchFormState = {
   maxPrice: "",
   minArea: "",
   maxArea: "",
+  infrastructureLevel: "",
+  transportLevel: "any",
+  commerceLevel: "",
+  needDailyCommerce: false,
+  needStrongSurfaceTransport: false,
+  needFamilyInfrastructure: false,
+  needWalkableInfrastructure: false,
   minInfrastructureScore: "",
   minEducationCount: "",
   minTransportCount: "",
@@ -82,7 +104,6 @@ const initialState: SearchFormState = {
   requireMetroInPrimaryRadius: false,
   sortBy: "published_desc",
   page: 0,
-  pageSize: 12,
   searchInMapArea: false,
   boundsMinLatitude: null,
   boundsMinLongitude: null,
@@ -102,6 +123,23 @@ function parseOptionalNumber(value: string) {
   return Number.isFinite(normalized) ? normalized : null;
 }
 
+function getVisiblePageNumbers(currentPage: number, totalPages: number) {
+  if (totalPages <= PAGINATION_WINDOW) {
+    return Array.from({ length: totalPages }, (_, index) => index);
+  }
+
+  const halfWindow = Math.floor(PAGINATION_WINDOW / 2);
+  let start = Math.max(0, currentPage - halfWindow);
+  let end = start + PAGINATION_WINDOW - 1;
+
+  if (end >= totalPages) {
+    end = totalPages - 1;
+    start = Math.max(0, end - PAGINATION_WINDOW + 1);
+  }
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 export function ListingsClient() {
   const queryClient = useQueryClient();
   const { api, user } = useAuth();
@@ -117,6 +155,13 @@ export function ListingsClient() {
     maxPrice: parseOptionalNumber(filters.maxPrice),
     minArea: parseOptionalNumber(filters.minArea),
     maxArea: parseOptionalNumber(filters.maxArea),
+    infrastructureLevel: filters.infrastructureLevel || null,
+    transportLevel: filters.transportLevel === "any" ? null : filters.transportLevel,
+    commerceLevel: filters.commerceLevel || null,
+    needDailyCommerce: filters.needDailyCommerce ? true : null,
+    needStrongSurfaceTransport: filters.needStrongSurfaceTransport ? true : null,
+    needFamilyInfrastructure: filters.needFamilyInfrastructure ? true : null,
+    needWalkableInfrastructure: filters.needWalkableInfrastructure ? true : null,
     minInfrastructureScore: parseOptionalNumber(filters.minInfrastructureScore),
     minEducationCount: parseOptionalNumber(filters.minEducationCount),
     minTransportCount: parseOptionalNumber(filters.minTransportCount),
@@ -157,14 +202,14 @@ export function ListingsClient() {
     sort: filters.sortBy,
     sortBy: filters.sortBy,
     page: filters.page,
-    pageSize: filters.pageSize,
+    pageSize: LISTINGS_PAGE_SIZE,
   }), [filters]);
   const deferredSearchRequest = useDeferredValue(searchRequest);
   const { data, isLoading, error } = useSearchListingsQuery(api, deferredSearchRequest);
   const mapSearchRequest = useMemo<SearchListingsRequest>(() => ({
     ...searchRequest,
     page: 0,
-    pageSize: Math.max(data?.totalCount ?? searchRequest.pageSize, searchRequest.pageSize),
+    pageSize: Math.max(data?.totalCount ?? LISTINGS_PAGE_SIZE, LISTINGS_PAGE_SIZE),
   }), [data?.totalCount, searchRequest]);
   const deferredMapSearchRequest = useDeferredValue(mapSearchRequest);
   const { data: mapData } = useQuery({
@@ -191,7 +236,7 @@ export function ListingsClient() {
     }),
   );
   const mapItemsSource =
-    filters.page === 0 && (data?.totalCount ?? 0) <= filters.pageSize
+    filters.page === 0 && (data?.totalCount ?? 0) <= LISTINGS_PAGE_SIZE
       ? (data?.items ?? [])
       : (mapData?.items ?? data?.items ?? []);
   const mapListings = mapItemsSource
@@ -205,12 +250,13 @@ export function ListingsClient() {
       latitude: listing.latitude as number,
       longitude: listing.longitude as number,
       priceText: `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(listing.priceAmount ?? 0)} ${listing.priceCurrency ?? "BYN"}`,
+      publishedDate: listing.publishedDate,
     }));
   const listingsWithoutCoordinates = (data?.items ?? []).filter(
     (listing) => listing.latitude == null || listing.longitude == null,
   ).length;
-  const mapVisibleCount = mapListings.length;
-  const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / filters.pageSize));
+  const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / LISTINGS_PAGE_SIZE));
+  const visiblePages = getVisiblePageNumbers(filters.page, totalPages);
   const activeFiltersCount = [
     filters.query.trim(),
     filters.listingType,
@@ -218,6 +264,13 @@ export function ListingsClient() {
     filters.maxPrice,
     filters.minArea,
     filters.maxArea,
+    filters.infrastructureLevel,
+    filters.transportLevel !== "any" ? filters.transportLevel : "",
+    filters.commerceLevel,
+    filters.needDailyCommerce ? "daily-commerce" : "",
+    filters.needStrongSurfaceTransport ? "surface-transport" : "",
+    filters.needFamilyInfrastructure ? "family" : "",
+    filters.needWalkableInfrastructure ? "walkable" : "",
     filters.minInfrastructureScore,
     filters.minEducationCount,
     filters.minTransportCount,
@@ -239,7 +292,6 @@ export function ListingsClient() {
     filters.requireMetroInPrimaryRadius ? "metro" : "",
     filters.radiusMeters,
     filters.centerLatitude != null && filters.centerLongitude != null ? "point" : "",
-    filters.sortBy !== initialState.sortBy ? filters.sortBy : "",
   ].filter(Boolean).length;
 
   function updateFilter<K extends keyof SearchFormState>(key: K, value: SearchFormState[K]) {
@@ -249,6 +301,50 @@ export function ListingsClient() {
       page: key === "page" ? (value as SearchFormState["page"]) : 0,
     }));
   }
+
+  const paginationBlock = totalPages > 1 ? (
+    <div style={listingsClientStyles.footerRow}>
+      <div style={listingsClientStyles.footerMeta}>
+        Страница {Math.min((data?.page ?? 0) + 1, totalPages)} из {totalPages}
+      </div>
+
+      <div style={listingsClientStyles.footerActions}>
+        <button
+          className="button-secondary"
+          type="button"
+          disabled={filters.page <= 0}
+          onClick={() => updateFilter("page", Math.max(0, filters.page - 1))}
+        >
+          Назад
+        </button>
+        <div className="flex flex-wrap gap-2">
+          {visiblePages.map((pageNumber) => {
+            const isActive = pageNumber === filters.page;
+
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => updateFilter("page", pageNumber)}
+                className={isActive ? "button-primary" : "button-secondary"}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {pageNumber + 1}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          className="button-secondary"
+          type="button"
+          disabled={filters.page + 1 >= totalPages}
+          onClick={() => updateFilter("page", filters.page + 1)}
+        >
+          Дальше
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <AppShell>
@@ -329,6 +425,41 @@ export function ListingsClient() {
                         Площадь: {filters.minArea || "0"} - {filters.maxArea || "∞"} м²
                       </span>
                     ) : null}
+                    {filters.infrastructureLevel ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Инфраструктура: {filters.infrastructureLevel}
+                      </span>
+                    ) : null}
+                    {filters.transportLevel !== "any" ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Транспорт: {filters.transportLevel}
+                      </span>
+                    ) : null}
+                    {filters.commerceLevel ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Коммерция: {filters.commerceLevel}
+                      </span>
+                    ) : null}
+                    {filters.needFamilyInfrastructure ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Для семьи
+                      </span>
+                    ) : null}
+                    {filters.needWalkableInfrastructure ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Всё рядом пешком
+                      </span>
+                    ) : null}
+                    {filters.needStrongSurfaceTransport ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Сильный наземный транспорт
+                      </span>
+                    ) : null}
+                    {filters.needDailyCommerce ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Повседневная коммерция
+                      </span>
+                    ) : null}
                     {filters.centerLatitude != null && filters.centerLongitude != null ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Точка на карте
@@ -337,11 +468,6 @@ export function ListingsClient() {
                     {filters.radiusMeters && filters.centerLatitude != null && filters.centerLongitude != null ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Радиус: {filters.radiusMeters} м
-                      </span>
-                    ) : null}
-                    {filters.sortBy !== initialState.sortBy ? (
-                      <span className="surface" style={listingsClientStyles.filterTag}>
-                        Сортировка: {filters.sortBy}
                       </span>
                     ) : null}
                   </>
@@ -364,10 +490,11 @@ export function ListingsClient() {
               <p style={listingsClientStyles.metaText}>
                 Страница {Math.min((data?.page ?? 0) + 1, totalPages)} из {totalPages}
               </p>
-              <p style={listingsClientStyles.metaText}>
-                На карте: {mapVisibleCount} из {data?.totalCount ?? 0}
-                {listingsWithoutCoordinates > 0 ? `, без координат на этой странице: ${listingsWithoutCoordinates}` : ""}
-              </p>
+              {listingsWithoutCoordinates > 0 ? (
+                <p style={listingsClientStyles.metaText}>
+                  Без координат на этой странице: {listingsWithoutCoordinates}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -377,42 +504,38 @@ export function ListingsClient() {
             </div>
           ) : null}
 
+          <div style={listingsClientStyles.footerRow}>
+            <div style={listingsClientStyles.footerMeta}>
+              Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
+            </div>
+            <div style={listingsClientStyles.footerActions}>
+              <select
+                className="field"
+                value={filters.sortBy}
+                onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
+                style={{ minWidth: 220 }}
+              >
+                <option value="relevance">По релевантности</option>
+                <option value="published_desc">Сначала новые</option>
+                <option value="area_desc">Площадь больше</option>
+                <option value="price_asc">Цена по возрастанию</option>
+                <option value="price_desc">Цена по убыванию</option>
+                <option value="infrastructure_desc">Лучшая инфраструктура</option>
+              </select>
+            </div>
+          </div>
+
+          {paginationBlock}
+
           <ListingGrid items={items} isLoading={isLoading && items.length === 0} />
 
           <div style={listingsClientStyles.footerRow}>
             <div style={listingsClientStyles.footerMeta}>
               Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
             </div>
-
-            <div style={listingsClientStyles.footerActions}>
-              <select
-                className="field"
-                value={String(filters.pageSize)}
-                onChange={(event) => updateFilter("pageSize", Number(event.target.value))}
-                style={listingsClientStyles.pageSizeSelect}
-              >
-                <option value="12">12 / стр.</option>
-                <option value="24">24 / стр.</option>
-                <option value="36">36 / стр.</option>
-              </select>
-              <button
-                className="button-secondary"
-                type="button"
-                disabled={filters.page <= 0}
-                onClick={() => updateFilter("page", Math.max(0, filters.page - 1))}
-              >
-                Назад
-              </button>
-              <button
-                className="button-secondary"
-                type="button"
-                disabled={filters.page + 1 >= totalPages}
-                onClick={() => updateFilter("page", filters.page + 1)}
-              >
-                Дальше
-              </button>
-            </div>
           </div>
+
+          {paginationBlock}
         </section>
       </main>
 
@@ -486,7 +609,7 @@ export function ListingsClient() {
                       Параметры поиска
                     </h2>
                     <p style={listingsClientStyles.mutedParagraph}>
-                      Здесь можно уточнить цену, площадь, инфраструктуру, сортировку и поиск вокруг выбранной точки на карте.
+                      Здесь можно уточнить цену, площадь, инфраструктуру и поиск вокруг выбранной точки на карте.
                     </p>
                   </div>
                   <button
@@ -542,6 +665,81 @@ export function ListingsClient() {
                     placeholder="Площадь до, м²"
                     inputMode="decimal"
                   />
+                  <select
+                    className="field"
+                    value={filters.infrastructureLevel}
+                    onChange={(event) => updateFilter("infrastructureLevel", event.target.value as InfrastructureLevel | "")}
+                  >
+                    <option value="">Минимальная общая инфраструктура</option>
+                    <option value="basic">Базовая</option>
+                    <option value="good">Хорошая</option>
+                    <option value="high">Высокая</option>
+                    <option value="premium">Премиальная</option>
+                  </select>
+                  <select
+                    className="field"
+                    value={filters.transportLevel}
+                    onChange={(event) => updateFilter("transportLevel", event.target.value as TransportLevel)}
+                  >
+                    <option value="any">Транспорт: любой</option>
+                    <option value="basic">Транспорт: базовый</option>
+                    <option value="good">Транспорт: хороший</option>
+                    <option value="excellent">Транспорт: отличный</option>
+                  </select>
+                  <select
+                    className="field"
+                    value={filters.commerceLevel}
+                    onChange={(event) => updateFilter("commerceLevel", event.target.value as CommerceLevel | "")}
+                  >
+                    <option value="">Коммерция: любая</option>
+                    <option value="basic">Коммерция: базовая</option>
+                    <option value="good">Коммерция: хорошая</option>
+                    <option value="rich">Коммерция: насыщенная</option>
+                  </select>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.needFamilyInfrastructure}
+                      onChange={(event) => updateFilter("needFamilyInfrastructure", event.target.checked)}
+                    />
+                    Для семьи
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.needWalkableInfrastructure}
+                      onChange={(event) => updateFilter("needWalkableInfrastructure", event.target.checked)}
+                    />
+                    Всё рядом пешком
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.needStrongSurfaceTransport}
+                      onChange={(event) => updateFilter("needStrongSurfaceTransport", event.target.checked)}
+                    />
+                    Сильный наземный транспорт
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.needDailyCommerce}
+                      onChange={(event) => updateFilter("needDailyCommerce", event.target.checked)}
+                    />
+                    Нужна повседневная коммерция
+                  </label>
+                </div>
+
+                <div className="grid gap-2">
+                  <h3 className="section-title" style={{ fontSize: 18 }}>
+                    Расширенные фильтры
+                  </h3>
+                  <p style={listingsClientStyles.mutedParagraph}>
+                    Здесь остаются точные ограничения по метрам, минутам и количеству.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   <input
                     className="field"
                     value={filters.minInfrastructureScore}
@@ -549,18 +747,6 @@ export function ListingsClient() {
                     placeholder="Инфраструктура от"
                     inputMode="decimal"
                   />
-                  <select
-                    className="field"
-                    value={filters.sortBy}
-                    onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
-                  >
-                    <option value="relevance">По релевантности</option>
-                    <option value="published_desc">Сначала новые</option>
-                    <option value="area_desc">Площадь больше</option>
-                    <option value="price_asc">Цена по возрастанию</option>
-                    <option value="price_desc">Цена по убыванию</option>
-                    <option value="infrastructure_desc">Инфраструктура выше</option>
-                  </select>
                   <input
                     className="field"
                     value={filters.minEducationCount}

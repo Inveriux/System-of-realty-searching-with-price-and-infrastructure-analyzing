@@ -76,6 +76,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         existing.PriceCurrency = listing.PriceCurrency;
         existing.AreaTotal = listing.AreaTotal;
         existing.MainMediaUrl = listing.MainMediaUrl;
+        existing.MediaCount = listing.MediaCount;
         existing.PublishedDate = listing.PublishedDate;
         existing.InfrastructureScore = listing.InfrastructureScore;
         existing.EducationScore = listing.EducationScore;
@@ -273,6 +274,8 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         if (request.RequireMetroInPrimaryRadius.HasValue)
             searchQuery = searchQuery.Where(x => x.MetroFoundInPrimaryRadius == request.RequireMetroInPrimaryRadius.Value);
 
+        searchQuery = ApplyHighLevelFilters(searchQuery, request);
+
         if (HasBounds(request))
         {
             searchQuery = searchQuery.Where(x =>
@@ -310,6 +313,104 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
            request.BoundsMinLongitude.HasValue &&
            request.BoundsMaxLatitude.HasValue &&
            request.BoundsMaxLongitude.HasValue;
+
+    private static IQueryable<SearchListing> ApplyHighLevelFilters(IQueryable<SearchListing> searchQuery, SearchListingsRequestDto request)
+    {
+        if (TryGetInfrastructureThreshold(request.InfrastructureLevel, out var infrastructureThreshold))
+        {
+            searchQuery = searchQuery.Where(x => (x.InfrastructureScore ?? 0m) >= infrastructureThreshold);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TransportLevel))
+        {
+            searchQuery = request.TransportLevel.Trim().ToLowerInvariant() switch
+            {
+                "basic" => searchQuery.Where(x =>
+                    (x.TransportScore ?? 0m) >= 45m ||
+                    (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 12m) ||
+                    (x.StopGroupsCountPrimary ?? 0) >= 2),
+                "good" => searchQuery.Where(x =>
+                    (x.TransportScore ?? 0m) >= 65m ||
+                    (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 8m) ||
+                    (x.StopGroupsCountPrimary ?? 0) >= 3),
+                "excellent" => searchQuery.Where(x =>
+                    (x.TransportScore ?? 0m) >= 80m ||
+                    ((x.StopGroupsCountPrimary ?? 0) >= 5 && x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 6m) ||
+                    x.MetroFoundInPrimaryRadius),
+                _ => searchQuery
+            };
+        }
+
+        if (TryGetCommerceThreshold(request.CommerceLevel, out var commerceThreshold))
+        {
+            searchQuery = searchQuery.Where(x => (x.CommerceScore ?? 0m) >= commerceThreshold);
+        }
+
+        if (request.NeedDailyCommerce == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.StoreCountPrimary ?? 0) >= 1 &&
+                (x.NearestStoreWalkMinutes == null || x.NearestStoreWalkMinutes <= 12m) &&
+                (x.CommerceScore ?? 0m) >= 50m);
+        }
+
+        if (request.NeedStrongSurfaceTransport == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.StopGroupsCountPrimary ?? 0) >= 4 ||
+                (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 6m) ||
+                (x.TransportScore ?? 0m) >= 75m);
+        }
+
+        if (request.NeedFamilyInfrastructure == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.SchoolCountPrimary ?? 0) >= 1 &&
+                (x.KindergartenCountPrimary ?? 0) >= 1 &&
+                (x.EducationScore ?? 0m) >= 60m);
+        }
+
+        if (request.NeedWalkableInfrastructure == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                x.NearestStoreWalkMinutes != null && x.NearestStoreWalkMinutes <= 12m &&
+                x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 8m &&
+                (
+                    (x.NearestSchoolWalkMinutes != null && x.NearestSchoolWalkMinutes <= 15m) ||
+                    (x.NearestParkWalkMinutes != null && x.NearestParkWalkMinutes <= 15m) ||
+                    (x.NearestPharmacyWalkMinutes != null && x.NearestPharmacyWalkMinutes <= 12m)
+                ));
+        }
+
+        return searchQuery;
+    }
+
+    private static bool TryGetInfrastructureThreshold(string? level, out decimal threshold)
+    {
+        threshold = level?.Trim().ToLowerInvariant() switch
+        {
+            "basic" => 45m,
+            "good" => 60m,
+            "high" => 75m,
+            "premium" => 88m,
+            _ => 0m
+        };
+
+        return !string.IsNullOrWhiteSpace(level) && threshold > 0m;
+    }
+
+    private static bool TryGetCommerceThreshold(string? level, out decimal threshold)
+    {
+        threshold = level?.Trim().ToLowerInvariant() switch
+        {
+            "basic" => 45m,
+            "good" => 60m,
+            "rich" => 75m,
+            _ => 0m
+        };
+
+        return !string.IsNullOrWhiteSpace(level) && threshold > 0m;
+    }
 
     private static IOrderedQueryable<SearchListing> ApplyCandidateSorting(IQueryable<SearchListing> query, SearchListingsRequestDto request)
     {

@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  loadYandexMaps,
+  type YandexGeoObject,
+  type YandexMapInstance,
+  type YandexMapsApi,
+  type YandexPlacemark,
+} from "../lib/loadYandexMaps";
 import { listingsMapOverviewStyles } from "./styles/listings-map-overview.styles";
-
-const YANDEX_MAPS_API_KEY =
-  process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ??
-  "3225bb0b-e2a7-455f-9c95-ce49d86acbcb";
 
 type MapListingItem = {
   id: string;
@@ -16,84 +19,60 @@ type MapListingItem = {
   latitude: number;
   longitude: number;
   priceText: string;
+  publishedDate: string | null;
 };
-
-type YandexMapsApi = {
-  ready(callback: () => void): void;
-  Map: new (container: HTMLElement, state: unknown, options?: unknown) => YandexMapInstance;
-  Placemark: new (geometry: [number, number], properties?: unknown, options?: unknown) => YandexPlacemark;
-  Circle: new (geometry: [[number, number], number], properties?: unknown, options?: unknown) => YandexGeoObject;
-};
-
-type YandexMapInstance = {
-  geoObjects: {
-    add(object: unknown): void;
-    remove(object: unknown): void;
-  };
-  events?: {
-    add(eventName: string, handler: (event: YandexMapEvent) => void): void;
-  };
-  getBounds?(): [[number, number], [number, number]] | null;
-  setCenter?(center: [number, number], zoom?: number, options?: unknown): void;
-  destroy(): void;
-};
-
-type YandexGeoObject = {
-  geometry?: {
-    setCoordinates?(coords: [number, number]): void;
-    setRadius?(radius: number): void;
-  };
-};
-
-type YandexPlacemark = {
-  events?: {
-    add(eventName: string, handler: () => void): void;
-  };
-  balloon?: {
-    open(): void;
-  };
-} & YandexGeoObject;
 
 type YandexMapEvent = {
   get(name: "coords"): [number, number];
 };
 
-let yandexMapsPromise: Promise<YandexMapsApi> | null = null;
-
-function loadYandexMaps() {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("Yandex Maps доступны только в браузере."));
+function formatPublishedDate(value: string | null) {
+  if (!value) {
+    return null;
   }
 
-  const globalWindow = window as typeof window & { ymaps?: unknown };
-
-  if (globalWindow.ymaps) {
-    return Promise.resolve(globalWindow.ymaps as unknown as YandexMapsApi);
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
   }
 
-  if (yandexMapsPromise) {
-    return yandexMapsPromise;
+  return new Intl.DateTimeFormat("ru-BY", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function getListingMarkerOptions(propertyType: string) {
+  const normalized = propertyType.trim().toLowerCase();
+
+  let iconImageHref = "/map-markers/listing-apartment.svg";
+
+  switch (normalized) {
+    case "дом":
+      iconImageHref = "/map-markers/listing-house.svg";
+      break;
+    case "участок":
+      iconImageHref = "/map-markers/listing-land.svg";
+      break;
+    case "офис":
+      iconImageHref = "/map-markers/listing-office.svg";
+      break;
+    case "склад":
+      iconImageHref = "/map-markers/listing-warehouse.svg";
+      break;
+    case "квартира":
+    default:
+      iconImageHref = "/map-markers/listing-apartment.svg";
+      break;
   }
 
-  yandexMapsPromise = new Promise<YandexMapsApi>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://api-maps.yandex.ru/2.1/?apikey=${encodeURIComponent(
-      YANDEX_MAPS_API_KEY,
-    )}&lang=ru_RU`;
-    script.async = true;
-    script.onload = () => {
-      if (globalWindow.ymaps) {
-        resolve(globalWindow.ymaps as unknown as YandexMapsApi);
-        return;
-      }
-
-      reject(new Error("Yandex Maps API не инициализировался."));
-    };
-    script.onerror = () => reject(new Error("Не удалось загрузить Yandex Maps API."));
-    document.head.appendChild(script);
-  });
-
-  return yandexMapsPromise;
+  return {
+    iconLayout: "default#image",
+    iconImageHref,
+    iconImageSize: [32, 40],
+    iconImageOffset: [-16, -36],
+  };
 }
 
 type Props = {
@@ -171,6 +150,7 @@ export function ListingsMapOverview({
           );
 
           for (const listing of mappableListings) {
+            const publishedDateLabel = formatPublishedDate(listing.publishedDate);
             const placemark = new ymaps.Placemark(
               [listing.latitude, listing.longitude],
               {
@@ -181,12 +161,13 @@ export function ListingsMapOverview({
                     <div style="color:#5b3df5;font-size:13px;font-weight:700;">${listing.propertyType}</div>
                     <div style="color:#667085;font-size:13px;">${listing.addressText ?? "Адрес уточняется"}</div>
                     <div style="font-weight:800;">${listing.priceText}</div>
+                    ${publishedDateLabel ? `<div style="color:#667085;font-size:12px;">Опубликовано: ${publishedDateLabel}</div>` : ""}
                     <a href="${listing.href}" style="color:#5b3df5;font-weight:700;text-decoration:none;">Открыть объявление</a>
                   </div>
                 `,
               },
               {
-                preset: "islands#darkBlueDotIcon",
+                ...getListingMarkerOptions(listing.propertyType),
               },
             );
 

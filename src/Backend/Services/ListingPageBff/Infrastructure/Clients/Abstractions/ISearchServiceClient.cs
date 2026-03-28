@@ -5,4 +5,5 @@ namespace ListingPageBff.Infrastructure.Clients.Abstractions;
 public interface ISearchServiceClient
 {
     Task<DownstreamSearchListingDto?> GetListingAsync(Guid listingId, CancellationToken cancellationToken);
+    Task<bool> DeleteListingAsync(Guid listingId, CancellationToken cancellationToken);
 }

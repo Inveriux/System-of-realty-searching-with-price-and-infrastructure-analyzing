@@ -908,9 +908,11 @@ export function CreateListingClient() {
     };
 
     try {
-      await createListingWithImages(api, payload, files);
+      const createdListingId = await createListingWithImages(api, payload, files);
       await queryClient.invalidateQueries({ queryKey: ["listings"] });
-      router.push("/listings");
+      await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+      await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
+      router.push(`/listings/${createdListingId}`);
     } catch (submissionError) {
       setError(
         submissionError instanceof Error

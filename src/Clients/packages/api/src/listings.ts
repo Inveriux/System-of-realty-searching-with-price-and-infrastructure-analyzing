@@ -22,6 +22,21 @@ const LookupOptionsSchema = z.object({
   ),
 });
 
+const CreateListingResultSchema = z.object({
+  isSuccess: z.boolean(),
+  message: z.string().nullable(),
+  statusCode: z.number(),
+  data: z.string().uuid(),
+  errors: z.array(
+    z.object({
+      message: z.string().optional(),
+      errorMessage: z.string().optional(),
+      code: z.number().nullable().optional(),
+      propertyName: z.string().nullable().optional(),
+    }),
+  ),
+});
+
 const PagedListingsSchema = createPagedResponseSchema(ListingDtoSchema);
 const ListingsResultSchema = z.object({
   isSuccess: z.boolean(),
@@ -121,7 +136,8 @@ export async function createListingWithImages(
     formData.append("images", image);
   }
 
-  await api.postFormVoid("/api/listings/with-images", formData);
+  const result = await api.post("/api/listings/with-images", formData, CreateListingResultSchema);
+  return result.data;
 }
 
 export async function deleteListing(api: ApiClient, listingId: string) {

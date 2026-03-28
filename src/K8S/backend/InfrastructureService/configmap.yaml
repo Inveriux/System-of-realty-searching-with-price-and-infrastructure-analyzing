@@ -10,3 +10,9 @@ data:
   Yandex__OrganizationSearchBaseUrl: https://search-maps.yandex.ru/
   Yandex__Language: ru_RU
   Yandex__DefaultSearchRadiusMeters: "1500"
+  Overpass__BaseUrl: http://172.19.0.1:12345/api/interpreter
+  Overpass__TimeoutSeconds: "20"
+  Overpass__UsePublicInstance: "false"
+  Overpass__RetryCount: "1"
+  Overpass__RetryDelayMs: "500"
+  Overpass__UserAgent: DiplomaRealEstateApp/1.0 (local-overpass)

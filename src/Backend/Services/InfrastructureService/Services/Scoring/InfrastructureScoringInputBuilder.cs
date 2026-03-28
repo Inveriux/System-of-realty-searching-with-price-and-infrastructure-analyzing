@@ -51,6 +51,8 @@ public sealed partial class InfrastructureScoringInputBuilder : IInfrastructureS
                 "metro_station" => new TransportScoringEntity("metro_station", cluster.Latitude, cluster.Longitude, cluster.DistanceMeters, cluster.Name, cluster.SourceCount, "metro_station"),
                 "railway_station" => new TransportScoringEntity("railway_station", cluster.Latitude, cluster.Longitude, cluster.DistanceMeters, cluster.Name, cluster.SourceCount, "railway_station"),
                 "parking" => new TransportScoringEntity("parking", cluster.Latitude, cluster.Longitude, cluster.DistanceMeters, cluster.Name, cluster.SourceCount, "parking"),
+                "fuel_station" => new TransportScoringEntity("fuel_station", cluster.Latitude, cluster.Longitude, cluster.DistanceMeters, cluster.Name, cluster.SourceCount, "fuel_station"),
+                "service_station" => new TransportScoringEntity("service_station", cluster.Latitude, cluster.Longitude, cluster.DistanceMeters, cluster.Name, cluster.SourceCount, "service_station"),
                 _ => null
             };
 

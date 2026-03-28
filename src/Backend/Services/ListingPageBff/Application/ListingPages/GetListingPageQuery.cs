@@ -35,7 +35,10 @@ public sealed class GetListingPageHandler(
         }
 
         if (listing is null)
+        {
+            await TryDeleteStaleSearchEntryAsync(request.ListingId, cancellationToken);
             return Result.NotFound<ListingPageDto>($"Listing '{request.ListingId}' was not found.");
+        }
 
         var warnings = new List<ListingPageWarningDto>();
 
@@ -177,6 +180,26 @@ public sealed class GetListingPageHandler(
                 Message = "Search enrichment is unavailable. Listing page returned without optional search-derived data."
             });
             return null;
+        }
+    }
+
+    private async Task TryDeleteStaleSearchEntryAsync(Guid listingId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var deleted = await searchServiceClient.DeleteListingAsync(listingId, cancellationToken);
+            if (deleted)
+            {
+                logger.LogInformation(
+                    "Listing {ListingId} was missing in ListingService. Removed stale search entry.",
+                    listingId);
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            logger.LogInformation(ex,
+                "Failed to remove stale search entry for missing listing {ListingId}.",
+                listingId);
         }
     }
 }

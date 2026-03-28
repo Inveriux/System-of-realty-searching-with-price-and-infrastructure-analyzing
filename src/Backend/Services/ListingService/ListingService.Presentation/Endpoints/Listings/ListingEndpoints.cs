@@ -193,6 +193,16 @@ public class ListingsEndpoints : IEndpointRegistrar
             result.IsSuccess,
             result.Message);
 
+        if (!result.IsSuccess && result.Errors.Count > 0)
+        {
+            logger.LogWarning(
+                "CreateListingCommand validation/business errors: {Errors}",
+                string.Join("; ", result.Errors.Select(static error =>
+                    string.IsNullOrWhiteSpace(error.PropertyName)
+                        ? error.ErrorMessage
+                        : $"{error.PropertyName}: {error.ErrorMessage}")));
+        }
+
         return result.ToHttpResult();
     }
 

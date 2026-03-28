@@ -97,6 +97,12 @@
     ],
     "parking": [
       "парковка", "parking", "паркинг", "стоянка", "garage parking"
+    ],
+    "fuel_station": [
+      "азс", "заправка", "fuel", "gas station", "petrol station"
+    ],
+    "service_station": [
+      "сто", "автосервис", "car repair", "service station", "автомастерская", "автомойка", "car wash"
     ]
   },
   "education": {
@@ -116,6 +122,10 @@
   "leisure": {
     "park": [
       "парк", "park", "сквер", "square", "набережная", "embankment"
+    ],
+    "recreation_zone": [
+      "лес", "forest", "лесопарк", "forest park", "природная зона", "nature reserve",
+      "зона отдыха", "recreation area", "пляж", "beach", "protected area", "national park"
     ],
     "cinema": [
       "кинотеатр", "cinema", "movie theater",
@@ -158,6 +168,11 @@
     ],
     "library": [
       "библиотека", "library"
+    ],
+    "landmark": [
+      "достопримечательность", "landmark", "памятник", "monument", "мемориал", "memorial",
+      "смотровая площадка", "viewpoint", "арт-объект", "artwork", "замок", "castle",
+      "храм", "собор", "церковь", "мечеть", "синагога", "church", "cathedral", "mosque", "synagogue", "temple"
     ],
     "recreation_zone": [
       "зона отдыха", "recreation area", "пляж", "beach"

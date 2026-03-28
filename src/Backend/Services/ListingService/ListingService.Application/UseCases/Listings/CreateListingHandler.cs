@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ListingService.Application.UseCases.Listings;
 
-public record CreateListingCommand(CreateListingDto ListingDto) : IRequest<Result>;
+public record CreateListingCommand(CreateListingDto ListingDto) : IRequest<Result<Guid>>;
 
 public class CreateListingHandler(IRepositoryManager manager, 
     ILookupCache cache, 
@@ -21,13 +21,14 @@ public class CreateListingHandler(IRepositoryManager manager,
     ICurrencyRateService currencyRateService,
     ISearchServiceClient searchServiceClient,
     ILogger<CreateListingHandler> logger)
-    : IRequestHandler<CreateListingCommand, Result>
+    : IRequestHandler<CreateListingCommand, Result<Guid>>
 {
-    public async Task<Result> Handle(CreateListingCommand request, 
+    public async Task<Result<Guid>> Handle(CreateListingCommand request, 
         CancellationToken cancellationToken)
     {   
         var listing = mapper.Map<Listing>(request.ListingDto);
         listing.AgentId = currentUserProvider.GetUserId();
+        listing.PublishedDate = request.ListingDto.PublishedDate?.ToUniversalTime();
         await NormalizePriceAsync(listing, request.ListingDto, cancellationToken);
 
         if (!listing.LocationId.HasValue && !string.IsNullOrWhiteSpace(listing.AddressText))
@@ -52,7 +53,7 @@ public class CreateListingHandler(IRepositoryManager manager,
                 string.Join("; ", resolveLookupIdsResult.Errors.Select(static e =>
                     $"{e.PropertyName}: {e.ErrorMessage}")));
 
-            return Result.Fail(
+            return Result.Fail<Guid>(
                 resolveLookupIdsResult.StatusCode,
                 resolveLookupIdsResult.Message,
                 resolveLookupIdsResult.Errors);
@@ -62,48 +63,75 @@ public class CreateListingHandler(IRepositoryManager manager,
 
         await manager.SaveChangesAsync(cancellationToken);
 
+        var postCommitCancellationToken = CancellationToken.None;
+
         if (listing.LocationId.HasValue)
         {
-            var refreshed = await infrastructureServiceClient.RefreshInfrastructureAsync(listing.LocationId.Value, cancellationToken);
-            if (!refreshed)
+            try
+            {
+                var refreshed = await infrastructureServiceClient.RefreshInfrastructureAsync(
+                    listing.LocationId.Value,
+                    postCommitCancellationToken);
+
+                if (!refreshed)
+                {
+                    logger.LogWarning(
+                        "Listing {ListingId} was created, but infrastructure refresh failed for location {LocationId}.",
+                        listing.Id,
+                        listing.LocationId.Value);
+                }
+            }
+            catch (Exception ex)
             {
                 logger.LogWarning(
-                    "Listing {ListingId} was created, but infrastructure refresh failed for location {LocationId}.",
+                    ex,
+                    "Listing {ListingId} was created, but infrastructure refresh threw for location {LocationId}.",
                     listing.Id,
                     listing.LocationId.Value);
             }
         }
 
-        var indexed = await searchServiceClient.IndexListingAsync(new SearchListingIndexRequest
+        try
         {
-            ListingId = listing.Id,
-            AgentId = listing.AgentId,
-            Title = listing.Title,
-            Description = listing.Description,
-            AddressText = listing.AddressText,
-            LocationId = listing.LocationId,
-            Latitude = listing.Latitude,
-            Longitude = listing.Longitude,
-            ListingType = request.ListingDto.ListingType,
-            BuildingType = request.ListingDto.BuildingType,
-            PriceAmount = listing.PriceAmount,
-            PriceAmountByn = listing.PriceAmountByn,
-            PriceAmountUsd = listing.PriceAmountUsd,
-            PriceCurrency = listing.PriceCurrency,
-            AreaTotal = listing.AreaTotal,
-            MainMediaUrl = request.ListingDto.MediaUrls?.FirstOrDefault(static url => !string.IsNullOrWhiteSpace(url)),
-            PublishedDate = listing.PublishedDate,
-            ListingDetailsType = listing.ListingDetailsType.ToString()
-        }, cancellationToken);
+            var indexed = await searchServiceClient.IndexListingAsync(new SearchListingIndexRequest
+            {
+                ListingId = listing.Id,
+                AgentId = listing.AgentId,
+                Title = listing.Title,
+                Description = listing.Description,
+                AddressText = listing.AddressText,
+                LocationId = listing.LocationId,
+                Latitude = listing.Latitude,
+                Longitude = listing.Longitude,
+                ListingType = request.ListingDto.ListingType,
+                BuildingType = request.ListingDto.BuildingType,
+                PriceAmount = listing.PriceAmount,
+                PriceAmountByn = listing.PriceAmountByn,
+                PriceAmountUsd = listing.PriceAmountUsd,
+                PriceCurrency = listing.PriceCurrency,
+                AreaTotal = listing.AreaTotal,
+                MainMediaUrl = request.ListingDto.MediaUrls?.FirstOrDefault(static url => !string.IsNullOrWhiteSpace(url)),
+                MediaCount = request.ListingDto.MediaUrls?.Count(static url => !string.IsNullOrWhiteSpace(url)) ?? 0,
+                PublishedDate = listing.PublishedDate,
+                ListingDetailsType = listing.ListingDetailsType.ToString()
+            }, postCommitCancellationToken);
 
-        if (!indexed)
+            if (!indexed)
+            {
+                logger.LogWarning(
+                    "Listing {ListingId} was created, but search indexing failed.",
+                    listing.Id);
+            }
+        }
+        catch (Exception ex)
         {
             logger.LogWarning(
-                "Listing {ListingId} was created, but search indexing failed.",
+                ex,
+                "Listing {ListingId} was created, but search indexing threw.",
                 listing.Id);
         }
 
-        return Result.Ok();
+        return Result.Ok(listing.Id);
     }
 
     private async Task NormalizePriceAsync(Listing listing, CreateListingDto listingDto, CancellationToken cancellationToken)

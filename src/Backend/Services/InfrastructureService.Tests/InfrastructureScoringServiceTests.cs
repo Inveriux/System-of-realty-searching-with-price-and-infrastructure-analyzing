@@ -176,9 +176,9 @@ public sealed class InfrastructureScoringServiceTests
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
         var breakdown = score.Details().CategoryScoreBreakdowns["transport"];
 
-        Assert.True(score.TransportScore >= 40m, $"Actual transport score: {score.TransportScore}");
-        Assert.True(score.TransportScore <= 68m);
-        Assert.Equal("surface_only", breakdown.AppliedCapReason);
+        Assert.True(score.TransportScore >= 65m, $"Actual transport score: {score.TransportScore}");
+        Assert.True(score.TransportScore <= 90m);
+        Assert.Equal("surface_only_excellent", breakdown.AppliedCapReason);
         Assert.Equal("7", breakdown.DebugInfo["surface_stop_groups_count"]);
     }
 
@@ -195,7 +195,7 @@ public sealed class InfrastructureScoringServiceTests
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
 
-        Assert.InRange(score.TransportScore, 40m, 68m);
+        Assert.InRange(score.TransportScore, 65m, 86m);
     }
 
     [Fact]
@@ -301,6 +301,35 @@ public sealed class InfrastructureScoringServiceTests
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
 
         Assert.True(score.CommerceScore >= 50m);
+    }
+
+    [Fact]
+    public void Commerce_SupermarketConvenienceAndDrogerie_ShouldReachHighScoreWithoutMall()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("commerce", "supermarket", "Супермаркет", 110m, 53.9000m, 27.5600m),
+            CreatePoi("commerce", "convenience_store", "У дома", 140m, 53.9006m, 27.5605m),
+            CreatePoi("commerce", "drogerie", "Мила", 220m, 53.9010m, 27.5610m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+
+        Assert.True(score.CommerceScore >= 65m, $"Actual commerce score: {score.CommerceScore}");
+    }
+
+    [Fact]
+    public void Commerce_RareCategoryWithoutSupermarket_ShouldNotReachHighScore()
+    {
+        var snapshot = CreateSnapshot(
+        [
+            CreatePoi("commerce", "electronics", "5 элемент", 220m, 53.9000m, 27.5600m),
+            CreatePoi("commerce", "building_store", "Ома", 450m, 53.9020m, 27.5620m)
+        ]);
+
+        var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+
+        Assert.True(score.CommerceScore < 60m, $"Actual commerce score: {score.CommerceScore}");
     }
 
     [Fact]

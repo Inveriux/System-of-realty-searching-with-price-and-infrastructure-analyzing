@@ -58,12 +58,16 @@ builder.Services.AddOptions<PlacesProviderOptions>()
 builder.Services.AddOptions<OverpassOptions>()
     .BindConfiguration(OverpassOptions.SectionName)
     .Validate(x => !string.IsNullOrWhiteSpace(x.BaseUrl), "Overpass base url is required.")
+    .Validate(x => x.FallbackBaseUrls.All(static value => !string.IsNullOrWhiteSpace(value)), "Overpass fallback base urls must not contain empty values.")
+    .Validate(x => x.TimeoutSeconds > 0, "Overpass timeout must be positive.")
+    .Validate(x => x.DefaultRadiusMeters > 0, "Overpass default radius must be positive.")
+    .Validate(x => x.MaxRadiusMeters >= x.DefaultRadiusMeters, "Overpass max radius must be greater than or equal to default radius.")
+    .Validate(x => x.RetryCount >= 0, "Overpass retry count must be non-negative.")
     .ValidateOnStart();
 
 builder.Services.AddOptions<GeoapifyOptions>()
     .BindConfiguration(GeoapifyOptions.SectionName)
-    .Validate(x => !string.IsNullOrWhiteSpace(x.BaseUrl), "Geoapify base url is required.")
-    .Validate(x => !string.IsNullOrWhiteSpace(x.ApiKey), "Geoapify api key is required.")
+    .Validate(x => true, "Geoapify options are optional when provider is not active.")
     .ValidateOnStart();
 
 builder.Services.AddOptions<InfrastructureScoringOptions>()
@@ -88,7 +92,6 @@ builder.Services.AddHttpClient<IYandexGeocoderClient, YandexGeocoderClient>((ser
 builder.Services.AddHttpClient<IOverpassApiClient, OverpassApiClient>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OverpassOptions>>().Value;
-    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
     client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
 });
@@ -107,6 +110,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IPlaceCategoryNormalizer, PlaceCategoryNormalizer>();
 builder.Services.AddSingleton<PoiClassificationDictionaryProvider>();
 builder.Services.AddScoped<IPoiClassificationService, PoiClassificationService>();
+builder.Services.AddScoped<IOverpassPoiMapper, OverpassPoiMapper>();
 builder.Services.AddScoped<OverpassPlacesProvider>();
 builder.Services.AddScoped<GeoapifyPlacesProvider>();
 builder.Services.AddScoped<IPlacesProvider>(serviceProvider =>

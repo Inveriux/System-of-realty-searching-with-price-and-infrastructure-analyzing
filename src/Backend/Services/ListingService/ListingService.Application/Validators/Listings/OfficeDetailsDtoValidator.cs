@@ -20,6 +20,9 @@ public class OfficeDetailsDtoValidator : AbstractValidator<OfficeDetailsDto>
             .MustExistInLookup<OfficeDetailsDto, RenovationType>(lookupCache, nameof(RenovationType));
 
         RuleFor(x => x.ParkingType)
-            .MustExistInLookup<OfficeDetailsDto, LayoutType>(lookupCache, nameof(LayoutType));
+            .MustExistInLookup<OfficeDetailsDto, LayoutType>(
+                lookupCache,
+                nameof(LayoutType),
+                nameof(OfficeDetailsDto.ParkingType));
     }
 }
