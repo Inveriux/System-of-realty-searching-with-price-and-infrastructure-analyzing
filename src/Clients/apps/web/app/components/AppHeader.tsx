@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth, useTheme } from "../providers";
 import { AuthDialog } from "./AuthDialog";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function AppHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { status, user, signOut } = useAuth();
   const { theme } = useTheme();
   const [dialogMode, setDialogMode] = useState<"signin" | "signup" | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q")?.trim() ?? "");
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const isFavoritesPage = pathname.startsWith("/favorites");
   const isCreateListingPage = pathname.startsWith("/create-listing");
@@ -80,6 +83,22 @@ export function AppHeader() {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isAccountMenuOpen]);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q")?.trim() ?? "");
+  }, [searchParams]);
+
+  function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const query = searchQuery.trim();
+    if (query) {
+      router.push(`/listings?q=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    router.push("/listings");
+  }
 
   return (
     <>
@@ -160,7 +179,8 @@ export function AppHeader() {
             </Link>
 
             {!isCreateListingPage ? (
-              <div
+              <form
+                onSubmit={handleSearchSubmit}
                 style={{
                   position: "relative",
                   flex: "1 1 420px",
@@ -172,6 +192,8 @@ export function AppHeader() {
                   className="field"
                   aria-label="Поиск"
                   placeholder="Поиск по объявлениям, адресу или жилому комплексу"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   style={{
                     borderRadius: 999,
                     padding: "0.8rem 1.1rem",
@@ -179,7 +201,7 @@ export function AppHeader() {
                     background: "color-mix(in srgb, var(--background) 55%, var(--background-elevated))",
                   }}
                 />
-              </div>
+              </form>
             ) : (
               <div style={{ flex: "1 1 auto" }} />
             )}

@@ -1,11 +1,15 @@
 import { z } from "zod";
 import type {
+  CommerceLevel,
+  InfrastructureLevel,
+  LocationMode,
   SearchListingDto,
   SearchListingsRequest,
   SearchListingsResponse,
   SearchProfile,
   SearchRankingWeights,
   SearchRelevanceBreakdown,
+  TransportLevel,
 } from "@diploma/contracts/search";
 
 const nullableString = z.string().nullable();
@@ -27,6 +31,34 @@ export const SearchProfileSchema: z.ZodType<SearchProfile> = z.enum([
   "urban",
   "investment",
   "student",
+]);
+
+export const InfrastructureLevelSchema: z.ZodType<InfrastructureLevel> = z.enum([
+  "poor",
+  "medium",
+  "good",
+  "excellent",
+]);
+
+export const TransportLevelSchema: z.ZodType<TransportLevel> = z.enum([
+  "any",
+  "medium",
+  "good",
+  "excellent",
+]);
+
+export const CommerceLevelSchema: z.ZodType<CommerceLevel> = z.enum([
+  "any",
+  "basic",
+  "good",
+  "rich",
+]);
+
+export const LocationModeSchema: z.ZodType<LocationMode> = z.enum([
+  "any",
+  "in_city",
+  "near_city",
+  "outside_city",
 ]);
 
 export const SearchRankingWeightsSchema: z.ZodType<SearchRankingWeights> = z.object({
@@ -97,6 +129,27 @@ export const SearchListingsRequestSchema: z.ZodType<SearchListingsRequest> = z.o
   maxCinemaDriveMinutes: nullableNumber.optional(),
   maxMetroWalkMinutes: nullableNumber.optional(),
   requireMetroInPrimaryRadius: z.boolean().nullable().optional(),
+  infrastructureLevel: InfrastructureLevelSchema.nullable().optional(),
+  transportLevel: TransportLevelSchema.nullable().optional(),
+  commerceLevel: CommerceLevelSchema.nullable().optional(),
+  locationMode: LocationModeSchema.nullable().optional(),
+  nearKindergarten: z.boolean().nullable().optional(),
+  nearSchool: z.boolean().nullable().optional(),
+  nearStore: z.boolean().nullable().optional(),
+  nearPharmacy: z.boolean().nullable().optional(),
+  nearStop: z.boolean().nullable().optional(),
+  nearPark: z.boolean().nullable().optional(),
+  nearClinic: z.boolean().nullable().optional(),
+  nearParking: z.boolean().nullable().optional(),
+  nearFitness: z.boolean().nullable().optional(),
+  nearLeisure: z.boolean().nullable().optional(),
+  nearMetro: z.boolean().nullable().optional(),
+  familyFriendly: z.boolean().nullable().optional(),
+  walkableArea: z.boolean().nullable().optional(),
+  needDailyCommerce: z.boolean().nullable().optional(),
+  needStrongSurfaceTransport: z.boolean().nullable().optional(),
+  needFamilyInfrastructure: z.boolean().nullable().optional(),
+  needWalkableInfrastructure: z.boolean().nullable().optional(),
   latitude: nullableNumber.optional(),
   longitude: nullableNumber.optional(),
   centerLatitude: nullableNumber.optional(),

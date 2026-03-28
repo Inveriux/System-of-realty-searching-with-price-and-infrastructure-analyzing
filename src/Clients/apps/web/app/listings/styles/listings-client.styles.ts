@@ -129,7 +129,9 @@ export const listingsClientStyles = {
     alignItems: "center",
   } satisfies CSSProperties,
   radiusInput: {
-    maxWidth: 180,
+    minWidth: 260,
+    maxWidth: 320,
+    width: "100%",
   } satisfies CSSProperties,
   modalFooter: {
     display: "flex",

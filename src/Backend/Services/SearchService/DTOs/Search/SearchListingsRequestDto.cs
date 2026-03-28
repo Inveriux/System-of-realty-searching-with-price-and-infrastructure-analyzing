@@ -50,6 +50,20 @@ public sealed class SearchListingsRequestDto
     public string? InfrastructureLevel { get; init; }
     public string? TransportLevel { get; init; }
     public string? CommerceLevel { get; init; }
+    public string? LocationMode { get; init; }
+    public bool? NearKindergarten { get; init; }
+    public bool? NearSchool { get; init; }
+    public bool? NearStore { get; init; }
+    public bool? NearPharmacy { get; init; }
+    public bool? NearStop { get; init; }
+    public bool? NearPark { get; init; }
+    public bool? NearClinic { get; init; }
+    public bool? NearParking { get; init; }
+    public bool? NearFitness { get; init; }
+    public bool? NearLeisure { get; init; }
+    public bool? NearMetro { get; init; }
+    public bool? FamilyFriendly { get; init; }
+    public bool? WalkableArea { get; init; }
     public bool? NeedDailyCommerce { get; init; }
     public bool? NeedStrongSurfaceTransport { get; init; }
     public bool? NeedFamilyInfrastructure { get; init; }

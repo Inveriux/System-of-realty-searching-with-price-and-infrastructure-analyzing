@@ -274,7 +274,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         if (request.RequireMetroInPrimaryRadius.HasValue)
             searchQuery = searchQuery.Where(x => x.MetroFoundInPrimaryRadius == request.RequireMetroInPrimaryRadius.Value);
 
-        searchQuery = ApplyHighLevelFilters(searchQuery, request);
+        searchQuery = ApplySemanticFilters(searchQuery, request);
 
         if (HasBounds(request))
         {
@@ -314,7 +314,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
            request.BoundsMaxLatitude.HasValue &&
            request.BoundsMaxLongitude.HasValue;
 
-    private static IQueryable<SearchListing> ApplyHighLevelFilters(IQueryable<SearchListing> searchQuery, SearchListingsRequestDto request)
+    private static IQueryable<SearchListing> ApplySemanticFilters(IQueryable<SearchListing> searchQuery, SearchListingsRequestDto request)
     {
         if (TryGetInfrastructureThreshold(request.InfrastructureLevel, out var infrastructureThreshold))
         {
@@ -325,10 +325,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         {
             searchQuery = request.TransportLevel.Trim().ToLowerInvariant() switch
             {
-                "basic" => searchQuery.Where(x =>
-                    (x.TransportScore ?? 0m) >= 45m ||
-                    (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 12m) ||
-                    (x.StopGroupsCountPrimary ?? 0) >= 2),
+                "medium" => searchQuery.Where(x => (x.TransportScore ?? 0m) >= 45m),
                 "good" => searchQuery.Where(x =>
                     (x.TransportScore ?? 0m) >= 65m ||
                     (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 8m) ||
@@ -345,6 +342,113 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         {
             searchQuery = searchQuery.Where(x => (x.CommerceScore ?? 0m) >= commerceThreshold);
         }
+
+        if (request.NearKindergarten == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.KindergartenCountPrimary ?? 0) >= 1 ||
+                (x.NearestKindergartenWalkMinutes != null && x.NearestKindergartenWalkMinutes <= 15m));
+        }
+
+        if (request.NearSchool == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.SchoolCountPrimary ?? 0) >= 1 ||
+                (x.NearestSchoolWalkMinutes != null && x.NearestSchoolWalkMinutes <= 15m));
+        }
+
+        if (request.NearStore == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.StoreCountPrimary ?? 0) >= 1 ||
+                (x.NearestStoreWalkMinutes != null && x.NearestStoreWalkMinutes <= 12m));
+        }
+
+        if (request.NearPharmacy == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.PharmacyCountPrimary ?? 0) >= 1 ||
+                (x.NearestPharmacyWalkMinutes != null && x.NearestPharmacyWalkMinutes <= 12m));
+        }
+
+        if (request.NearStop == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.StopGroupsCountPrimary ?? 0) >= 1 ||
+                (x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 8m));
+        }
+
+        if (request.NearPark == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.ParksCountPrimary ?? 0) >= 1 ||
+                (x.NearestParkWalkMinutes != null && x.NearestParkWalkMinutes <= 15m));
+        }
+
+        if (request.NearClinic == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.ClinicCountPrimary ?? 0) >= 1 ||
+                (x.NearestClinicDriveMinutes != null && x.NearestClinicDriveMinutes <= 12m));
+        }
+
+        if (request.NearParking == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.ParkingCountPrimary ?? 0) >= 1 ||
+                (x.NearestParkingWalkMinutes != null && x.NearestParkingWalkMinutes <= 10m));
+        }
+
+        if (request.NearFitness == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.FitnessCountPrimary ?? 0) >= 1 ||
+                (x.NearestFitnessWalkMinutes != null && x.NearestFitnessWalkMinutes <= 15m));
+        }
+
+        if (request.NearLeisure == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.CinemasCountPrimary ?? 0) >= 1 ||
+                (x.MuseumsCountPrimary ?? 0) >= 1 ||
+                (x.TheatersCountPrimary ?? 0) >= 1 ||
+                (x.LeisureScore ?? 0m) >= 60m);
+        }
+
+        if (request.NearMetro == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                x.MetroFoundInPrimaryRadius ||
+                (x.NearestMetroWalkMinutes != null && x.NearestMetroWalkMinutes <= 12m));
+        }
+
+        if (request.FamilyFriendly == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                (x.EducationScore ?? 0m) >= 60m &&
+                (
+                    (x.SchoolCountPrimary ?? 0) >= 1 ||
+                    (x.NearestSchoolWalkMinutes != null && x.NearestSchoolWalkMinutes <= 15m)
+                ) &&
+                (
+                    (x.KindergartenCountPrimary ?? 0) >= 1 ||
+                    (x.NearestKindergartenWalkMinutes != null && x.NearestKindergartenWalkMinutes <= 15m)
+                ));
+        }
+
+        if (request.WalkableArea == true)
+        {
+            searchQuery = searchQuery.Where(x =>
+                x.NearestStoreWalkMinutes != null && x.NearestStoreWalkMinutes <= 12m &&
+                x.NearestStopWalkMinutes != null && x.NearestStopWalkMinutes <= 8m &&
+                (
+                    (x.NearestSchoolWalkMinutes != null && x.NearestSchoolWalkMinutes <= 15m) ||
+                    (x.NearestParkWalkMinutes != null && x.NearestParkWalkMinutes <= 15m) ||
+                    (x.NearestPharmacyWalkMinutes != null && x.NearestPharmacyWalkMinutes <= 12m)
+                ));
+        }
+
+        // LocationMode intentionally stays a no-op until SearchListing gets a reliable urbanity/distance signal.
 
         if (request.NeedDailyCommerce == true)
         {
@@ -389,8 +493,11 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
     {
         threshold = level?.Trim().ToLowerInvariant() switch
         {
+            "poor" => 30m,
+            "medium" => 50m,
+            "good" => 70m,
+            "excellent" => 85m,
             "basic" => 45m,
-            "good" => 60m,
             "high" => 75m,
             "premium" => 88m,
             _ => 0m
@@ -403,6 +510,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
     {
         threshold = level?.Trim().ToLowerInvariant() switch
         {
+            "any" => 0m,
             "basic" => 45m,
             "good" => 60m,
             "rich" => 75m,

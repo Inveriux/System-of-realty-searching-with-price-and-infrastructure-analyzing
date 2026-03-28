@@ -8,9 +8,10 @@ export type SearchSortBy =
   | "infrastructure_desc";
 
 export type SearchProfile = "default" | "family" | "urban" | "investment" | "student";
-export type InfrastructureLevel = "basic" | "good" | "high" | "premium";
-export type TransportLevel = "any" | "basic" | "good" | "excellent";
+export type InfrastructureLevel = "poor" | "medium" | "good" | "excellent";
+export type TransportLevel = "any" | "medium" | "good" | "excellent";
 export type CommerceLevel = "any" | "basic" | "good" | "rich";
+export type LocationMode = "any" | "in_city" | "near_city" | "outside_city";
 
 export type SearchRankingWeights = {
   transportWeight: number;
@@ -83,6 +84,20 @@ export type SearchListingsRequest = {
   infrastructureLevel?: InfrastructureLevel | null;
   transportLevel?: TransportLevel | null;
   commerceLevel?: CommerceLevel | null;
+  locationMode?: LocationMode | null;
+  nearKindergarten?: boolean | null;
+  nearSchool?: boolean | null;
+  nearStore?: boolean | null;
+  nearPharmacy?: boolean | null;
+  nearStop?: boolean | null;
+  nearPark?: boolean | null;
+  nearClinic?: boolean | null;
+  nearParking?: boolean | null;
+  nearFitness?: boolean | null;
+  nearLeisure?: boolean | null;
+  nearMetro?: boolean | null;
+  familyFriendly?: boolean | null;
+  walkableArea?: boolean | null;
   needDailyCommerce?: boolean | null;
   needStrongSurfaceTransport?: boolean | null;
   needFamilyInfrastructure?: boolean | null;

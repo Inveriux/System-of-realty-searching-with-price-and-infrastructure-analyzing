@@ -6,13 +6,15 @@ import { useSearchListingsQuery } from "@diploma/features";
 import type {
   CommerceLevel,
   InfrastructureLevel,
+  LocationMode,
   SearchListingsRequest,
   SearchSortBy,
   TransportLevel,
 } from "@diploma/contracts/search";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "../components/AppShell";
 import { useAuth } from "../providers";
 import { ListingGrid } from "./components/ListingGrid";
@@ -34,11 +36,26 @@ type SearchFormState = {
   infrastructureLevel: InfrastructureLevel | "";
   transportLevel: TransportLevel;
   commerceLevel: CommerceLevel | "";
-  needDailyCommerce: boolean;
-  needStrongSurfaceTransport: boolean;
-  needFamilyInfrastructure: boolean;
-  needWalkableInfrastructure: boolean;
+  locationMode: LocationMode | "";
+  nearKindergarten: boolean;
+  nearSchool: boolean;
+  nearStore: boolean;
+  nearPharmacy: boolean;
+  nearStop: boolean;
+  nearPark: boolean;
+  nearClinic: boolean;
+  nearParking: boolean;
+  nearFitness: boolean;
+  nearLeisure: boolean;
+  nearMetro: boolean;
+  familyFriendly: boolean;
+  walkableArea: boolean;
   minInfrastructureScore: string;
+  minEducationScore: string;
+  minHealthcareScore: string;
+  minTransportScore: string;
+  minCommerceScore: string;
+  minLeisureScore: string;
   minEducationCount: string;
   minTransportCount: string;
   minHealthcareCount: string;
@@ -47,6 +64,8 @@ type SearchFormState = {
   maxTransportNearestMeters: string;
   maxEducationNearestMeters: string;
   maxHealthcareNearestMeters: string;
+  maxCommerceNearestMeters: string;
+  maxLeisureNearestMeters: string;
   maxStoreWalkMinutes: string;
   maxPharmacyWalkMinutes: string;
   maxStopWalkMinutes: string;
@@ -55,6 +74,11 @@ type SearchFormState = {
   maxKindergartenWalkMinutes: string;
   maxClinicDriveMinutes: string;
   maxHospitalDriveMinutes: string;
+  maxParkWalkMinutes: string;
+  maxFitnessWalkMinutes: string;
+  maxMuseumDriveMinutes: string;
+  maxTheaterDriveMinutes: string;
+  maxCinemaDriveMinutes: string;
   maxMetroWalkMinutes: string;
   requireMetroInPrimaryRadius: boolean;
   sortBy: SearchSortBy;
@@ -79,11 +103,26 @@ const initialState: SearchFormState = {
   infrastructureLevel: "",
   transportLevel: "any",
   commerceLevel: "",
-  needDailyCommerce: false,
-  needStrongSurfaceTransport: false,
-  needFamilyInfrastructure: false,
-  needWalkableInfrastructure: false,
+  locationMode: "",
+  nearKindergarten: false,
+  nearSchool: false,
+  nearStore: false,
+  nearPharmacy: false,
+  nearStop: false,
+  nearPark: false,
+  nearClinic: false,
+  nearParking: false,
+  nearFitness: false,
+  nearLeisure: false,
+  nearMetro: false,
+  familyFriendly: false,
+  walkableArea: false,
   minInfrastructureScore: "",
+  minEducationScore: "",
+  minHealthcareScore: "",
+  minTransportScore: "",
+  minCommerceScore: "",
+  minLeisureScore: "",
   minEducationCount: "",
   minTransportCount: "",
   minHealthcareCount: "",
@@ -92,6 +131,8 @@ const initialState: SearchFormState = {
   maxTransportNearestMeters: "",
   maxEducationNearestMeters: "",
   maxHealthcareNearestMeters: "",
+  maxCommerceNearestMeters: "",
+  maxLeisureNearestMeters: "",
   maxStoreWalkMinutes: "",
   maxPharmacyWalkMinutes: "",
   maxStopWalkMinutes: "",
@@ -100,6 +141,11 @@ const initialState: SearchFormState = {
   maxKindergartenWalkMinutes: "",
   maxClinicDriveMinutes: "",
   maxHospitalDriveMinutes: "",
+  maxParkWalkMinutes: "",
+  maxFitnessWalkMinutes: "",
+  maxMuseumDriveMinutes: "",
+  maxTheaterDriveMinutes: "",
+  maxCinemaDriveMinutes: "",
   maxMetroWalkMinutes: "",
   requireMetroInPrimaryRadius: false,
   sortBy: "published_desc",
@@ -123,6 +169,15 @@ function parseOptionalNumber(value: string) {
   return Number.isFinite(normalized) ? normalized : null;
 }
 
+function parseOptionalWalkMinutesFromMeters(value: string) {
+  const meters = parseOptionalNumber(value);
+  if (meters == null) {
+    return null;
+  }
+
+  return meters / 80;
+}
+
 function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   if (totalPages <= PAGINATION_WINDOW) {
     return Array.from({ length: totalPages }, (_, index) => index);
@@ -140,13 +195,79 @@ function getVisiblePageNumbers(currentPage: number, totalPages: number) {
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
+function getInfrastructureLevelLabel(level: InfrastructureLevel | "") {
+  switch (level) {
+    case "poor":
+      return "Базовый район";
+    case "medium":
+      return "Средний район";
+    case "good":
+      return "Хороший район";
+    case "excellent":
+      return "Отличный район";
+    default:
+      return "";
+  }
+}
+
+function getTransportLevelLabel(level: TransportLevel) {
+  switch (level) {
+    case "medium":
+      return "Транспорт: средний";
+    case "good":
+      return "Транспорт: хороший";
+    case "excellent":
+      return "Транспорт: отличный";
+    default:
+      return "";
+  }
+}
+
+function getCommerceLevelLabel(level: CommerceLevel | "") {
+  switch (level) {
+    case "basic":
+      return "Коммерция: базовая";
+    case "good":
+      return "Коммерция: хорошая";
+    case "rich":
+      return "Коммерция: насыщенная";
+    default:
+      return "";
+  }
+}
+
+function getLocationModeLabel(mode: LocationMode | "") {
+  switch (mode) {
+    case "in_city":
+      return "В городе";
+    case "near_city":
+      return "Рядом с городом";
+    case "outside_city":
+      return "За городом";
+    default:
+      return "";
+  }
+}
+
 export function ListingsClient() {
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { api, user } = useAuth();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isMapOverviewOpen, setIsMapOverviewOpen] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
-  const [filters, setFilters] = useState<SearchFormState>(initialState);
+  const [filters, setFilters] = useState<SearchFormState>(() => ({
+    ...initialState,
+    query: searchParams.get("q")?.trim() ?? "",
+  }));
+  useEffect(() => {
+    const nextQuery = searchParams.get("q")?.trim() ?? "";
+    setFilters((current) => (current.query === nextQuery ? current : {
+      ...current,
+      query: nextQuery,
+      page: 0,
+    }));
+  }, [searchParams]);
   const isAdmin = user?.role?.toLowerCase() === "admin";
   const searchRequest = useMemo<SearchListingsRequest>(() => ({
     query: filters.query.trim() || null,
@@ -158,11 +279,26 @@ export function ListingsClient() {
     infrastructureLevel: filters.infrastructureLevel || null,
     transportLevel: filters.transportLevel === "any" ? null : filters.transportLevel,
     commerceLevel: filters.commerceLevel || null,
-    needDailyCommerce: filters.needDailyCommerce ? true : null,
-    needStrongSurfaceTransport: filters.needStrongSurfaceTransport ? true : null,
-    needFamilyInfrastructure: filters.needFamilyInfrastructure ? true : null,
-    needWalkableInfrastructure: filters.needWalkableInfrastructure ? true : null,
+    locationMode: filters.locationMode || null,
+    nearKindergarten: filters.nearKindergarten ? true : null,
+    nearSchool: filters.nearSchool ? true : null,
+    nearStore: filters.nearStore ? true : null,
+    nearPharmacy: filters.nearPharmacy ? true : null,
+    nearStop: filters.nearStop ? true : null,
+    nearPark: filters.nearPark ? true : null,
+    nearClinic: filters.nearClinic ? true : null,
+    nearParking: filters.nearParking ? true : null,
+    nearFitness: filters.nearFitness ? true : null,
+    nearLeisure: filters.nearLeisure ? true : null,
+    nearMetro: filters.nearMetro ? true : null,
+    familyFriendly: filters.familyFriendly ? true : null,
+    walkableArea: filters.walkableArea ? true : null,
     minInfrastructureScore: parseOptionalNumber(filters.minInfrastructureScore),
+    minEducationScore: parseOptionalNumber(filters.minEducationScore),
+    minHealthcareScore: parseOptionalNumber(filters.minHealthcareScore),
+    minTransportScore: parseOptionalNumber(filters.minTransportScore),
+    minCommerceScore: parseOptionalNumber(filters.minCommerceScore),
+    minLeisureScore: parseOptionalNumber(filters.minLeisureScore),
     minEducationCount: parseOptionalNumber(filters.minEducationCount),
     minTransportCount: parseOptionalNumber(filters.minTransportCount),
     minHealthcareCount: parseOptionalNumber(filters.minHealthcareCount),
@@ -171,6 +307,8 @@ export function ListingsClient() {
     maxTransportNearestMeters: parseOptionalNumber(filters.maxTransportNearestMeters),
     maxEducationNearestMeters: parseOptionalNumber(filters.maxEducationNearestMeters),
     maxHealthcareNearestMeters: parseOptionalNumber(filters.maxHealthcareNearestMeters),
+    maxCommerceNearestMeters: parseOptionalNumber(filters.maxCommerceNearestMeters),
+    maxLeisureNearestMeters: parseOptionalNumber(filters.maxLeisureNearestMeters),
     maxStoreWalkMinutes: parseOptionalNumber(filters.maxStoreWalkMinutes),
     maxPharmacyWalkMinutes: parseOptionalNumber(filters.maxPharmacyWalkMinutes),
     maxStopWalkMinutes: parseOptionalNumber(filters.maxStopWalkMinutes),
@@ -179,7 +317,12 @@ export function ListingsClient() {
     maxKindergartenWalkMinutes: parseOptionalNumber(filters.maxKindergartenWalkMinutes),
     maxClinicDriveMinutes: parseOptionalNumber(filters.maxClinicDriveMinutes),
     maxHospitalDriveMinutes: parseOptionalNumber(filters.maxHospitalDriveMinutes),
-    maxMetroWalkMinutes: parseOptionalNumber(filters.maxMetroWalkMinutes),
+    maxParkWalkMinutes: parseOptionalNumber(filters.maxParkWalkMinutes),
+    maxFitnessWalkMinutes: parseOptionalNumber(filters.maxFitnessWalkMinutes),
+    maxMuseumDriveMinutes: parseOptionalNumber(filters.maxMuseumDriveMinutes),
+    maxTheaterDriveMinutes: parseOptionalNumber(filters.maxTheaterDriveMinutes),
+    maxCinemaDriveMinutes: parseOptionalNumber(filters.maxCinemaDriveMinutes),
+    maxMetroWalkMinutes: parseOptionalWalkMinutesFromMeters(filters.maxMetroWalkMinutes),
     requireMetroInPrimaryRadius: filters.requireMetroInPrimaryRadius ? true : null,
     boundsMinLatitude: null,
     boundsMinLongitude: null,
@@ -267,11 +410,26 @@ export function ListingsClient() {
     filters.infrastructureLevel,
     filters.transportLevel !== "any" ? filters.transportLevel : "",
     filters.commerceLevel,
-    filters.needDailyCommerce ? "daily-commerce" : "",
-    filters.needStrongSurfaceTransport ? "surface-transport" : "",
-    filters.needFamilyInfrastructure ? "family" : "",
-    filters.needWalkableInfrastructure ? "walkable" : "",
+    filters.locationMode,
+    filters.nearKindergarten ? "near-kindergarten" : "",
+    filters.nearSchool ? "near-school" : "",
+    filters.nearStore ? "near-store" : "",
+    filters.nearPharmacy ? "near-pharmacy" : "",
+    filters.nearStop ? "near-stop" : "",
+    filters.nearPark ? "near-park" : "",
+    filters.nearClinic ? "near-clinic" : "",
+    filters.nearParking ? "near-parking" : "",
+    filters.nearFitness ? "near-fitness" : "",
+    filters.nearLeisure ? "near-leisure" : "",
+    filters.nearMetro ? "near-metro" : "",
+    filters.familyFriendly ? "family-friendly" : "",
+    filters.walkableArea ? "walkable-area" : "",
     filters.minInfrastructureScore,
+    filters.minEducationScore,
+    filters.minHealthcareScore,
+    filters.minTransportScore,
+    filters.minCommerceScore,
+    filters.minLeisureScore,
     filters.minEducationCount,
     filters.minTransportCount,
     filters.minHealthcareCount,
@@ -280,6 +438,8 @@ export function ListingsClient() {
     filters.maxTransportNearestMeters,
     filters.maxEducationNearestMeters,
     filters.maxHealthcareNearestMeters,
+    filters.maxCommerceNearestMeters,
+    filters.maxLeisureNearestMeters,
     filters.maxStoreWalkMinutes,
     filters.maxPharmacyWalkMinutes,
     filters.maxStopWalkMinutes,
@@ -288,6 +448,11 @@ export function ListingsClient() {
     filters.maxKindergartenWalkMinutes,
     filters.maxClinicDriveMinutes,
     filters.maxHospitalDriveMinutes,
+    filters.maxParkWalkMinutes,
+    filters.maxFitnessWalkMinutes,
+    filters.maxMuseumDriveMinutes,
+    filters.maxTheaterDriveMinutes,
+    filters.maxCinemaDriveMinutes,
     filters.maxMetroWalkMinutes,
     filters.requireMetroInPrimaryRadius ? "metro" : "",
     filters.radiusMeters,
@@ -427,37 +592,47 @@ export function ListingsClient() {
                     ) : null}
                     {filters.infrastructureLevel ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
-                        Инфраструктура: {filters.infrastructureLevel}
+                        {getInfrastructureLevelLabel(filters.infrastructureLevel)}
                       </span>
                     ) : null}
                     {filters.transportLevel !== "any" ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
-                        Транспорт: {filters.transportLevel}
+                        {getTransportLevelLabel(filters.transportLevel)}
                       </span>
                     ) : null}
                     {filters.commerceLevel ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
-                        Коммерция: {filters.commerceLevel}
+                        {getCommerceLevelLabel(filters.commerceLevel)}
                       </span>
                     ) : null}
-                    {filters.needFamilyInfrastructure ? (
+                    {filters.locationMode ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        {getLocationModeLabel(filters.locationMode)}
+                      </span>
+                    ) : null}
+                    {filters.familyFriendly ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Для семьи
                       </span>
                     ) : null}
-                    {filters.needWalkableInfrastructure ? (
+                    {filters.walkableArea ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Всё рядом пешком
                       </span>
                     ) : null}
-                    {filters.needStrongSurfaceTransport ? (
+                    {filters.nearMetro ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
-                        Сильный наземный транспорт
+                        Рядом с метро
                       </span>
                     ) : null}
-                    {filters.needDailyCommerce ? (
+                    {filters.nearStore ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
-                        Повседневная коммерция
+                        Рядом с магазинами
+                      </span>
+                    ) : null}
+                    {filters.nearStop ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Рядом с остановками
                       </span>
                     ) : null}
                     {filters.centerLatitude != null && filters.centerLongitude != null ? (
@@ -608,9 +783,6 @@ export function ListingsClient() {
                     <h2 className="section-title" style={listingsClientStyles.modalHeading}>
                       Параметры поиска
                     </h2>
-                    <p style={listingsClientStyles.mutedParagraph}>
-                      Здесь можно уточнить цену, площадь, инфраструктуру и поиск вокруг выбранной точки на карте.
-                    </p>
                   </div>
                   <button
                     className="button-secondary"
@@ -627,6 +799,7 @@ export function ListingsClient() {
                     value={filters.query}
                     onChange={(event) => updateFilter("query", event.target.value)}
                     placeholder="Поиск по названию, адресу, описанию"
+                    style={{ gridColumn: "1 / -1", width: "100%" }}
                   />
                   <select
                     className="field"
@@ -670,11 +843,11 @@ export function ListingsClient() {
                     value={filters.infrastructureLevel}
                     onChange={(event) => updateFilter("infrastructureLevel", event.target.value as InfrastructureLevel | "")}
                   >
-                    <option value="">Минимальная общая инфраструктура</option>
-                    <option value="basic">Базовая</option>
-                    <option value="good">Хорошая</option>
-                    <option value="high">Высокая</option>
-                    <option value="premium">Премиальная</option>
+                    <option value="">Уровень инфраструктуры</option>
+                    <option value="poor">Базовый</option>
+                    <option value="medium">Средний</option>
+                    <option value="good">Хороший</option>
+                    <option value="excellent">Отличный</option>
                   </select>
                   <select
                     className="field"
@@ -682,7 +855,7 @@ export function ListingsClient() {
                     onChange={(event) => updateFilter("transportLevel", event.target.value as TransportLevel)}
                   >
                     <option value="any">Транспорт: любой</option>
-                    <option value="basic">Транспорт: базовый</option>
+                    <option value="medium">Транспорт: средний</option>
                     <option value="good">Транспорт: хороший</option>
                     <option value="excellent">Транспорт: отличный</option>
                   </select>
@@ -696,185 +869,328 @@ export function ListingsClient() {
                     <option value="good">Коммерция: хорошая</option>
                     <option value="rich">Коммерция: насыщенная</option>
                   </select>
+                  <select
+                    className="field"
+                    value={filters.locationMode}
+                    onChange={(event) => updateFilter("locationMode", event.target.value as LocationMode | "")}
+                  >
+                    <option value="">Локация: не важно</option>
+                    <option value="in_city">В городе</option>
+                    <option value="near_city">Рядом с городом</option>
+                    <option value="outside_city">За городом</option>
+                  </select>
+                </div>
+
+                <div className="grid gap-2">
+                  <h3 className="section-title" style={{ fontSize: 18 }}>
+                    Рядом с
+                  </h3>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearKindergarten} onChange={(event) => updateFilter("nearKindergarten", event.target.checked)} />
+                    Детским садом
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearSchool} onChange={(event) => updateFilter("nearSchool", event.target.checked)} />
+                    Школой
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearStore} onChange={(event) => updateFilter("nearStore", event.target.checked)} />
+                    Магазинами
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearPharmacy} onChange={(event) => updateFilter("nearPharmacy", event.target.checked)} />
+                    Аптекой
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearStop} onChange={(event) => updateFilter("nearStop", event.target.checked)} />
+                    Остановками
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearPark} onChange={(event) => updateFilter("nearPark", event.target.checked)} />
+                    Парком
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearClinic} onChange={(event) => updateFilter("nearClinic", event.target.checked)} />
+                    Поликлиникой
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearParking} onChange={(event) => updateFilter("nearParking", event.target.checked)} />
+                    Парковкой
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearFitness} onChange={(event) => updateFilter("nearFitness", event.target.checked)} />
+                    Фитнесом
+                  </label>
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="checkbox" checked={filters.nearLeisure} onChange={(event) => updateFilter("nearLeisure", event.target.checked)} />
+                    Досугом
+                  </label>
                   <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <input
                       type="checkbox"
-                      checked={filters.needFamilyInfrastructure}
-                      onChange={(event) => updateFilter("needFamilyInfrastructure", event.target.checked)}
+                      checked={filters.nearMetro}
+                      onChange={(event) => updateFilter("nearMetro", event.target.checked)}
+                    />
+                    Метро
+                  </label>
+                </div>
+
+                <div className="grid gap-2">
+                  <h3 className="section-title" style={{ fontSize: 18 }}>
+                    Формат района
+                  </h3>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={filters.familyFriendly}
+                      onChange={(event) => updateFilter("familyFriendly", event.target.checked)}
                     />
                     Для семьи
                   </label>
                   <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <input
                       type="checkbox"
-                      checked={filters.needWalkableInfrastructure}
-                      onChange={(event) => updateFilter("needWalkableInfrastructure", event.target.checked)}
+                      checked={filters.walkableArea}
+                      onChange={(event) => updateFilter("walkableArea", event.target.checked)}
                     />
                     Всё рядом пешком
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={filters.needStrongSurfaceTransport}
-                      onChange={(event) => updateFilter("needStrongSurfaceTransport", event.target.checked)}
-                    />
-                    Сильный наземный транспорт
-                  </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={filters.needDailyCommerce}
-                      onChange={(event) => updateFilter("needDailyCommerce", event.target.checked)}
-                    />
-                    Нужна повседневная коммерция
-                  </label>
                 </div>
 
-                <div className="grid gap-2">
-                  <h3 className="section-title" style={{ fontSize: 18 }}>
+                <details className="surface rounded-[24px] border border-[var(--border-color)] p-4">
+                  <summary style={{ cursor: "pointer", fontWeight: 700, color: "var(--text-color)" }}>
                     Расширенные фильтры
-                  </h3>
-                  <p style={listingsClientStyles.mutedParagraph}>
+                  </summary>
+                  <p style={{ ...listingsClientStyles.mutedParagraph, marginTop: 12, marginBottom: 12 }}>
                     Здесь остаются точные ограничения по метрам, минутам и количеству.
                   </p>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <input
-                    className="field"
-                    value={filters.minInfrastructureScore}
-                    onChange={(event) => updateFilter("minInfrastructureScore", event.target.value)}
-                    placeholder="Инфраструктура от"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.minEducationCount}
-                    onChange={(event) => updateFilter("minEducationCount", event.target.value)}
-                    placeholder="Объекты образования, от"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.minTransportCount}
-                    onChange={(event) => updateFilter("minTransportCount", event.target.value)}
-                    placeholder="Транспорт рядом, от"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.minHealthcareCount}
-                    onChange={(event) => updateFilter("minHealthcareCount", event.target.value)}
-                    placeholder="Медицина рядом, от"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.minCommerceCount}
-                    onChange={(event) => updateFilter("minCommerceCount", event.target.value)}
-                    placeholder="Коммерция рядом, от"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.minLeisureCount}
-                    onChange={(event) => updateFilter("minLeisureCount", event.target.value)}
-                    placeholder="Досуг рядом, от"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxTransportNearestMeters}
-                    onChange={(event) => updateFilter("maxTransportNearestMeters", event.target.value)}
-                    placeholder="Транспорт не дальше, м"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxEducationNearestMeters}
-                    onChange={(event) => updateFilter("maxEducationNearestMeters", event.target.value)}
-                    placeholder="Образование не дальше, м"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxHealthcareNearestMeters}
-                    onChange={(event) => updateFilter("maxHealthcareNearestMeters", event.target.value)}
-                    placeholder="Медицина не дальше, м"
-                    inputMode="numeric"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxStoreWalkMinutes}
-                    onChange={(event) => updateFilter("maxStoreWalkMinutes", event.target.value)}
-                    placeholder="Магазин: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxPharmacyWalkMinutes}
-                    onChange={(event) => updateFilter("maxPharmacyWalkMinutes", event.target.value)}
-                    placeholder="Аптека: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxStopWalkMinutes}
-                    onChange={(event) => updateFilter("maxStopWalkMinutes", event.target.value)}
-                    placeholder="Остановка: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxParkingWalkMinutes}
-                    onChange={(event) => updateFilter("maxParkingWalkMinutes", event.target.value)}
-                    placeholder="Парковка: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxSchoolWalkMinutes}
-                    onChange={(event) => updateFilter("maxSchoolWalkMinutes", event.target.value)}
-                    placeholder="Школа: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxKindergartenWalkMinutes}
-                    onChange={(event) => updateFilter("maxKindergartenWalkMinutes", event.target.value)}
-                    placeholder="Детский сад: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxClinicDriveMinutes}
-                    onChange={(event) => updateFilter("maxClinicDriveMinutes", event.target.value)}
-                    placeholder="Поликлиника: максимум минут на машине"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxHospitalDriveMinutes}
-                    onChange={(event) => updateFilter("maxHospitalDriveMinutes", event.target.value)}
-                    placeholder="Больница: максимум минут на машине"
-                    inputMode="decimal"
-                  />
-                  <input
-                    className="field"
-                    value={filters.maxMetroWalkMinutes}
-                    onChange={(event) => updateFilter("maxMetroWalkMinutes", event.target.value)}
-                    placeholder="Метро: максимум минут пешком"
-                    inputMode="decimal"
-                  />
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <input
-                      type="checkbox"
-                      checked={filters.requireMetroInPrimaryRadius}
-                      onChange={(event) => updateFilter("requireMetroInPrimaryRadius", event.target.checked)}
+                      className="field"
+                      value={filters.minInfrastructureScore}
+                      onChange={(event) => updateFilter("minInfrastructureScore", event.target.value)}
+                      placeholder="Инфраструктура от"
+                      inputMode="decimal"
                     />
-                    Требовать метро в primary radius
-                  </label>
-                </div>
+                    <input
+                      className="field"
+                      value={filters.minEducationScore}
+                      onChange={(event) => updateFilter("minEducationScore", event.target.value)}
+                      placeholder="Образование: минимальный score"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minHealthcareScore}
+                      onChange={(event) => updateFilter("minHealthcareScore", event.target.value)}
+                      placeholder="Здоровье: минимальный score"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minTransportScore}
+                      onChange={(event) => updateFilter("minTransportScore", event.target.value)}
+                      placeholder="Транспорт: минимальный score"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minCommerceScore}
+                      onChange={(event) => updateFilter("minCommerceScore", event.target.value)}
+                      placeholder="Коммерция: минимальный score"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minLeisureScore}
+                      onChange={(event) => updateFilter("minLeisureScore", event.target.value)}
+                      placeholder="Досуг: минимальный score"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minEducationCount}
+                      onChange={(event) => updateFilter("minEducationCount", event.target.value)}
+                      placeholder="Объекты образования, от"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minTransportCount}
+                      onChange={(event) => updateFilter("minTransportCount", event.target.value)}
+                      placeholder="Транспорт рядом, от"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minHealthcareCount}
+                      onChange={(event) => updateFilter("minHealthcareCount", event.target.value)}
+                      placeholder="Медицина рядом, от"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minCommerceCount}
+                      onChange={(event) => updateFilter("minCommerceCount", event.target.value)}
+                      placeholder="Коммерция рядом, от"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.minLeisureCount}
+                      onChange={(event) => updateFilter("minLeisureCount", event.target.value)}
+                      placeholder="Досуг рядом, от"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxTransportNearestMeters}
+                      onChange={(event) => updateFilter("maxTransportNearestMeters", event.target.value)}
+                      placeholder="Транспорт не дальше, м"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxEducationNearestMeters}
+                      onChange={(event) => updateFilter("maxEducationNearestMeters", event.target.value)}
+                      placeholder="Образование не дальше, м"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxHealthcareNearestMeters}
+                      onChange={(event) => updateFilter("maxHealthcareNearestMeters", event.target.value)}
+                      placeholder="Медицина не дальше, м"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxCommerceNearestMeters}
+                      onChange={(event) => updateFilter("maxCommerceNearestMeters", event.target.value)}
+                      placeholder="Коммерция не дальше, м"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxLeisureNearestMeters}
+                      onChange={(event) => updateFilter("maxLeisureNearestMeters", event.target.value)}
+                      placeholder="Досуг не дальше, м"
+                      inputMode="numeric"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxStoreWalkMinutes}
+                      onChange={(event) => updateFilter("maxStoreWalkMinutes", event.target.value)}
+                      placeholder="Магазин: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxPharmacyWalkMinutes}
+                      onChange={(event) => updateFilter("maxPharmacyWalkMinutes", event.target.value)}
+                      placeholder="Аптека: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxStopWalkMinutes}
+                      onChange={(event) => updateFilter("maxStopWalkMinutes", event.target.value)}
+                      placeholder="Остановка: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxParkingWalkMinutes}
+                      onChange={(event) => updateFilter("maxParkingWalkMinutes", event.target.value)}
+                      placeholder="Парковка: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxSchoolWalkMinutes}
+                      onChange={(event) => updateFilter("maxSchoolWalkMinutes", event.target.value)}
+                      placeholder="Школа: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxKindergartenWalkMinutes}
+                      onChange={(event) => updateFilter("maxKindergartenWalkMinutes", event.target.value)}
+                      placeholder="Детский сад: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxClinicDriveMinutes}
+                      onChange={(event) => updateFilter("maxClinicDriveMinutes", event.target.value)}
+                      placeholder="Поликлиника: максимум минут на машине"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxHospitalDriveMinutes}
+                      onChange={(event) => updateFilter("maxHospitalDriveMinutes", event.target.value)}
+                      placeholder="Больница: максимум минут на машине"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxParkWalkMinutes}
+                      onChange={(event) => updateFilter("maxParkWalkMinutes", event.target.value)}
+                      placeholder="Парк: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxFitnessWalkMinutes}
+                      onChange={(event) => updateFilter("maxFitnessWalkMinutes", event.target.value)}
+                      placeholder="Фитнес: максимум минут пешком"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxMuseumDriveMinutes}
+                      onChange={(event) => updateFilter("maxMuseumDriveMinutes", event.target.value)}
+                      placeholder="Музей: максимум минут на машине"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxTheaterDriveMinutes}
+                      onChange={(event) => updateFilter("maxTheaterDriveMinutes", event.target.value)}
+                      placeholder="Театр: максимум минут на машине"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxCinemaDriveMinutes}
+                      onChange={(event) => updateFilter("maxCinemaDriveMinutes", event.target.value)}
+                      placeholder="Кино: максимум минут на машине"
+                      inputMode="decimal"
+                    />
+                    <input
+                      className="field"
+                      value={filters.maxMetroWalkMinutes}
+                      onChange={(event) => updateFilter("maxMetroWalkMinutes", event.target.value)}
+                      placeholder="До метро: максимум метров пешком"
+                      inputMode="numeric"
+                    />
+                    <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={filters.requireMetroInPrimaryRadius}
+                        onChange={(event) => updateFilter("requireMetroInPrimaryRadius", event.target.checked)}
+                      />
+                      Требовать метро в primary radius
+                    </label>
+                  </div>
+                </details>
 
                 <div style={listingsClientStyles.mapControls}>
                   <input
