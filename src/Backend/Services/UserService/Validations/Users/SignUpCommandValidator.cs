@@ -26,8 +26,11 @@ public class SignUpCommandValidator : AbstractValidator<SignUpCommand>
                 .EmailAddress()
                 .WithMessage("Email format is invalid.")
                 .MustAsync(async (email, cancellationToken) =>
-                    await userRepository.GetByEmailAsync(email, false) is null)
-                .WithMessage("Email is already in use.");
+                {
+                    var user = await userRepository.GetByEmailAsync(email, false);
+                    return user is null || !user.EmailConfirmed;
+                })
+                .WithMessage("Email is already in use by a verified account.");
 
             RuleFor(x => x.SignUpUserDto.Password)
                 .NotEmpty()

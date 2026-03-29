@@ -145,6 +145,16 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
 
     private static IQueryable<SearchListing> ApplyFilters(IQueryable<SearchListing> searchQuery, SearchListingsRequestDto request)
     {
+        if (request.ListingIds is { Count: 0 })
+        {
+            return searchQuery.Where(static _ => false);
+        }
+
+        if (request.ListingIds is { Count: > 0 })
+        {
+            searchQuery = searchQuery.Where(x => request.ListingIds.Contains(x.ListingId));
+        }
+
         if (!string.IsNullOrWhiteSpace(request.Query))
         {
             var pattern = $"%{request.Query.Trim()}%";

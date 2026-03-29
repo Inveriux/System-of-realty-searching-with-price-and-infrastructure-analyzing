@@ -1,6 +1,6 @@
 "use client";
 
-import { updateOwnProfile, uploadUserAvatar } from "@diploma/api/users";
+import { changePassword, updateOwnProfile, uploadUserAvatar } from "@diploma/api/users";
 import { useListingsQuery } from "@diploma/features";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
@@ -30,6 +30,12 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   useEffect(() => {
     setName(user?.name ?? "");
@@ -81,6 +87,38 @@ export default function ProfilePage() {
       );
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleChangePassword() {
+    if (!user) {
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordError(null);
+    setPasswordMessage(null);
+
+    try {
+      await changePassword(api, {
+        email: user.email,
+        currentPassword: user.hasPassword ? currentPassword : null,
+        newPassword,
+      });
+
+      await reloadCurrentUser();
+      setCurrentPassword("");
+      setNewPassword("");
+      setPasswordMessage(user.hasPassword ? "Пароль обновлён." : "Пароль установлен.");
+      setShowPasswordForm(false);
+    } catch (submissionError) {
+      setPasswordError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Не удалось сохранить пароль.",
+      );
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -150,7 +188,7 @@ export default function ProfilePage() {
                 ) : null}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <Link
                   href="/profile/listings"
                   className="surface"
@@ -183,6 +221,23 @@ export default function ProfilePage() {
                   <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Избранное</div>
                   <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
                     Сохраненные объекты
+                  </div>
+                </Link>
+                <Link
+                  href="/history"
+                  className="surface"
+                  style={{
+                    borderRadius: 22,
+                    padding: 18,
+                    textDecoration: "none",
+                    color: "inherit",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <div className="eyebrow">Раздел</div>
+                  <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>История просмотра</div>
+                  <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                    Недавно открытые объекты
                   </div>
                 </Link>
                 <Link
@@ -241,11 +296,24 @@ export default function ProfilePage() {
               />
               <input
                 className="field"
-                value={user.email}
+                value={user.email ?? ""}
                 disabled
                 readOnly
                 placeholder="Email"
               />
+              <div
+                style={{
+                  borderRadius: 16,
+                  border: "1px solid var(--border-color)",
+                  background: "var(--background-elevated)",
+                  padding: "12px 14px",
+                  color: "var(--foreground-muted)",
+                  fontSize: 14,
+                }}
+              >
+                {user.emailConfirmed ? "Почта подтверждена" : "Почта не подтверждена"}
+                {user.isGoogleAccount ? " • вход через Google" : ""}
+              </div>
               <input
                 className="field"
                 value={phoneNumber}
@@ -292,6 +360,65 @@ export default function ProfilePage() {
               <button className="button-primary" type="submit" disabled={isSaving}>
                 {isSaving ? "Сохранение..." : "Сохранить изменения"}
               </button>
+
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => {
+                  setShowPasswordForm((current) => !current);
+                  setPasswordError(null);
+                  setPasswordMessage(null);
+                }}
+              >
+                {user.hasPassword ? "Изменить пароль" : "Установить пароль"}
+              </button>
+
+              {showPasswordForm ? (
+                <div className="grid gap-3">
+                  {user.hasPassword ? (
+                    <input
+                      className="field"
+                      type="password"
+                      placeholder="Текущий пароль"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      required
+                    />
+                  ) : null}
+
+                  <input
+                    className="field"
+                    type="password"
+                    placeholder={user.hasPassword ? "Новый пароль" : "Придумайте пароль"}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    minLength={8}
+                    required
+                  />
+
+                  {passwordError ? (
+                    <div style={{ color: "#b42318", fontSize: 14 }}>{passwordError}</div>
+                  ) : null}
+                  {passwordMessage ? (
+                    <div style={{ color: "#166534", fontSize: 14 }}>{passwordMessage}</div>
+                  ) : null}
+
+                  <button
+                    className="button-primary"
+                    type="button"
+                    disabled={isChangingPassword}
+                    onClick={() => {
+                      void handleChangePassword();
+                    }}
+                  >
+                    {isChangingPassword
+                      ? "Сохранение..."
+                      : user.hasPassword
+                        ? "Обновить пароль"
+                        : "Установить пароль"}
+                  </button>
+                </div>
+              ) : null}
             </form>
           </aside>
         </section>

@@ -15,7 +15,7 @@ export function AppHeader() {
   const { theme } = useTheme();
   const [dialogMode, setDialogMode] = useState<"signin" | "signup" | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q")?.trim() ?? "");
+  const [searchQuery, setSearchQuery] = useState("");
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const isFavoritesPage = pathname.startsWith("/favorites");
   const isCreateListingPage = pathname.startsWith("/create-listing");
@@ -207,6 +207,21 @@ export function AppHeader() {
             )}
 
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Link
+                aria-label="Ценовая аналитика"
+                className="icon-button"
+                href="/analytics/pricing"
+                style={{
+                  width: 42,
+                  height: 42,
+                  display: "grid",
+                  placeItems: "center",
+                  textDecoration: "none",
+                }}
+                title="Ценовая аналитика"
+              >
+                <img alt="" src="/icons/chart.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
+              </Link>
               {status === "authenticated" ? (
                 <Link
                   aria-label="Создать объявление"

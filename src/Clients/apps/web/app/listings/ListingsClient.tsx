@@ -19,6 +19,7 @@ import { AppShell } from "../components/AppShell";
 import { useAuth } from "../providers";
 import { ListingGrid } from "./components/ListingGrid";
 import { ListingsMapOverview } from "./components/ListingsMapOverview";
+import { useFavoriteListings } from "./lib/listing-collections";
 import { getSearchPropertyTypeLabel, mapSearchListingToCard } from "./search-listing-card.mapper";
 import { listingsClientStyles } from "./styles/listings-client.styles";
 import { listingsPageClasses } from "./styles/listings-page.styles";
@@ -249,17 +250,32 @@ function getLocationModeLabel(mode: LocationMode | "") {
   }
 }
 
-export function ListingsClient() {
+type ListingsClientProps = {
+  title?: string;
+  subtitle?: string;
+  eyebrow?: string;
+  forcedListingIds?: string[] | null;
+  emptyTitle?: string;
+  emptyDescription?: string;
+};
+
+export function ListingsClient({
+  title = "Каталог и поиск объявлений",
+  subtitle = "Основные параметры поиска и карта доступны в отдельной панели.",
+  eyebrow = "Каталог",
+  forcedListingIds = null,
+  emptyTitle = "Ничего не найдено",
+  emptyDescription = "Попробуйте изменить фильтры или сбросить ограничения, чтобы расширить выборку.",
+}: ListingsClientProps = {}) {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { api, user } = useAuth();
+  const favorites = useFavoriteListings();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isMapOverviewOpen, setIsMapOverviewOpen] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
-  const [filters, setFilters] = useState<SearchFormState>(() => ({
-    ...initialState,
-    query: searchParams.get("q")?.trim() ?? "",
-  }));
+  const [filters, setFilters] = useState<SearchFormState>(initialState);
+  const [appliedFilters, setAppliedFilters] = useState<SearchFormState>(initialState);
   useEffect(() => {
     const nextQuery = searchParams.get("q")?.trim() ?? "";
     setFilters((current) => (current.query === nextQuery ? current : {
@@ -267,86 +283,92 @@ export function ListingsClient() {
       query: nextQuery,
       page: 0,
     }));
+    setAppliedFilters((current) => (current.query === nextQuery ? current : {
+      ...current,
+      query: nextQuery,
+      page: 0,
+    }));
   }, [searchParams]);
   const isAdmin = user?.role?.toLowerCase() === "admin";
   const searchRequest = useMemo<SearchListingsRequest>(() => ({
-    query: filters.query.trim() || null,
-    listingType: filters.listingType || null,
-    minPrice: parseOptionalNumber(filters.minPrice),
-    maxPrice: parseOptionalNumber(filters.maxPrice),
-    minArea: parseOptionalNumber(filters.minArea),
-    maxArea: parseOptionalNumber(filters.maxArea),
-    infrastructureLevel: filters.infrastructureLevel || null,
-    transportLevel: filters.transportLevel === "any" ? null : filters.transportLevel,
-    commerceLevel: filters.commerceLevel || null,
-    locationMode: filters.locationMode || null,
-    nearKindergarten: filters.nearKindergarten ? true : null,
-    nearSchool: filters.nearSchool ? true : null,
-    nearStore: filters.nearStore ? true : null,
-    nearPharmacy: filters.nearPharmacy ? true : null,
-    nearStop: filters.nearStop ? true : null,
-    nearPark: filters.nearPark ? true : null,
-    nearClinic: filters.nearClinic ? true : null,
-    nearParking: filters.nearParking ? true : null,
-    nearFitness: filters.nearFitness ? true : null,
-    nearLeisure: filters.nearLeisure ? true : null,
-    nearMetro: filters.nearMetro ? true : null,
-    familyFriendly: filters.familyFriendly ? true : null,
-    walkableArea: filters.walkableArea ? true : null,
-    minInfrastructureScore: parseOptionalNumber(filters.minInfrastructureScore),
-    minEducationScore: parseOptionalNumber(filters.minEducationScore),
-    minHealthcareScore: parseOptionalNumber(filters.minHealthcareScore),
-    minTransportScore: parseOptionalNumber(filters.minTransportScore),
-    minCommerceScore: parseOptionalNumber(filters.minCommerceScore),
-    minLeisureScore: parseOptionalNumber(filters.minLeisureScore),
-    minEducationCount: parseOptionalNumber(filters.minEducationCount),
-    minTransportCount: parseOptionalNumber(filters.minTransportCount),
-    minHealthcareCount: parseOptionalNumber(filters.minHealthcareCount),
-    minCommerceCount: parseOptionalNumber(filters.minCommerceCount),
-    minLeisureCount: parseOptionalNumber(filters.minLeisureCount),
-    maxTransportNearestMeters: parseOptionalNumber(filters.maxTransportNearestMeters),
-    maxEducationNearestMeters: parseOptionalNumber(filters.maxEducationNearestMeters),
-    maxHealthcareNearestMeters: parseOptionalNumber(filters.maxHealthcareNearestMeters),
-    maxCommerceNearestMeters: parseOptionalNumber(filters.maxCommerceNearestMeters),
-    maxLeisureNearestMeters: parseOptionalNumber(filters.maxLeisureNearestMeters),
-    maxStoreWalkMinutes: parseOptionalNumber(filters.maxStoreWalkMinutes),
-    maxPharmacyWalkMinutes: parseOptionalNumber(filters.maxPharmacyWalkMinutes),
-    maxStopWalkMinutes: parseOptionalNumber(filters.maxStopWalkMinutes),
-    maxParkingWalkMinutes: parseOptionalNumber(filters.maxParkingWalkMinutes),
-    maxSchoolWalkMinutes: parseOptionalNumber(filters.maxSchoolWalkMinutes),
-    maxKindergartenWalkMinutes: parseOptionalNumber(filters.maxKindergartenWalkMinutes),
-    maxClinicDriveMinutes: parseOptionalNumber(filters.maxClinicDriveMinutes),
-    maxHospitalDriveMinutes: parseOptionalNumber(filters.maxHospitalDriveMinutes),
-    maxParkWalkMinutes: parseOptionalNumber(filters.maxParkWalkMinutes),
-    maxFitnessWalkMinutes: parseOptionalNumber(filters.maxFitnessWalkMinutes),
-    maxMuseumDriveMinutes: parseOptionalNumber(filters.maxMuseumDriveMinutes),
-    maxTheaterDriveMinutes: parseOptionalNumber(filters.maxTheaterDriveMinutes),
-    maxCinemaDriveMinutes: parseOptionalNumber(filters.maxCinemaDriveMinutes),
-    maxMetroWalkMinutes: parseOptionalWalkMinutesFromMeters(filters.maxMetroWalkMinutes),
-    requireMetroInPrimaryRadius: filters.requireMetroInPrimaryRadius ? true : null,
+    listingIds: forcedListingIds ?? null,
+    query: appliedFilters.query.trim() || null,
+    listingType: appliedFilters.listingType || null,
+    minPrice: parseOptionalNumber(appliedFilters.minPrice),
+    maxPrice: parseOptionalNumber(appliedFilters.maxPrice),
+    minArea: parseOptionalNumber(appliedFilters.minArea),
+    maxArea: parseOptionalNumber(appliedFilters.maxArea),
+    infrastructureLevel: appliedFilters.infrastructureLevel || null,
+    transportLevel: appliedFilters.transportLevel === "any" ? null : appliedFilters.transportLevel,
+    commerceLevel: appliedFilters.commerceLevel || null,
+    locationMode: appliedFilters.locationMode || null,
+    nearKindergarten: appliedFilters.nearKindergarten ? true : null,
+    nearSchool: appliedFilters.nearSchool ? true : null,
+    nearStore: appliedFilters.nearStore ? true : null,
+    nearPharmacy: appliedFilters.nearPharmacy ? true : null,
+    nearStop: appliedFilters.nearStop ? true : null,
+    nearPark: appliedFilters.nearPark ? true : null,
+    nearClinic: appliedFilters.nearClinic ? true : null,
+    nearParking: appliedFilters.nearParking ? true : null,
+    nearFitness: appliedFilters.nearFitness ? true : null,
+    nearLeisure: appliedFilters.nearLeisure ? true : null,
+    nearMetro: appliedFilters.nearMetro ? true : null,
+    familyFriendly: appliedFilters.familyFriendly ? true : null,
+    walkableArea: appliedFilters.walkableArea ? true : null,
+    minInfrastructureScore: parseOptionalNumber(appliedFilters.minInfrastructureScore),
+    minEducationScore: parseOptionalNumber(appliedFilters.minEducationScore),
+    minHealthcareScore: parseOptionalNumber(appliedFilters.minHealthcareScore),
+    minTransportScore: parseOptionalNumber(appliedFilters.minTransportScore),
+    minCommerceScore: parseOptionalNumber(appliedFilters.minCommerceScore),
+    minLeisureScore: parseOptionalNumber(appliedFilters.minLeisureScore),
+    minEducationCount: parseOptionalNumber(appliedFilters.minEducationCount),
+    minTransportCount: parseOptionalNumber(appliedFilters.minTransportCount),
+    minHealthcareCount: parseOptionalNumber(appliedFilters.minHealthcareCount),
+    minCommerceCount: parseOptionalNumber(appliedFilters.minCommerceCount),
+    minLeisureCount: parseOptionalNumber(appliedFilters.minLeisureCount),
+    maxTransportNearestMeters: parseOptionalNumber(appliedFilters.maxTransportNearestMeters),
+    maxEducationNearestMeters: parseOptionalNumber(appliedFilters.maxEducationNearestMeters),
+    maxHealthcareNearestMeters: parseOptionalNumber(appliedFilters.maxHealthcareNearestMeters),
+    maxCommerceNearestMeters: parseOptionalNumber(appliedFilters.maxCommerceNearestMeters),
+    maxLeisureNearestMeters: parseOptionalNumber(appliedFilters.maxLeisureNearestMeters),
+    maxStoreWalkMinutes: parseOptionalNumber(appliedFilters.maxStoreWalkMinutes),
+    maxPharmacyWalkMinutes: parseOptionalNumber(appliedFilters.maxPharmacyWalkMinutes),
+    maxStopWalkMinutes: parseOptionalNumber(appliedFilters.maxStopWalkMinutes),
+    maxParkingWalkMinutes: parseOptionalNumber(appliedFilters.maxParkingWalkMinutes),
+    maxSchoolWalkMinutes: parseOptionalNumber(appliedFilters.maxSchoolWalkMinutes),
+    maxKindergartenWalkMinutes: parseOptionalNumber(appliedFilters.maxKindergartenWalkMinutes),
+    maxClinicDriveMinutes: parseOptionalNumber(appliedFilters.maxClinicDriveMinutes),
+    maxHospitalDriveMinutes: parseOptionalNumber(appliedFilters.maxHospitalDriveMinutes),
+    maxParkWalkMinutes: parseOptionalNumber(appliedFilters.maxParkWalkMinutes),
+    maxFitnessWalkMinutes: parseOptionalNumber(appliedFilters.maxFitnessWalkMinutes),
+    maxMuseumDriveMinutes: parseOptionalNumber(appliedFilters.maxMuseumDriveMinutes),
+    maxTheaterDriveMinutes: parseOptionalNumber(appliedFilters.maxTheaterDriveMinutes),
+    maxCinemaDriveMinutes: parseOptionalNumber(appliedFilters.maxCinemaDriveMinutes),
+    maxMetroWalkMinutes: parseOptionalWalkMinutesFromMeters(appliedFilters.maxMetroWalkMinutes),
+    requireMetroInPrimaryRadius: appliedFilters.requireMetroInPrimaryRadius ? true : null,
     boundsMinLatitude: null,
     boundsMinLongitude: null,
     boundsMaxLatitude: null,
     boundsMaxLongitude: null,
     centerLatitude:
-      filters.centerLatitude != null && parseOptionalNumber(filters.radiusMeters) != null
-        ? filters.centerLatitude
+      appliedFilters.centerLatitude != null && parseOptionalNumber(appliedFilters.radiusMeters) != null
+        ? appliedFilters.centerLatitude
         : null,
     centerLongitude:
-      filters.centerLongitude != null && parseOptionalNumber(filters.radiusMeters) != null
-        ? filters.centerLongitude
+      appliedFilters.centerLongitude != null && parseOptionalNumber(appliedFilters.radiusMeters) != null
+        ? appliedFilters.centerLongitude
         : null,
     radiusMeters:
-      filters.centerLatitude != null && filters.centerLongitude != null
-        ? parseOptionalNumber(filters.radiusMeters)
+      appliedFilters.centerLatitude != null && appliedFilters.centerLongitude != null
+        ? parseOptionalNumber(appliedFilters.radiusMeters)
         : null,
     includeHighlights: true,
     includeRelevanceBreakdown: false,
-    sort: filters.sortBy,
-    sortBy: filters.sortBy,
-    page: filters.page,
+    sort: appliedFilters.sortBy,
+    sortBy: appliedFilters.sortBy,
+    page: appliedFilters.page,
     pageSize: LISTINGS_PAGE_SIZE,
-  }), [filters]);
+  }), [appliedFilters, forcedListingIds]);
   const deferredSearchRequest = useDeferredValue(searchRequest);
   const { data, isLoading, error } = useSearchListingsQuery(api, deferredSearchRequest);
   const mapSearchRequest = useMemo<SearchListingsRequest>(() => ({
@@ -376,6 +398,8 @@ export function ListingsClient() {
       canDelete: isAdmin || listing.agentId === user?.id,
       deletingId,
       onDelete: handleDelete,
+      isFavorite: favorites.isFavorite(listing.listingId),
+      onToggleFavorite: favorites.toggleFavorite,
     }),
   );
   const mapItemsSource =
@@ -399,68 +423,81 @@ export function ListingsClient() {
     (listing) => listing.latitude == null || listing.longitude == null,
   ).length;
   const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / LISTINGS_PAGE_SIZE));
-  const visiblePages = getVisiblePageNumbers(filters.page, totalPages);
+  const visiblePages = getVisiblePageNumbers(appliedFilters.page, totalPages);
   const activeFiltersCount = [
-    filters.query.trim(),
-    filters.listingType,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.minArea,
-    filters.maxArea,
-    filters.infrastructureLevel,
-    filters.transportLevel !== "any" ? filters.transportLevel : "",
-    filters.commerceLevel,
-    filters.locationMode,
-    filters.nearKindergarten ? "near-kindergarten" : "",
-    filters.nearSchool ? "near-school" : "",
-    filters.nearStore ? "near-store" : "",
-    filters.nearPharmacy ? "near-pharmacy" : "",
-    filters.nearStop ? "near-stop" : "",
-    filters.nearPark ? "near-park" : "",
-    filters.nearClinic ? "near-clinic" : "",
-    filters.nearParking ? "near-parking" : "",
-    filters.nearFitness ? "near-fitness" : "",
-    filters.nearLeisure ? "near-leisure" : "",
-    filters.nearMetro ? "near-metro" : "",
-    filters.familyFriendly ? "family-friendly" : "",
-    filters.walkableArea ? "walkable-area" : "",
-    filters.minInfrastructureScore,
-    filters.minEducationScore,
-    filters.minHealthcareScore,
-    filters.minTransportScore,
-    filters.minCommerceScore,
-    filters.minLeisureScore,
-    filters.minEducationCount,
-    filters.minTransportCount,
-    filters.minHealthcareCount,
-    filters.minCommerceCount,
-    filters.minLeisureCount,
-    filters.maxTransportNearestMeters,
-    filters.maxEducationNearestMeters,
-    filters.maxHealthcareNearestMeters,
-    filters.maxCommerceNearestMeters,
-    filters.maxLeisureNearestMeters,
-    filters.maxStoreWalkMinutes,
-    filters.maxPharmacyWalkMinutes,
-    filters.maxStopWalkMinutes,
-    filters.maxParkingWalkMinutes,
-    filters.maxSchoolWalkMinutes,
-    filters.maxKindergartenWalkMinutes,
-    filters.maxClinicDriveMinutes,
-    filters.maxHospitalDriveMinutes,
-    filters.maxParkWalkMinutes,
-    filters.maxFitnessWalkMinutes,
-    filters.maxMuseumDriveMinutes,
-    filters.maxTheaterDriveMinutes,
-    filters.maxCinemaDriveMinutes,
-    filters.maxMetroWalkMinutes,
-    filters.requireMetroInPrimaryRadius ? "metro" : "",
-    filters.radiusMeters,
-    filters.centerLatitude != null && filters.centerLongitude != null ? "point" : "",
+    appliedFilters.query.trim(),
+    appliedFilters.listingType,
+    appliedFilters.minPrice,
+    appliedFilters.maxPrice,
+    appliedFilters.minArea,
+    appliedFilters.maxArea,
+    appliedFilters.infrastructureLevel,
+    appliedFilters.transportLevel !== "any" ? appliedFilters.transportLevel : "",
+    appliedFilters.commerceLevel,
+    appliedFilters.locationMode,
+    appliedFilters.nearKindergarten ? "near-kindergarten" : "",
+    appliedFilters.nearSchool ? "near-school" : "",
+    appliedFilters.nearStore ? "near-store" : "",
+    appliedFilters.nearPharmacy ? "near-pharmacy" : "",
+    appliedFilters.nearStop ? "near-stop" : "",
+    appliedFilters.nearPark ? "near-park" : "",
+    appliedFilters.nearClinic ? "near-clinic" : "",
+    appliedFilters.nearParking ? "near-parking" : "",
+    appliedFilters.nearFitness ? "near-fitness" : "",
+    appliedFilters.nearLeisure ? "near-leisure" : "",
+    appliedFilters.nearMetro ? "near-metro" : "",
+    appliedFilters.familyFriendly ? "family-friendly" : "",
+    appliedFilters.walkableArea ? "walkable-area" : "",
+    appliedFilters.minInfrastructureScore,
+    appliedFilters.minEducationScore,
+    appliedFilters.minHealthcareScore,
+    appliedFilters.minTransportScore,
+    appliedFilters.minCommerceScore,
+    appliedFilters.minLeisureScore,
+    appliedFilters.minEducationCount,
+    appliedFilters.minTransportCount,
+    appliedFilters.minHealthcareCount,
+    appliedFilters.minCommerceCount,
+    appliedFilters.minLeisureCount,
+    appliedFilters.maxTransportNearestMeters,
+    appliedFilters.maxEducationNearestMeters,
+    appliedFilters.maxHealthcareNearestMeters,
+    appliedFilters.maxCommerceNearestMeters,
+    appliedFilters.maxLeisureNearestMeters,
+    appliedFilters.maxStoreWalkMinutes,
+    appliedFilters.maxPharmacyWalkMinutes,
+    appliedFilters.maxStopWalkMinutes,
+    appliedFilters.maxParkingWalkMinutes,
+    appliedFilters.maxSchoolWalkMinutes,
+    appliedFilters.maxKindergartenWalkMinutes,
+    appliedFilters.maxClinicDriveMinutes,
+    appliedFilters.maxHospitalDriveMinutes,
+    appliedFilters.maxParkWalkMinutes,
+    appliedFilters.maxFitnessWalkMinutes,
+    appliedFilters.maxMuseumDriveMinutes,
+    appliedFilters.maxTheaterDriveMinutes,
+    appliedFilters.maxCinemaDriveMinutes,
+    appliedFilters.maxMetroWalkMinutes,
+    appliedFilters.requireMetroInPrimaryRadius ? "metro" : "",
+    appliedFilters.radiusMeters,
+    appliedFilters.centerLatitude != null && appliedFilters.centerLongitude != null ? "point" : "",
   ].filter(Boolean).length;
 
   function updateFilter<K extends keyof SearchFormState>(key: K, value: SearchFormState[K]) {
     setFilters((current) => ({
+      ...current,
+      [key]: value,
+      page: 0,
+    }));
+  }
+
+  function updateAppliedFilter<K extends keyof SearchFormState>(key: K, value: SearchFormState[K]) {
+    setFilters((current) => ({
+      ...current,
+      [key]: value,
+      page: key === "page" ? (value as SearchFormState["page"]) : 0,
+    }));
+    setAppliedFilters((current) => ({
       ...current,
       [key]: value,
       page: key === "page" ? (value as SearchFormState["page"]) : 0,
@@ -477,20 +514,20 @@ export function ListingsClient() {
         <button
           className="button-secondary"
           type="button"
-          disabled={filters.page <= 0}
-          onClick={() => updateFilter("page", Math.max(0, filters.page - 1))}
+          disabled={appliedFilters.page <= 0}
+          onClick={() => updateAppliedFilter("page", Math.max(0, appliedFilters.page - 1))}
         >
           Назад
         </button>
         <div className="flex flex-wrap gap-2">
           {visiblePages.map((pageNumber) => {
-            const isActive = pageNumber === filters.page;
+            const isActive = pageNumber === appliedFilters.page;
 
             return (
               <button
                 key={pageNumber}
                 type="button"
-                onClick={() => updateFilter("page", pageNumber)}
+                onClick={() => updateAppliedFilter("page", pageNumber)}
                 className={isActive ? "button-primary" : "button-secondary"}
                 aria-current={isActive ? "page" : undefined}
               >
@@ -502,8 +539,8 @@ export function ListingsClient() {
         <button
           className="button-secondary"
           type="button"
-          disabled={filters.page + 1 >= totalPages}
-          onClick={() => updateFilter("page", filters.page + 1)}
+          disabled={appliedFilters.page + 1 >= totalPages}
+          onClick={() => updateAppliedFilter("page", appliedFilters.page + 1)}
         >
           Дальше
         </button>
@@ -515,11 +552,11 @@ export function ListingsClient() {
     <AppShell>
       <main className={listingsPageClasses.main}>
         <section className="surface grid gap-5 rounded-[30px] p-6">
-          <div className="grid gap-3">
-            <h1 className="section-title" style={listingsClientStyles.pageTitle}>
-              Каталог и поиск объявлений
-            </h1>
-          </div>
+            <div className="grid gap-3">
+              <h1 className="section-title" style={listingsClientStyles.pageTitle}>
+              {title}
+              </h1>
+            </div>
 
           <div style={listingsClientStyles.heroGrid}>
             <div style={listingsClientStyles.heroPanel}>
@@ -528,7 +565,7 @@ export function ListingsClient() {
                   Подберите объявления по нужным параметрам
                 </div>
                 <p style={listingsClientStyles.mutedParagraph}>
-                  Основные параметры поиска и карта доступны в отдельной панели.
+                  {subtitle}
                 </p>
               </div>
 
@@ -549,7 +586,10 @@ export function ListingsClient() {
                 <button
                   className="button-secondary"
                   type="button"
-                  onClick={() => setFilters(initialState)}
+                  onClick={() => {
+                    setFilters(initialState);
+                    setAppliedFilters(initialState);
+                  }}
                 >
                   Сбросить
                 </button>
@@ -679,6 +719,18 @@ export function ListingsClient() {
             </div>
           ) : null}
 
+          {!isLoading && items.length === 0 ? (
+            <section className="surface grid gap-4 rounded-[28px] p-7">
+              <div className="eyebrow">{eyebrow}</div>
+              <h2 className="section-title" style={{ marginTop: 0 }}>
+                {emptyTitle}
+              </h2>
+              <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 620 }}>
+                {emptyDescription}
+              </p>
+            </section>
+          ) : null}
+
           <div style={listingsClientStyles.footerRow}>
             <div style={listingsClientStyles.footerMeta}>
               Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
@@ -687,7 +739,7 @@ export function ListingsClient() {
               <select
                 className="field"
                 value={filters.sortBy}
-                onChange={(event) => updateFilter("sortBy", event.target.value as SearchSortBy)}
+                onChange={(event) => updateAppliedFilter("sortBy", event.target.value as SearchSortBy)}
                 style={{ minWidth: 220 }}
               >
                 <option value="relevance">По релевантности</option>
@@ -702,7 +754,9 @@ export function ListingsClient() {
 
           {paginationBlock}
 
-          <ListingGrid items={items} isLoading={isLoading && items.length === 0} />
+          {items.length > 0 || isLoading ? (
+            <ListingGrid items={items} isLoading={isLoading && items.length === 0} />
+          ) : null}
 
           <div style={listingsClientStyles.footerRow}>
             <div style={listingsClientStyles.footerMeta}>
@@ -1227,14 +1281,23 @@ export function ListingsClient() {
                     <button
                       className="button-secondary"
                       type="button"
-                      onClick={() => setFilters(initialState)}
+                      onClick={() => {
+                        setFilters(initialState);
+                        setAppliedFilters(initialState);
+                      }}
                     >
                       Сбросить
                     </button>
                     <button
                       className="button-primary"
                       type="button"
-                      onClick={() => setIsFiltersModalOpen(false)}
+                      onClick={() => {
+                        setAppliedFilters({
+                          ...filters,
+                          page: 0,
+                        });
+                        setIsFiltersModalOpen(false);
+                      }}
                     >
                       Показать результаты
                     </button>

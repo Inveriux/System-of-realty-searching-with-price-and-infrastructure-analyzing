@@ -40,6 +40,7 @@ function formatPublishedDate(value: string | null) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Europe/Minsk",
   }).format(parsed);
 }
 

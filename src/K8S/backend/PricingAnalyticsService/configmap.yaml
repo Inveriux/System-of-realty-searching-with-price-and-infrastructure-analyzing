@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pricing-analytics-service-config
+  namespace: diploma
+data:
+  SERVICE_NAME: PRICING_ANALYTICS_SERVICE
+  ASPNETCORE_URLS: http://+:8080
+  ListingService__BaseUrl: http://listing-service-svc:8080

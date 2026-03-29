@@ -26,6 +26,7 @@ public class SignUpByGoogleHandler(IUserRepository userRepository,
         var user = User.Create(currentUserProvider.GetUserName(), 
             currentUserProvider.GetEmail(), 
             currentUserProvider.GetImageUrl());
+        user.EmailConfirmed = true;
         
         user.GoogleAuthentication = new GoogleAuthentication
         {

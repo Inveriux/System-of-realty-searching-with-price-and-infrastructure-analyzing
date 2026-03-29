@@ -117,6 +117,7 @@ export const ListingDtoSchema: z.ZodType<ListingDto> = z.object({
   areaTotal: z.number(),
   buildYear: nullableNumber,
   publishedDate: nullableString,
+  status: z.string(),
   buildingType: nullableString,
   listingType: z.string(),
   mainMedia: nullableString,

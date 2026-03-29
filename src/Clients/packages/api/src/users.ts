@@ -4,7 +4,14 @@ import {
   CurrentUserDtoSchema,
 } from "@diploma/validation";
 import type { ApiClient } from "./http";
-import type { SignInDto, SignUpDto, UpdateOwnProfileDto } from "@diploma/contracts/auth";
+import type {
+  ResendEmailVerificationCodeDto,
+  SignInDto,
+  SignUpDto,
+  ChangePasswordDto,
+  UpdateOwnProfileDto,
+  VerifyEmailCodeDto,
+} from "@diploma/contracts/auth";
 
 const AuthTokensResultSchema = z.object({
   isSuccess: z.boolean(),
@@ -41,6 +48,18 @@ export async function signUpWithAvatar(api: ApiClient, payload: SignUpDto, image
   await api.post("/api/users/signup-with-avatar", formData, BooleanResultSchema, { authMode: "none" });
 }
 
+export async function verifyEmailCode(api: ApiClient, payload: VerifyEmailCodeDto) {
+  await api.post("/api/users/email-verification/verify", payload, BooleanResultSchema, {
+    authMode: "none",
+  });
+}
+
+export async function resendEmailVerificationCode(api: ApiClient, payload: ResendEmailVerificationCodeDto) {
+  await api.post("/api/users/email-verification/resend", payload, BooleanResultSchema, {
+    authMode: "none",
+  });
+}
+
 export async function signIn(api: ApiClient, payload: SignInDto) {
   const result = await api.post("/api/users/signin", payload, AuthTokensResultSchema, {
     authMode: "none",
@@ -73,4 +92,8 @@ export async function uploadUserAvatar(api: ApiClient, image: File) {
   formData.append("image", image);
   const result = await api.post("/api/users/avatar", formData, CurrentUserResultSchema);
   return result.data;
+}
+
+export async function changePassword(api: ApiClient, payload: ChangePasswordDto) {
+  await api.post("/api/users/change-password", payload, BooleanResultSchema);
 }

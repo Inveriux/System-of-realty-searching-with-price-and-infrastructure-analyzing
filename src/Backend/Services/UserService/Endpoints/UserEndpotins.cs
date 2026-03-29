@@ -53,6 +53,14 @@ public class UserEndpoints : IEndpointRegistrar
             .WithDescription("Accepts multipart/form-data with `user` JSON and one avatar file in `image`.")
             .Accepts<SignUpWithAvatarRequest>("multipart/form-data")
             .DisableAntiforgery();
+        group.MapPost("/email-verification/verify", VerifyEmailAsync)
+            .WithName("VerifyEmail")
+            .WithSummary("Verifies a local user email with a six-digit code.")
+            .WithDescription("Confirms the email after registration using a short-lived verification code.");
+        group.MapPost("/email-verification/resend", ResendEmailVerificationCodeAsync)
+            .WithName("ResendEmailVerificationCode")
+            .WithSummary("Resends the email verification code.")
+            .WithDescription("Resends a fresh verification code for an existing unverified local account.");
         group.MapPost("/signin", SignInAsync)
             .WithName("SignIn")
             .WithSummary("Signs in a local user.")
@@ -161,6 +169,24 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new SignInCommand(dto), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> VerifyEmailAsync(
+        ISender sender,
+        VerifyEmailCodeDto dto,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new VerifyEmailCodeCommand(dto), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> ResendEmailVerificationCodeAsync(
+        ISender sender,
+        ResendEmailVerificationCodeDto dto,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new ResendEmailVerificationCodeCommand(dto), cancellationToken);
         return result.ToHttpResult();
     }
 

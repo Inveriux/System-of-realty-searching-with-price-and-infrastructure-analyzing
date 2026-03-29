@@ -8,6 +8,7 @@ public class ListingPriceHistory
     public string? PriceCurrency { get; set; }
     public decimal? PriceAmountByn { get; set; }
     public decimal? PriceAmountUsd { get; set; }
+    public string? Comment { get; set; }
 
     public Guid ListingId { get; set; }
     public Listing? Listing { get; set; }

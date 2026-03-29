@@ -18,8 +18,11 @@ export type ListingCardBase = {
   publishedDate?: string | null;
   href?: string;
   isFavorite?: boolean;
+  isHidden?: boolean;
   canDelete?: boolean;
   isDeleting?: boolean;
+  canHide?: boolean;
+  isHiding?: boolean;
   mediaCount?: number;
   infrastructureScore?: number | null;
   transportCount?: number | null;
@@ -50,6 +53,8 @@ export type ListingCardBase = {
   hasCoordinates?: boolean;
   nearestMetroName?: string | null;
   onDelete?: (id: string) => void | Promise<void>;
+  onHide?: (id: string) => void | Promise<void>;
+  onToggleFavorite?: (id: string) => void | Promise<void>;
 };
 
 export type ApartmentDetails = {

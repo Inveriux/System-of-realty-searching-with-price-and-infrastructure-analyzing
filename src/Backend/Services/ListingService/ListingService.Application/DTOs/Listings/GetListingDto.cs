@@ -23,6 +23,7 @@ public class GetListingDto
     public string? MainMedia { get; set; }
     public int MediaCount { get; set; }
     public DateTimeOffset? PublishedDate { get; set; }
+    public string Status { get; set; } = string.Empty;
     public string? BuildingType { get; set; }
     public required string ListingType { get; init; }
     public DateTime? Created { get; set; }

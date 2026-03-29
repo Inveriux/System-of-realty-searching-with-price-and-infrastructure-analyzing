@@ -7,6 +7,7 @@
     "./auth": "./src/auth.ts",
     "./listings": "./src/listings/listings.ts",
     "./search": "./src/search.ts",
+    "./pricing-analytics": "./src/pricing-analytics.ts",
     "./listingPage": "./src/listingPage.ts",
     "./pagedResponse": "./src/pagedResponse.ts"
   }

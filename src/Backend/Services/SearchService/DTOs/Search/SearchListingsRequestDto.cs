@@ -2,6 +2,7 @@ namespace SearchService.DTOs.Search;
 
 public sealed class SearchListingsRequestDto
 {
+    public IReadOnlyCollection<Guid>? ListingIds { get; init; }
     public string? Query { get; init; }
     public Guid? LocationId { get; init; }
     public string? OperationType { get; init; }

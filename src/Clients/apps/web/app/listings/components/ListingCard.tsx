@@ -2,6 +2,7 @@
 
 import {
   Camera,
+  EyeOff,
   Heart,
   MapPin,
   MoveRight,
@@ -54,6 +55,7 @@ function formatPublishedDate(value?: string | null) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Europe/Minsk",
   }).format(parsed);
 }
 
@@ -86,8 +88,11 @@ export function ListingCard({ item }: ListingCardProps) {
   const transportNearest = formatMeters(item.transportNearestMeters);
   const compactTransportSummary: string[] = [];
   const publishedDateLabel = formatPublishedDate(item.publishedDate);
+  const metroLabel = item.nearestMetroWalkMinutes != null
+    ? `${Math.round(item.nearestMetroWalkMinutes)} мин`
+    : null;
   const parkingLabel = item.nearestParkingWalkMinutes != null
-    ? `${Math.round(item.nearestParkingWalkMinutes)} мин пешком`
+    ? `${Math.round(item.nearestParkingWalkMinutes)} мин`
     : item.nearestParkingDriveMinutes != null
       ? `${item.nearestParkingDriveMinutesEstimated ? "~" : ""}${Math.round(item.nearestParkingDriveMinutes)} мин на машине`
       : null;
@@ -106,6 +111,29 @@ export function ListingCard({ item }: ListingCardProps) {
     }
 
     await item.onDelete(item.id);
+  }
+
+  async function handleHide(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!item.onHide || item.isHiding) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Скрыть объявление "${item.title}" из общего каталога?`);
+    if (!confirmed) {
+      return;
+    }
+
+    await item.onHide(item.id);
+  }
+
+  async function handleToggleFavorite(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    await item.onToggleFavorite?.(item.id);
   }
 
   return (
@@ -129,12 +157,41 @@ export function ListingCard({ item }: ListingCardProps) {
               <span className={`rounded-full px-3 py-1.5 text-[12px] font-semibold shadow-sm backdrop-blur ${getPropertyBadgeTone(item)}`}>
                 {typeLabel}
               </span>
+              {item.isHidden ? (
+                <span className="rounded-full px-3 py-1.5 text-[12px] font-semibold shadow-sm backdrop-blur bg-[color:color-mix(in_srgb,#fff4e5_88%,white)] text-[#b45309]">
+                  Скрыто
+                </span>
+              ) : null}
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <span className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--background-elevated)_86%,var(--color-primary-soft))] text-[color:var(--color-primary-strong)] shadow-sm backdrop-blur">
+              <button
+                type="button"
+                onClick={handleToggleFavorite}
+                className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 shadow-sm backdrop-blur transition hover:scale-[1.03]"
+                style={{
+                  background: item.isFavorite
+                    ? "color-mix(in srgb, #ffe2ea 88%, white)"
+                    : "color-mix(in srgb, var(--background-elevated) 86%, var(--color-primary-soft))",
+                  color: item.isFavorite ? "#be123c" : "var(--color-primary-strong)",
+                }}
+                aria-label={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+                title={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+              >
                 <Heart className="h-4.5 w-4.5" />
-              </span>
+              </button>
+              {item.canHide ? (
+                <button
+                  type="button"
+                  onClick={handleHide}
+                  disabled={item.isHiding || item.isHidden}
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#eef2ff_88%,white)] text-[#4338ca] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Скрыть объявление"
+                  title="Скрыть объявление"
+                >
+                  <EyeOff className="h-4.5 w-4.5" />
+                </button>
+              ) : null}
               {item.canDelete ? (
                 <button
                   type="button"
@@ -320,7 +377,7 @@ export function ListingCard({ item }: ListingCardProps) {
                       unoptimized
                       aria-hidden="true"
                     />
-                    <span>{item.nearestMetroName}</span>
+                    <span>{item.nearestMetroName}{metroLabel ? ` • ${metroLabel}` : ""}</span>
                   </div>
                 ) : null}
                 {parkingLabel ? (

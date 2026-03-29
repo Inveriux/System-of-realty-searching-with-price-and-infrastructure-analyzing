@@ -25,6 +25,10 @@ public class SignInHandler(IUserRepository userRepository,
             return Result.Fail<SignInUserResponseDto>("Invalid email.")
                 .WithError($"User with {dto.Email} email not found.", propertyName: nameof(User)); 
 
+        if (!user.EmailConfirmed)
+            return Result.Fail<SignInUserResponseDto>("Email is not verified.")
+                .WithError("Confirm your email before signing in.", propertyName: nameof(User.EmailConfirmed));
+
         var isPasswordValid = await userManager.CheckPasswordAsync(user, dto.Password);
         if (!isPasswordValid)
             return Result.Fail<SignInUserResponseDto>("Invalid password.")

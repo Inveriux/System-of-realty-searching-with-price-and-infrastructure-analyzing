@@ -5,6 +5,7 @@ import {
   getCreateListingLookups,
   type LookupOption,
 } from "@diploma/api/listings";
+import { estimateListingPrice } from "@diploma/api/pricing-analytics";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChangeEvent,
@@ -383,6 +384,20 @@ function isWithinBelarusBounds(latitude: number, longitude: number) {
   );
 }
 
+function deriveCityName(addressText: string) {
+  const trimmed = addressText.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.toLowerCase().includes("минск")) {
+    return "Минск";
+  }
+
+  const firstChunk = trimmed.split(",")[0]?.replace(/^г\.\s*/i, "").trim();
+  return firstChunk || null;
+}
+
 function getGeoObjectAddress(geoObject: YandexGeoObject | null) {
   if (!geoObject) {
     return null;
@@ -455,6 +470,7 @@ export function CreateListingClient() {
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [draftLocation, setDraftLocation] = useState<DraftLocation | null>(null);
   const [draftAddressQuery, setDraftAddressQuery] = useState("");
+  const [estimateNonce, setEstimateNonce] = useState(0);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<YandexMapInstance | null>(null);
@@ -514,6 +530,60 @@ export function CreateListingClient() {
         current.warehouseHeatingType || lookupsQuery.data.heatingTypes[0]?.name || "",
     }));
   }, [lookupsQuery.data]);
+
+  const pricingEstimateRequest = useMemo(() => {
+    const priceAmountByn = Number(values.priceAmount);
+    const areaTotal = Number(values.areaTotal);
+    const latitude = values.latitude ? Number(values.latitude) : null;
+    const longitude = values.longitude ? Number(values.longitude) : null;
+
+    if (!Number.isFinite(priceAmountByn) || priceAmountByn <= 0) {
+      return null;
+    }
+
+    if (!Number.isFinite(areaTotal) || areaTotal <= 0) {
+      return null;
+    }
+
+    return {
+      listingType: values.listingType || null,
+      buildingType: values.buildingType || null,
+      listingDetailsType: values.listingDetailsType || null,
+      priceAmountByn,
+      areaTotal,
+      latitude,
+      longitude,
+      cityName: deriveCityName(values.addressText),
+      locationId: null,
+    };
+  }, [
+    values.addressText,
+    values.areaTotal,
+    values.buildingType,
+    values.latitude,
+    values.listingDetailsType,
+    values.listingType,
+    values.longitude,
+    values.priceAmount,
+  ]);
+
+  useEffect(() => {
+    if (!pricingEstimateRequest) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setEstimateNonce((current) => current + 1);
+    }, 550);
+
+    return () => window.clearTimeout(timeout);
+  }, [pricingEstimateRequest]);
+
+  const pricingEstimateQuery = useQuery({
+    queryKey: ["listing-price-estimate", estimateNonce, pricingEstimateRequest],
+    queryFn: () => estimateListingPrice(api, pricingEstimateRequest!),
+    enabled: Boolean(pricingEstimateRequest) && estimateNonce > 0,
+  });
 
   const updateDraftLocation = useEffectEvent(async (ymaps: YandexMapsApi, coords: [number, number]) => {
     if (!isWithinBelarusBounds(coords[0], coords[1])) {
@@ -1079,6 +1149,53 @@ export function CreateListingClient() {
                   )
                 : null}
             </div>
+
+            {pricingEstimateRequest ? (
+              <div className="rounded-[24px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-5">
+                <div className="eyebrow">Аналитика</div>
+                <h3 className="section-title" style={{ marginTop: 8 }}>Оценка цены</h3>
+                {pricingEstimateQuery.isLoading ? (
+                  <p style={{ margin: "0.75rem 0 0", color: "var(--foreground-muted)" }}>
+                    Считаем ориентир по рынку…
+                  </p>
+                ) : pricingEstimateQuery.isError ? (
+                  <p style={{ margin: "0.75rem 0 0", color: "var(--foreground-muted)" }}>
+                    Не удалось получить оценку по рынку.
+                  </p>
+                ) : pricingEstimateQuery.data ? (
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Ваша цена</div>
+                      <div className="mt-1 text-[1rem] font-black">
+                        {pricingEstimateQuery.data.enteredPricePerSqm != null
+                          ? `${Math.round(pricingEstimateQuery.data.enteredPricePerSqm)} BYN/м²`
+                          : "Нет информации"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Рядом 1.5 км</div>
+                      <div className="mt-1 text-[1rem] font-black">
+                        {pricingEstimateQuery.data.localRadiusAveragePricePerSqm != null
+                          ? `${Math.round(pricingEstimateQuery.data.localRadiusAveragePricePerSqm)} BYN/м²`
+                          : "Недостаточно данных"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">По городу</div>
+                      <div className="mt-1 text-[1rem] font-black">
+                        {pricingEstimateQuery.data.cityAveragePricePerSqm != null
+                          ? `${Math.round(pricingEstimateQuery.data.cityAveragePricePerSqm)} BYN/м²`
+                          : "Нет информации"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Позиция</div>
+                      <div className="mt-1 text-[1rem] font-black">{pricingEstimateQuery.data.message}</div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             </section>
 
             <section className="surface" style={{ borderRadius: 28, padding: 24, display: "grid", gap: 16 }}>

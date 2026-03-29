@@ -10,6 +10,9 @@ public class GetUserDto
     public required string Email { get; init; } 
     public string? AccountImageUrl { get; init; }
     public string? PhoneNumber { get; init; }
+    public bool EmailConfirmed { get; init; }
+    public bool HasPassword { get; init; }
+    public bool IsGoogleAccount { get; init; }
     public required string Role { get; set; }
 
 
@@ -17,7 +20,9 @@ public class GetUserDto
     {
         public Mapping()
         {
-            CreateMap<User, GetUserDto>();    
+            CreateMap<User, GetUserDto>()
+                .ForMember(x => x.HasPassword, y => y.MapFrom(s => !string.IsNullOrWhiteSpace(s.PasswordHash)))
+                .ForMember(x => x.IsGoogleAccount, y => y.MapFrom(s => s.GoogleAuthentication != null));    
         }
     }
 }

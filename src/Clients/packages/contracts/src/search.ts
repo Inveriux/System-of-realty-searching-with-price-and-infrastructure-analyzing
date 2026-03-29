@@ -36,6 +36,7 @@ export type SearchRelevanceBreakdown = {
 };
 
 export type SearchListingsRequest = {
+  listingIds?: string[] | null;
   query?: string | null;
   locationId?: string | null;
   operationType?: string | null;

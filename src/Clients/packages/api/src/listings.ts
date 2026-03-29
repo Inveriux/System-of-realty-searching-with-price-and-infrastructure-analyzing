@@ -143,3 +143,7 @@ export async function createListingWithImages(
 export async function deleteListing(api: ApiClient, listingId: string) {
   await api.deleteVoid(`/api/listings/${listingId}`);
 }
+
+export async function hideListing(api: ApiClient, listingId: string) {
+  await api.patch(`/api/listings/${listingId}/hide`, {}, z.void());
+}

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using UserService.Data.Repositiroes.Abstractions;
 using UserService.UseCases.Users;
 using UserService.Models;
 using FluentValidation;
@@ -7,7 +8,9 @@ namespace UserService.Validations.Users;
 
 public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
 {
-    public ChangePasswordCommandValidator(UserManager<User> userManager)
+    public ChangePasswordCommandValidator(
+        UserManager<User> userManager,
+        IUserRepository userRepository)
     {
         RuleFor(x => x.ChangePasswordDto)
             .NotNull()
@@ -21,15 +24,25 @@ public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCo
                 .EmailAddress()
                 .WithMessage("Email format is invalid.");
 
-            RuleFor(x => x.ChangePasswordDto.CurrentPassword)
-                .NotEmpty()
-                .WithMessage("Current password is required.");
-
             RuleFor(x => x.ChangePasswordDto.NewPassword)
                 .NotEmpty()
                 .WithMessage("New password is required.")
-                .NotEqual(x => x.ChangePasswordDto.CurrentPassword)
+                .NotEqual(x => x.ChangePasswordDto.CurrentPassword!)
                 .WithMessage("New password must differ from current password.");
+
+            RuleFor(x => x)
+                .CustomAsync(async (command, context, cancellationToken) =>
+                {
+                    var dto = command.ChangePasswordDto;
+                    var user = await userRepository.GetByEmailAsync(dto.Email, false);
+                    if (user is null)
+                        return;
+
+                    if (!string.IsNullOrWhiteSpace(user.PasswordHash) && string.IsNullOrWhiteSpace(dto.CurrentPassword))
+                    {
+                        context.AddFailure(nameof(command.ChangePasswordDto.CurrentPassword), "Current password is required.");
+                    }
+                });
 
             RuleFor(x => x)
                 .CustomAsync(async (command, context, cancellationToken) =>

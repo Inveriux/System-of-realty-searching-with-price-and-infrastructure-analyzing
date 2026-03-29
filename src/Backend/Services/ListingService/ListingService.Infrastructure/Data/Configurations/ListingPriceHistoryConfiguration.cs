@@ -38,6 +38,9 @@ internal class ListingPriceHistoryConfiguration : IEntityTypeConfiguration<Listi
             .HasMaxLength(StringMaxLength)
             .IsRequired();
 
+        builder.Property(x => x.Comment)
+            .HasMaxLength(500);
+
         builder.HasIndex(x => x.ChangedAt);
         builder.HasIndex(x => x.ListingId);
     }

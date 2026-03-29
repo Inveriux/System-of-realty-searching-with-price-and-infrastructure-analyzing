@@ -18,6 +18,8 @@ import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
 import { ListingGallery } from "./ListingGallery";
 import { ListingLocationMap } from "./ListingLocationMap";
+import { ListingPriceAnalytics } from "./components/ListingPriceAnalytics";
+import { useViewedListings } from "../lib/listing-collections";
 
 const fallbackImage =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 760'%3E%3Crect width='1200' height='760' fill='%23efe8ff'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%235326d4' font-family='Arial' font-size='54'%3EListing%20Preview%3C/text%3E%3C/svg%3E";
@@ -55,6 +57,7 @@ function formatPublishedDate(value?: string | null) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Europe/Minsk",
   }).format(parsed);
 }
 
@@ -532,6 +535,8 @@ type Props = {
 
 export function ListingDetailsClient({ listingId }: Props) {
   const { api } = useAuth();
+  const viewed = useViewedListings();
+  const { pushViewed } = viewed;
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useListingPageQuery(api, listingId);
   const [activeInfrastructureCategory, setActiveInfrastructureCategory] = useState<string | null>(null);
@@ -547,6 +552,14 @@ export function ListingDetailsClient({ listingId }: Props) {
     void queryClient.invalidateQueries({ queryKey: ["search-listings"] });
     void queryClient.invalidateQueries({ queryKey: ["listings"] });
   }, [isMissingListingError, queryClient]);
+
+  useEffect(() => {
+    if (!listingId) {
+      return;
+    }
+
+    pushViewed(listingId);
+  }, [listingId, pushViewed]);
 
   const infrastructure = data?.infrastructure;
   const groupedInfrastructurePois = useMemo(() => infrastructure?.groupedPois ?? [], [infrastructure?.groupedPois]);
@@ -811,6 +824,12 @@ export function ListingDetailsClient({ listingId }: Props) {
                 {seller.email ? <div>Электронная почта: {seller.email}</div> : null}
               </div>
             </section>
+
+            <ListingPriceAnalytics
+              listingId={listing.id}
+              currentPriceAmountByn={listing.priceAmountByn ?? listing.priceAmount}
+              areaTotal={listing.areaTotal}
+            />
           </aside>
         </section>
 
@@ -1268,6 +1287,7 @@ export function ListingDetailsClient({ listingId }: Props) {
             </div>
           </section>
         ) : null}
+
       </main>
     </AppShell>
   );

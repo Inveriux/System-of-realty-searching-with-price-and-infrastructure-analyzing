@@ -10,6 +10,15 @@ export type SignUpDto = {
   accountImageUrl?: string | null;
 };
 
+export type VerifyEmailCodeDto = {
+  email: string;
+  code: string;
+};
+
+export type ResendEmailVerificationCodeDto = {
+  email: string;
+};
+
 export type AuthTokensDto = {
   success?: boolean;
   token: string;
@@ -22,10 +31,19 @@ export type CurrentUserDto = {
   email: string;
   accountImageUrl: string | null;
   phoneNumber?: string | null;
+  emailConfirmed: boolean;
+  hasPassword: boolean;
+  isGoogleAccount: boolean;
   role: string;
 };
 
 export type UpdateOwnProfileDto = {
   name: string;
   phoneNumber?: string | null;
+};
+
+export type ChangePasswordDto = {
+  email: string;
+  currentPassword?: string | null;
+  newPassword: string;
 };

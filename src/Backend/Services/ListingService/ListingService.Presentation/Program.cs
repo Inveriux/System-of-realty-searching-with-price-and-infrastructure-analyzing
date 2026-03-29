@@ -20,6 +20,7 @@ using ListingService.Presentation.Services;
 using System.Security.Claims;
 using System.Reflection;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -222,6 +223,15 @@ if(app.Environment.IsProduction())
 {
     var isDeletedata = app.Configuration.GetValue<bool>("DeleteDataAtStartup");
     await app.InitializeTestDatabaseAsync(isDeletedata);
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.ExecuteSqlRawAsync("""
+        ALTER TABLE listing_price_history
+        ADD COLUMN IF NOT EXISTS comment character varying(500);
+        """);
 }
 
 app.MapOpenApi();

@@ -3,8 +3,13 @@ import type { ListingCardItem } from "./components/listing-card.types";
 
 type MapSearchListingOptions = {
   canDelete: boolean;
+  canHide?: boolean;
   deletingId: string | null;
+  hidingId?: string | null;
   onDelete: (id: string) => Promise<void>;
+  onHide?: (id: string) => Promise<void>;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void | Promise<void>;
 };
 
 export function mapSearchListingToCard(
@@ -22,13 +27,18 @@ export function mapSearchListingToCard(
     priceCurrency: (listing.priceCurrency ?? "BYN") as "BYN",
     areaTotal: listing.areaTotal,
     mainMedia: listing.mainMediaUrl,
-    mediaCount: listing.mediaCount,
+    mediaCount: listing.mediaCount ?? undefined,
     listingType,
     buildingType: listing.buildingType,
     publishedDate: listing.publishedDate,
+    isFavorite: options.isFavorite,
     canDelete: options.canDelete,
     isDeleting: options.deletingId === listing.listingId,
+    canHide: options.canHide,
+    isHiding: options.hidingId === listing.listingId,
     onDelete: options.onDelete,
+    onHide: options.onHide,
+    onToggleFavorite: options.onToggleFavorite,
     href: `/listings/${listing.listingId}`,
     infrastructureScore: listing.infrastructureScore,
     transportCount: listing.transportCount,

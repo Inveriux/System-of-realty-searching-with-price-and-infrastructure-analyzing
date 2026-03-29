@@ -11,13 +11,12 @@ namespace UserService.UseCases.Users;
 public record GetUserByEmailQuery(string Email) : IRequest<Result<GetUserDto>>;
 
 public class GetUserByEmailHandler(IUserRepository userRepository,
-    UserManager<User> userManager,
     IMapper mapper) : IRequestHandler<GetUserByEmailQuery, Result<GetUserDto>>
 {
     public async Task<Result<GetUserDto>> Handle(GetUserByEmailQuery request, 
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await userRepository.GetByEmailAsync(request.Email);
 
         if(user is null)
             return Result.Fail<GetUserDto>("User not found.")

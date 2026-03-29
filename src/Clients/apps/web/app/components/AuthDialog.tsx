@@ -10,6 +10,11 @@ type AuthDialogProps = {
   onClose(): void;
 };
 
+type PendingVerificationState = {
+  email: string;
+  password: string;
+};
+
 const initialSignInState: SignInDto = {
   email: "",
   password: "",
@@ -22,21 +27,28 @@ const initialSignUpState: SignUpDto = {
   accountImageUrl: "",
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://diploma.com:5102";
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? ""
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://diploma.com:5102");
 
 export function AuthDialog({ mode, onClose }: AuthDialogProps) {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, verifySignUpEmail, resendVerificationCode } = useAuth();
   const [activeMode, setActiveMode] = useState<"signin" | "signup">("signin");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signInValues, setSignInValues] = useState(initialSignInState);
   const [signUpValues, setSignUpValues] = useState(initialSignUpState);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingVerification, setPendingVerification] = useState<PendingVerificationState | null>(null);
 
   useEffect(() => {
     if (mode) {
       setActiveMode(mode);
       setError(null);
+      setPendingVerification(null);
+      setVerificationCode("");
     }
   }, [mode]);
 
@@ -50,13 +62,25 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
     setError(null);
 
     try {
-      if (activeMode === "signin") {
+      if (pendingVerification) {
+        await verifySignUpEmail(
+          pendingVerification.email,
+          pendingVerification.password,
+          verificationCode,
+        );
+      } else if (activeMode === "signin") {
         await signIn(signInValues);
       } else {
         await signUp({
           ...signUpValues,
           accountImageUrl: signUpValues.accountImageUrl?.trim() || null,
         }, avatarFile);
+        setPendingVerification({
+          email: signUpValues.email,
+          password: signUpValues.password,
+        });
+        setVerificationCode("");
+        return;
       }
 
       onClose();
@@ -71,7 +95,11 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
     }
   }
 
-  const title = activeMode === "signin" ? "Вход в профиль" : "Создание аккаунта";
+  const title = pendingVerification
+    ? "Подтверждение почты"
+    : activeMode === "signin"
+      ? "Вход в профиль"
+      : "Создание аккаунта";
 
   function handleGoogleSignIn() {
     const form = document.createElement("form");
@@ -131,7 +159,46 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
         </button>
 
         <form onSubmit={handleSubmit} style={authDialogStyles.form}>
-          {activeMode === "signup" ? (
+          {pendingVerification ? (
+            <>
+              <div style={authDialogStyles.uploadMeta}>
+                На {pendingVerification.email} отправлен 6-значный код подтверждения.
+              </div>
+              <input
+                className="field"
+                inputMode="numeric"
+                maxLength={6}
+                onChange={(event) =>
+                  setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                placeholder="Код из письма"
+                required
+                value={verificationCode}
+              />
+              <button
+                className="button-secondary"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  setError(null);
+
+                  try {
+                    await resendVerificationCode(pendingVerification.email);
+                  } catch (submissionError) {
+                    setError(
+                      submissionError instanceof Error
+                        ? submissionError.message
+                        : "Не удалось отправить код повторно.",
+                    );
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                type="button"
+              >
+                Отправить код ещё раз
+              </button>
+            </>
+          ) : activeMode === "signup" ? (
             <>
               <input
                 className="field"
@@ -166,38 +233,42 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
             </>
           ) : null}
 
-          <input
-            className="field"
-            onChange={(event) => {
-              const email = event.target.value;
-              if (activeMode === "signin") {
-                setSignInValues((current) => ({ ...current, email }));
-              } else {
-                setSignUpValues((current) => ({ ...current, email }));
-              }
-            }}
-            placeholder="Email"
-            required
-            type="email"
-            value={activeMode === "signin" ? signInValues.email : signUpValues.email}
-          />
+          {pendingVerification ? null : (
+            <input
+              className="field"
+              onChange={(event) => {
+                const email = event.target.value;
+                if (activeMode === "signin") {
+                  setSignInValues((current) => ({ ...current, email }));
+                } else {
+                  setSignUpValues((current) => ({ ...current, email }));
+                }
+              }}
+              placeholder="Email"
+              required
+              type="email"
+              value={activeMode === "signin" ? signInValues.email : signUpValues.email}
+            />
+          )}
 
-          <input
-            className="field"
-            minLength={8}
-            onChange={(event) => {
-              const password = event.target.value;
-              if (activeMode === "signin") {
-                setSignInValues((current) => ({ ...current, password }));
-              } else {
-                setSignUpValues((current) => ({ ...current, password }));
-              }
-            }}
-            placeholder="Пароль"
-            required
-            type="password"
-            value={activeMode === "signin" ? signInValues.password : signUpValues.password}
-          />
+          {pendingVerification ? null : (
+            <input
+              className="field"
+              minLength={8}
+              onChange={(event) => {
+                const password = event.target.value;
+                if (activeMode === "signin") {
+                  setSignInValues((current) => ({ ...current, password }));
+                } else {
+                  setSignUpValues((current) => ({ ...current, password }));
+                }
+              }}
+              placeholder="Пароль"
+              required
+              type="password"
+              value={activeMode === "signin" ? signInValues.password : signUpValues.password}
+            />
+          )}
 
           {error ? (
             <div style={authDialogStyles.error}>
@@ -210,7 +281,13 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
               Отмена
             </button>
             <button className="button-primary" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Отправка..." : activeMode === "signin" ? "Войти" : "Создать аккаунт"}
+              {isSubmitting
+                ? "Отправка..."
+                : pendingVerification
+                  ? "Подтвердить почту"
+                  : activeMode === "signin"
+                    ? "Войти"
+                    : "Создать аккаунт"}
             </button>
           </div>
         </form>

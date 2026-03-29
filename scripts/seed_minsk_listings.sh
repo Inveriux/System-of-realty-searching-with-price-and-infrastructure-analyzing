@@ -10,9 +10,17 @@ mkdir -p "$(dirname "$OUTPUT_FILE")"
 
 signin_response="$(curl -sS -X POST "${API_BASE}/api/users/signin" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"roman@gmail.com","password":"12345678"}')"
+  -d '{"email":"gromahacer@gmail.com","password":"12345678"}')"
 
-token="$(printf '%s' "$signin_response" | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["token"])')"
+token="$(printf '%s' "$signin_response" | python3 -c '
+import json, sys
+
+payload = json.load(sys.stdin)
+data = payload.get("data")
+if not isinstance(data, dict) or "token" not in data:
+    raise SystemExit(f"signin failed: {json.dumps(payload, ensure_ascii=False)}")
+print(data["token"])
+')"
 
 printf '{"step":"signin","response":%s}\n' "$signin_response" > "$OUTPUT_FILE"
 

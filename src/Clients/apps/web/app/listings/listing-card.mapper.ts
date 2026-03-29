@@ -10,8 +10,13 @@ import type { ListingCardItem } from "./components/listing-card.types";
 
 type MapListingOptions = {
   canDelete: boolean;
+  canHide?: boolean;
   deletingId: string | null;
+  hidingId?: string | null;
   onDelete: (id: string) => Promise<void>;
+  onHide?: (id: string) => Promise<void>;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void | Promise<void>;
 };
 
 function stripNulls<T extends Record<string, unknown>>(value: T) {
@@ -60,10 +65,16 @@ export function mapApiListingToCard(
         listingType,
         buildingType: listing.buildingType,
         publishedDate: listing.publishedDate,
+        isHidden: listing.status === "Hidden",
+        isFavorite: options.isFavorite,
         mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
         canDelete: options.canDelete,
         isDeleting: options.deletingId === listing.id,
+        canHide: options.canHide,
+        isHiding: options.hidingId === listing.id,
         onDelete: options.onDelete,
+        onHide: options.onHide,
+        onToggleFavorite: options.onToggleFavorite,
         href,
         details: {
           kind: "house",
@@ -84,10 +95,16 @@ export function mapApiListingToCard(
         listingType,
         buildingType: listing.buildingType,
         publishedDate: listing.publishedDate,
+        isHidden: listing.status === "Hidden",
+        isFavorite: options.isFavorite,
         mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
         canDelete: options.canDelete,
         isDeleting: options.deletingId === listing.id,
+        canHide: options.canHide,
+        isHiding: options.hidingId === listing.id,
         onDelete: options.onDelete,
+        onHide: options.onHide,
+        onToggleFavorite: options.onToggleFavorite,
         href,
         details: {
           kind: "land",
@@ -108,10 +125,16 @@ export function mapApiListingToCard(
         listingType,
         buildingType: listing.buildingType,
         publishedDate: listing.publishedDate,
+        isHidden: listing.status === "Hidden",
+        isFavorite: options.isFavorite,
         mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
         canDelete: options.canDelete,
         isDeleting: options.deletingId === listing.id,
+        canHide: options.canHide,
+        isHiding: options.hidingId === listing.id,
         onDelete: options.onDelete,
+        onHide: options.onHide,
+        onToggleFavorite: options.onToggleFavorite,
         href,
         details: {
           kind: "office",
@@ -132,10 +155,16 @@ export function mapApiListingToCard(
         listingType,
         buildingType: listing.buildingType,
         publishedDate: listing.publishedDate,
+        isHidden: listing.status === "Hidden",
+        isFavorite: options.isFavorite,
         mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
         canDelete: options.canDelete,
         isDeleting: options.deletingId === listing.id,
+        canHide: options.canHide,
+        isHiding: options.hidingId === listing.id,
         onDelete: options.onDelete,
+        onHide: options.onHide,
+        onToggleFavorite: options.onToggleFavorite,
         href,
         details: {
           kind: "warehouse",
@@ -157,10 +186,16 @@ export function mapApiListingToCard(
         listingType,
         buildingType: listing.buildingType,
         publishedDate: listing.publishedDate,
+        isHidden: listing.status === "Hidden",
+        isFavorite: options.isFavorite,
         mediaCount: listing.media?.length ?? (listing.mainMedia ? 1 : 0),
         canDelete: options.canDelete,
         isDeleting: options.deletingId === listing.id,
+        canHide: options.canHide,
+        isHiding: options.hidingId === listing.id,
         onDelete: options.onDelete,
+        onHide: options.onHide,
+        onToggleFavorite: options.onToggleFavorite,
         href,
         details: {
           kind: "apartment",

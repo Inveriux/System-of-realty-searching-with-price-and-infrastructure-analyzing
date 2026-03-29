@@ -16,5 +16,10 @@ public interface IListingRepository
     Task AddAsync(Listing listing, CancellationToken cancellationToken);
     Task ChangePriceHistoryAsync(Guid listingId, ListingPriceHistory newPriceHistory, CancellationToken cancellationToken);
     Task<ListingPriceHistory?> GetLastPriceAsync(Guid listingId, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<ListingPriceHistory>> GetPriceHistoryAsync(Guid listingId, CancellationToken cancellationToken);
+    Task<ListingPriceHistory?> GetPriceHistoryEntryAsync(Guid listingId, Guid historyEntryId, bool isTracking, CancellationToken cancellationToken);
+    Task AddPriceHistoryEntryAsync(ListingPriceHistory entry, CancellationToken cancellationToken);
+    void RemovePriceHistoryEntry(ListingPriceHistory entry);
+    Task SyncCurrentPriceWithLatestHistoryAsync(Guid listingId, CancellationToken cancellationToken);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

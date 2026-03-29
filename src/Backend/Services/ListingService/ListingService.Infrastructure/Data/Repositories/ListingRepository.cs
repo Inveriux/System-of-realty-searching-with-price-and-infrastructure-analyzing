@@ -200,6 +200,49 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<ListingPriceHistory>> GetPriceHistoryAsync(Guid listingId, CancellationToken cancellationToken)
+        => await context.ListingPriceHistories
+            .AsNoTracking()
+            .Where(x => x.ListingId == listingId)
+            .OrderBy(x => x.ChangedAt)
+            .ToListAsync(cancellationToken);
+
+    public async Task<ListingPriceHistory?> GetPriceHistoryEntryAsync(
+        Guid listingId,
+        Guid historyEntryId,
+        bool isTracking,
+        CancellationToken cancellationToken)
+        => await context.ListingPriceHistories
+            .IsTracking(isTracking)
+            .FirstOrDefaultAsync(
+                x => x.ListingId == listingId && x.Id == historyEntryId,
+                cancellationToken);
+
+    public async Task AddPriceHistoryEntryAsync(ListingPriceHistory entry, CancellationToken cancellationToken)
+        => await context.ListingPriceHistories.AddAsync(entry, cancellationToken);
+
+    public void RemovePriceHistoryEntry(ListingPriceHistory entry)
+        => context.ListingPriceHistories.Remove(entry);
+
+    public async Task SyncCurrentPriceWithLatestHistoryAsync(Guid listingId, CancellationToken cancellationToken)
+    {
+        var latest = await context.ListingPriceHistories
+            .Where(x => x.ListingId == listingId)
+            .OrderByDescending(x => x.ChangedAt)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (latest is null)
+        {
+            return;
+        }
+
+        var listing = await context.Listings.FirstOrDefaultAsync(x => x.Id == listingId, cancellationToken)
+            ?? throw new ArgumentException($"There is no listing with id: {listingId}");
+
+        listing.ChangePrice(latest);
+    }
+
     public async Task ChangePriceHistoryAsync(Guid listingId, 
         ListingPriceHistory newPriceHistory, 
         CancellationToken cancellationToken)
@@ -228,7 +271,8 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
             PriceAmountByn = listing.PriceAmountByn,
             PriceAmountUsd = listing.PriceAmountUsd,
             ChangedAt = DateTimeOffset.UtcNow,
-            ListingId = listing.Id
+            ListingId = listing.Id,
+            Comment = null
         };
 
         await context.AddAsync(priceHistory, cancellationToken);

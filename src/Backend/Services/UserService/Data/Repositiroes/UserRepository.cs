@@ -21,6 +21,7 @@ public class UserRepository(ApplicationDbContext context,
     public async Task<User?> GetByEmailAsync(string email, bool IsTracking = false)
     {
         return await userManager.Users
+            .Include(u => u.GoogleAuthentication)
             .Include(u => u.RefreshToken)
             .IsTracking(IsTracking)
             .FirstOrDefaultAsync(u => u.Email == email);

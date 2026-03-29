@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteListing } from "@diploma/api/listings";
+import { deleteListing, hideListing } from "@diploma/api/listings";
 import { useListingsQuery } from "@diploma/features";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -8,14 +8,17 @@ import { useMemo, useState } from "react";
 import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
 import { ListingGrid } from "../../listings/components/ListingGrid";
+import { useFavoriteListings } from "../../listings/lib/listing-collections";
 import { mapApiListingToCard } from "../../listings/listing-card.mapper";
 import { listingsPageClasses } from "../../listings/styles/listings-page.styles";
 
 export function ProfileListingsClient() {
   const queryClient = useQueryClient();
   const { api, status, user } = useAuth();
+  const favorites = useFavoriteListings();
   const { data, isLoading, error } = useListingsQuery(api);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [hidingId, setHidingId] = useState<string | null>(null);
 
   async function handleDelete(id: string) {
     try {
@@ -26,6 +29,18 @@ export function ProfileListingsClient() {
       await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleHide(id: string) {
+    try {
+      setHidingId(id);
+      await hideListing(api, id);
+      await queryClient.invalidateQueries({ queryKey: ["listings"] });
+      await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+      await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
+    } finally {
+      setHidingId(null);
     }
   }
 
@@ -40,8 +55,13 @@ export function ProfileListingsClient() {
   const items = ownListings.map((listing) =>
     mapApiListingToCard(listing, {
       canDelete: true,
+      canHide: listing.status !== "Hidden",
       deletingId,
+      hidingId,
       onDelete: handleDelete,
+      onHide: handleHide,
+      isFavorite: favorites.isFavorite(listing.id),
+      onToggleFavorite: favorites.toggleFavorite,
     }),
   );
 
@@ -75,7 +95,7 @@ export function ProfileListingsClient() {
                 Мои объявления
               </h1>
               <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 720 }}>
-                Здесь собраны все ваши объекты. Их можно открыть, просмотреть как каталог и удалить через корзину.
+                Здесь собраны все ваши объекты. Их можно открыть, скрыть из общего каталога или удалить окончательно.
               </p>
             </div>
 

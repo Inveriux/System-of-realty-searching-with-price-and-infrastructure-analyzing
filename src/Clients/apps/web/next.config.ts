@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
     //"@diploma/utils"
   ],
   reactCompiler: true,
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://diploma.com:5102/api/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

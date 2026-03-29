@@ -84,6 +84,7 @@ export const SearchRelevanceBreakdownSchema: z.ZodType<SearchRelevanceBreakdown>
 });
 
 export const SearchListingsRequestSchema: z.ZodType<SearchListingsRequest> = z.object({
+  listingIds: z.array(z.string()).nullable().optional(),
   query: nullableString.optional(),
   locationId: nullableString.optional(),
   operationType: nullableString.optional(),

@@ -12,6 +12,7 @@
     "./users": "./src/users.ts",
     "./listings": "./src/listings.ts",
     "./search": "./src/search.ts",
+    "./pricing-analytics": "./src/pricing-analytics.ts",
     "./listing-pages": "./src/listing-pages.ts",
     "./http": "./src/http.ts"
   }

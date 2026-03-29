@@ -63,6 +63,7 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 context.Database.EnsureDeleted();
             }
             context.Database.EnsureCreated();
+            EnsureEmailVerificationCodesTable();
         }
         catch (Exception ex)
         {
@@ -79,6 +80,7 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 await context.Database.EnsureDeletedAsync();
             }
             await context.Database.EnsureCreatedAsync();
+            await EnsureEmailVerificationCodesTableAsync();
         }
         catch (Exception ex)
         {
@@ -102,11 +104,8 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 context.SaveChanges();
             }
 
-            if(!context.UserRoles.Where(ur => ur.RoleId == context.Roles.First(r => r.Name == UserRoles.Admin).Id).Any())
-            {
-                adminSeeder.SeedAdmin("roman", "roman@gmail.com", "12345678");
-                context.SaveChanges();
-            }
+            adminSeeder.SeedAdmin("gromahacer", "gromahacer@gmail.com", "12345678", phoneNumber: "+375291112233");
+            context.SaveChanges();
         }
         catch (Exception ex)
         {
@@ -125,15 +124,54 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 await context.SaveChangesAsync();
             }
 
-            if(!context.UserRoles.Where(ur => ur.RoleId == context.Roles.First(r => r.Name == UserRoles.Admin).Id).Any())
-            {
-                await adminSeeder.SeedAdminAsync("roman", "roman@gmail.com", "12345678");
-                await context.SaveChangesAsync();
-            }
+            await adminSeeder.SeedAdminAsync("gromahacer", "gromahacer@gmail.com", "12345678", phoneNumber: "+375291112233");
+            await context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while seeding the database: {ex.Message}");
         }
     }
+
+    private void EnsureEmailVerificationCodesTable()
+    {
+        context.Database.ExecuteSqlRaw("""
+            CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id uuid PRIMARY KEY,
+                user_id uuid NOT NULL,
+                email character varying(256) NOT NULL,
+                code_hash character varying(128) NOT NULL,
+                expires_at_utc timestamp with time zone NOT NULL,
+                created_at_utc timestamp with time zone NOT NULL,
+                is_used boolean NOT NULL DEFAULT false
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw("""
+            CREATE INDEX IF NOT EXISTS ix_email_verification_codes_email
+            ON email_verification_codes (email);
+            """);
+
+        context.Database.ExecuteSqlRaw("""
+            CREATE INDEX IF NOT EXISTS ix_email_verification_codes_user_state
+            ON email_verification_codes (user_id, is_used, expires_at_utc);
+            """);
+    }
+
+    private Task EnsureEmailVerificationCodesTableAsync()
+        => context.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id uuid PRIMARY KEY,
+                user_id uuid NOT NULL,
+                email character varying(256) NOT NULL,
+                code_hash character varying(128) NOT NULL,
+                expires_at_utc timestamp with time zone NOT NULL,
+                created_at_utc timestamp with time zone NOT NULL,
+                is_used boolean NOT NULL DEFAULT false
+            );
+            CREATE INDEX IF NOT EXISTS ix_email_verification_codes_email
+            ON email_verification_codes (email);
+            CREATE INDEX IF NOT EXISTS ix_email_verification_codes_user_state
+            ON email_verification_codes (user_id, is_used, expires_at_utc);
+            """);
 }

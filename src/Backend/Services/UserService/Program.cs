@@ -1,5 +1,6 @@
 using UserService.Services.JwtProviders.Abstractions;
 using UserService.Services.AdminSeeder.Abstractions;
+using UserService.Services.EmailVerification.Abstractions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using UserService.Data.Repositiroes.Abstractions;
@@ -10,6 +11,9 @@ using Microsoft.AspNetCore.Authorization;
 using BasicBuildingBlocks.Authorization;
 using UserService.Services.JwtProviders;
 using UserService.Services.AdminSeeder;
+using UserService.Services.Email.Abstractions;
+using UserService.Services.EmailVerification;
+using UserService.Services.Email;
 using UserService.Services.Images.Abstractions;
 using UserService.Services.Images;
 using System.IdentityModel.Tokens.Jwt;
@@ -96,6 +100,14 @@ builder.Services
     .Validate(o => !string.IsNullOrWhiteSpace(o.BaseUrl), "Image service base url is required.")
     .ValidateOnStart();
 
+builder.Services
+    .AddOptions<SmtpEmailOptions>()
+    .BindConfiguration(SmtpEmailOptions.SectionName);
+
+builder.Services
+    .AddOptions<EmailVerificationOptions>()
+    .BindConfiguration(EmailVerificationOptions.SectionName);
+
 var service = builder.Services
     .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
     .Configure<IOptions<JwtSettingsOptions>>((options, settings) => {
@@ -181,6 +193,8 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
 
 builder.Services.AddScoped<IRefreshTokenProvider, RefreshTokenProvider>();
 builder.Services.AddHttpClient<IImageServiceClient, ImageServiceClient>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IEmailVerificationService, EmailVerificationService>();
 builder.Services.AddSingleton<IDomainJwtProvider, DomainJwtProvider>((services) =>
 {
     var settings = services.GetRequiredService<IOptions<JwtSettingsOptions>>().Value;;

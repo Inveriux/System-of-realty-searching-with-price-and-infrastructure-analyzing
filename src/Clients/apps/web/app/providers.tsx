@@ -1,6 +1,14 @@
 "use client";
 
-import { getCurrentUser, refreshToken, signIn, signUp, signUpWithAvatar } from "@diploma/api/users";
+import {
+  getCurrentUser,
+  refreshToken,
+  resendEmailVerificationCode,
+  signIn,
+  signUp,
+  signUpWithAvatar,
+  verifyEmailCode,
+} from "@diploma/api/users";
 import { ApiClient } from "@diploma/api/http";
 import type { CurrentUserDto, SignInDto, SignUpDto } from "@diploma/contracts/auth";
 import React, {
@@ -13,7 +21,10 @@ import React, {
 } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://diploma.com:5102";
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? ""
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://diploma.com:5102");
 const ACCESS_TOKEN_COOKIE = "diploma_access_token";
 const REFRESH_TOKEN_COOKIE = "diploma_refresh_token";
 const THEME_STORAGE_KEY = "diploma_theme";
@@ -32,6 +43,8 @@ type AuthContextValue = {
   user: CurrentUserDto | null;
   signIn(payload: SignInDto): Promise<void>;
   signUp(payload: SignUpDto, avatarFile?: File | null): Promise<void>;
+  verifySignUpEmail(email: string, password: string, code: string): Promise<void>;
+  resendVerificationCode(email: string): Promise<void>;
   reloadCurrentUser(): Promise<void>;
   signOut(): void;
 };
@@ -229,11 +242,18 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       await signUp(api, payload);
     }
+  }
 
+  async function handleVerifySignUpEmail(email: string, password: string, code: string) {
+    await verifyEmailCode(api, { email, code });
     await handleSignIn({
-      email: payload.email,
-      password: payload.password,
+      email,
+      password,
     });
+  }
+
+  async function handleResendVerificationCode(email: string) {
+    await resendEmailVerificationCode(api, { email });
   }
 
   return (
@@ -244,6 +264,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         signIn: handleSignIn,
         signUp: handleSignUp,
+        verifySignUpEmail: handleVerifySignUpEmail,
+        resendVerificationCode: handleResendVerificationCode,
         reloadCurrentUser: loadCurrentUser,
         signOut: clearAuthInternal,
       }}
