@@ -71,6 +71,7 @@ builder.Services.AddHttpClient<ICurrencyRateService, NbrbCurrencyRateService>((s
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
     o.SerializerOptions.Converters.Add(new CreateListingDtoJsonConverter());
+    o.SerializerOptions.Converters.Add(new UpdateListingRequestDtoJsonConverter());
     o.SerializerOptions.Converters.Add(new ListingDetailsDtoWriteConverter());
 });
 
@@ -228,6 +229,10 @@ if(app.Environment.IsProduction())
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.ExecuteSqlRawAsync("""
+        ALTER TABLE listing
+        ADD COLUMN IF NOT EXISTS status character varying(100) NOT NULL DEFAULT 'Active';
+        """);
     await dbContext.Database.ExecuteSqlRawAsync("""
         ALTER TABLE listing_price_history
         ADD COLUMN IF NOT EXISTS comment character varying(500);

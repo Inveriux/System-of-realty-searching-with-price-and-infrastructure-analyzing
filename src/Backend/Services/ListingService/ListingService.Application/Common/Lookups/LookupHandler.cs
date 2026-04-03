@@ -25,8 +25,8 @@ public class LookupHandler<TLookup, TLookupDto>(IRepositoryManager repositoryMan
         if (existing is not null)
         {
             return Result.Conflict(
-                $"{typeof(TLookup).Name} with the same name already exists.",
-                [new ResultError($"{typeof(TLookup).Name} with the same name already exists.", 0, nameof(ILookupDto.Name))]);
+                $"Значение справочника {typeof(TLookup).Name} с таким именем уже существует.",
+                [new ResultError($"Значение справочника {typeof(TLookup).Name} с таким именем уже существует.", 0, nameof(ILookupDto.Name))]);
         }
 
         await repositoryManager.GetLookup<TLookup>()
@@ -40,7 +40,7 @@ public class LookupHandler<TLookup, TLookupDto>(IRepositoryManager repositoryMan
         catch (DbUpdateException ex)
         {
             return Result.Fail(
-                $"Failed to create {typeof(TLookup).Name} type.",
+                $"Не удалось создать значение справочника {typeof(TLookup).Name}.",
                 [new ResultError(ex.Message, 0, nameof(ILookupDto.Name))]);
         }
         finally
@@ -57,8 +57,8 @@ public class LookupHandler<TLookup, TLookupDto>(IRepositoryManager repositoryMan
         if (!isDeleted)
         {
             return Result.NotFound(
-                $"{typeof(TLookup).Name} not found.",
-                [new ResultError($"{typeof(TLookup).Name} not found.", 0, nameof(ILookupDto.Name))]);
+                $"Значение справочника {typeof(TLookup).Name} не найдено.",
+                [new ResultError($"Значение справочника {typeof(TLookup).Name} не найдено.", 0, nameof(ILookupDto.Name))]);
         }
 
         try
@@ -69,7 +69,7 @@ public class LookupHandler<TLookup, TLookupDto>(IRepositoryManager repositoryMan
         catch (DbUpdateException ex)
         {
             return Result.Fail(
-                $"{typeof(TLookup).Name} not found or could not be deleted.",
+                $"Значение справочника {typeof(TLookup).Name} не найдено или не может быть удалено.",
                 [new ResultError(ex.Message, 0, nameof(ILookupDto.Name))]);
         }
         finally

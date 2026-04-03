@@ -9,12 +9,12 @@ public sealed class ResolveLocationCommandValidator : AbstractValidator<ResolveL
     {
         RuleFor(x => x.Request)
             .NotNull()
-            .WithMessage("Location resolve request is required.");
+            .WithMessage("Запрос на определение локации обязателен.");
 
         RuleFor(x => x)
             .Must(x =>
                 !string.IsNullOrWhiteSpace(x.Request.AddressText) ||
                 (x.Request.Latitude.HasValue && x.Request.Longitude.HasValue))
-            .WithMessage("AddressText or both coordinates are required.");
+            .WithMessage("Необходимо передать `addressText` или обе координаты.");
     }
 }

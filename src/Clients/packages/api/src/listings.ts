@@ -2,6 +2,7 @@ import type { ApiClient } from "./http";
 import { z } from "zod";
 import { ListingDtoSchema } from "@diploma/validation";
 import { createPagedResponseSchema } from "@diploma/validation";
+import type { ListingDetailsDto } from "@diploma/contracts/listings";
 
 const LookupOptionSchema = z.object({
   name: z.string(),
@@ -52,6 +53,62 @@ const ListingsResultSchema = z.object({
     }),
   ),
 });
+
+const UpdateListingResultSchema = z.object({
+  isSuccess: z.boolean(),
+  message: z.string().nullable(),
+  statusCode: z.number(),
+  data: ListingDtoSchema,
+  errors: z.array(
+    z.object({
+      message: z.string().optional(),
+      errorMessage: z.string().optional(),
+      code: z.number().nullable().optional(),
+      propertyName: z.string().nullable().optional(),
+    }),
+  ),
+});
+
+const ActionResultSchema = z.object({
+  isSuccess: z.boolean(),
+  message: z.string().nullable(),
+  statusCode: z.number(),
+  data: z.unknown().optional(),
+  errors: z.array(
+    z.object({
+      message: z.string().optional(),
+      errorMessage: z.string().optional(),
+      code: z.number().nullable().optional(),
+      propertyName: z.string().nullable().optional(),
+    }),
+  ),
+});
+const ActionResultOrVoidSchema = z.union([ActionResultSchema, z.void()]);
+
+export type UpdateListingRequest = {
+  agentId?: string;
+  title: string;
+  addressText: string;
+  locationId?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  description?: string | null;
+  priceAmount?: number | null;
+  priceCurrency?: string | null;
+  priceAmountByn?: number | null;
+  priceAmountUsd?: number | null;
+  pricePeriod?: string | null;
+  areaTotal: number;
+  buildYear?: number | null;
+  publishedDate?: string | null;
+  addressId: string;
+  buildingType?: string | null;
+  listingType: string;
+  status?: string | null;
+  listingDetailsType: string;
+  mediaUrls?: string[] | null;
+  listingDetails: ListingDetailsDto;
+};
 
 export async function getListings(api: ApiClient) {
   const result = await api.get("/api/listings/", ListingsResultSchema);
@@ -140,10 +197,29 @@ export async function createListingWithImages(
   return result.data;
 }
 
+export async function uploadListingImage(api: ApiClient, listingId: string, image: File) {
+  const formData = new FormData();
+  formData.append("image", image);
+  await api.postFormVoid(`/api/listings/${listingId}/images`, formData);
+}
+
 export async function deleteListing(api: ApiClient, listingId: string) {
   await api.deleteVoid(`/api/listings/${listingId}`);
 }
 
 export async function hideListing(api: ApiClient, listingId: string) {
-  await api.patch(`/api/listings/${listingId}/hide`, {}, z.void());
+  await api.patch(`/api/listings/${listingId}/hide`, {}, ActionResultOrVoidSchema);
+}
+
+export async function unhideListing(api: ApiClient, listingId: string) {
+  await api.patch(`/api/listings/${listingId}/unhide`, {}, ActionResultOrVoidSchema);
+}
+
+export async function updateListing(
+  api: ApiClient,
+  listingId: string,
+  request: UpdateListingRequest,
+) {
+  const result = await api.patch(`/api/listings/${listingId}`, request, UpdateListingResultSchema);
+  return result.data;
 }

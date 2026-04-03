@@ -11,7 +11,10 @@ function formatPrice(value?: number | null) {
     return "Нет информации";
   }
 
-  return `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(value)} BYN`;
+  return `${new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+  }).format(value)} BYN`;
 }
 
 function formatDate(value?: string | null, options?: Intl.DateTimeFormatOptions) {

@@ -15,7 +15,7 @@ public sealed class GetLocationByIdHandler(ILocationRepository locationRepositor
     {
         var location = await locationRepository.GetByIdAsync(request.Id, cancellationToken);
         return location is null
-            ? Result.NotFound<LocationDto>("Location was not found.")
+            ? Result.NotFound<LocationDto>("Локация не найдена.")
             : Result.Ok(mapper.Map<LocationDto>(location));
     }
 }

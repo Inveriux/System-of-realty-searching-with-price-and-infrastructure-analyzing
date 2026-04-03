@@ -12,29 +12,29 @@ public class SignUpCommandValidator : AbstractValidator<SignUpCommand>
     {
         RuleFor(x => x.SignUpUserDto)
             .NotNull()
-            .WithMessage("Sign up data must be provided.");
+            .WithMessage("Необходимо передать данные для регистрации.");
 
         When(x => x.SignUpUserDto is not null, () =>
         {
             RuleFor(x => x.SignUpUserDto.Name)
                 .NotEmpty()
-                .WithMessage("Name is required.");
+                .WithMessage("Имя обязательно.");
 
             RuleFor(x => x.SignUpUserDto.Email)
                 .NotEmpty()
-                .WithMessage("Email is required.")
+                .WithMessage("Электронная почта обязательна.")
                 .EmailAddress()
-                .WithMessage("Email format is invalid.")
+                .WithMessage("Некорректный формат email.")
                 .MustAsync(async (email, cancellationToken) =>
                 {
                     var user = await userRepository.GetByEmailAsync(email, false);
                     return user is null || !user.EmailConfirmed;
                 })
-                .WithMessage("Email is already in use by a verified account.");
+                .WithMessage("Этот email уже используется подтвержденной учетной записью.");
 
             RuleFor(x => x.SignUpUserDto.Password)
                 .NotEmpty()
-                .WithMessage("Password is required.");
+                .WithMessage("Пароль обязателен.");
 
             RuleFor(x => x)
                 .CustomAsync(async (command, context, cancellationToken) =>

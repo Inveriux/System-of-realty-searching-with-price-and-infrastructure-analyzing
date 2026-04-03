@@ -18,26 +18,26 @@ public class CreateListingCommandValidator : AbstractValidator<CreateListingComm
     {
         RuleFor(x => x.ListingDto)
             .NotNull()
-            .WithMessage("Listing data must be provided.");
+            .WithMessage("Необходимо передать данные объявления.");
 
         RuleFor(x => x.ListingDto.Title)
             .NotEmpty()
-            .WithMessage("Title of listing shouldn't be empty.")
+            .WithMessage("Заголовок объявления не должен быть пустым.")
             .MaximumLength(TitleMaxLength)
-            .WithMessage($"Maximum length must be equals or less than {TitleMaxLength} characters.");
+            .WithMessage($"Максимальная длина должна быть не более {TitleMaxLength} символов.");
 
         RuleFor(x => x.ListingDto.Description)
             .MaximumLength(DescriptionMaxLength)
-            .WithMessage($"Maximum length must be equals or less than {DescriptionMaxLength} characters.");
+            .WithMessage($"Максимальная длина должна быть не более {DescriptionMaxLength} символов.");
 
         RuleFor(x => x.ListingDto.PriceAmount)
             .GreaterThan(0)
-            .WithMessage("Price must be greater than 0.");
+            .WithMessage("Цена должна быть больше 0.");
 
         RuleFor(x => x.ListingDto.PriceAmountByn)
             .GreaterThan(0)
             .When(x => x.ListingDto.PriceAmountByn.HasValue)
-            .WithMessage("Price in BYN must be greater than 0.");
+            .WithMessage("Цена в BYN должна быть больше 0.");
 
         When(x => x.ListingDto.ListingDetails is ApartmentDetailsDto, () =>
         {

@@ -16,7 +16,7 @@ public sealed class GetListingPriceHistoryHandler(IRepositoryManager manager)
         var listing = await manager.Listing.GetDetailedByIdAsync(request.ListingId, false, cancellationToken);
         if (listing is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Listing was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Объявление не найдено.");
         }
 
         var history = await manager.Listing.GetPriceHistoryAsync(request.ListingId, cancellationToken);

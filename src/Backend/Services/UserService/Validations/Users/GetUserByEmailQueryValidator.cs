@@ -9,8 +9,8 @@ public class GetUserByEmailQueryValidator : AbstractValidator<GetUserByEmailQuer
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .WithMessage("Email is required.")
+            .WithMessage("Электронная почта обязательна.")
             .EmailAddress()
-            .WithMessage("Email format is invalid.");
+            .WithMessage("Некорректный формат email.");
     }
 }

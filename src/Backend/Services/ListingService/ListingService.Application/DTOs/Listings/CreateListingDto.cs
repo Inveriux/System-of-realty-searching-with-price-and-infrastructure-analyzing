@@ -2,7 +2,6 @@ using ListingService.Application.DTOs.Listings.Abstractions;
 using ListingService.Domain.Abstractions;
 using ListingService.Domain.Models;
 using AutoMapper;
-using System.Text.Json.Serialization;
 
 namespace ListingService.Application.DTOs.Listings;
 
@@ -28,7 +27,6 @@ public class CreateListingDto
     public required string ListingType { get; set; }
     public string? Status { get; set; }
     public required string ListingDetailsType { get; init; }
-    [JsonIgnore]
     public List<string>? MediaUrls { get; set; }
 
     public required IListingDetailsDto ListingDetails { get; init; }

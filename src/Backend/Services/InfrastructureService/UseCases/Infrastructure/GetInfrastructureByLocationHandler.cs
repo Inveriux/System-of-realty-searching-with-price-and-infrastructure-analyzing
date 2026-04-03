@@ -15,7 +15,7 @@ public sealed class GetInfrastructureByLocationHandler(IInfrastructureRepository
     {
         var score = await infrastructureRepository.GetScoreAsync(request.LocationId, cancellationToken);
         return score is null
-            ? Result.NotFound<InfrastructureScoreDto>("Infrastructure score was not found.")
+            ? Result.NotFound<InfrastructureScoreDto>("Оценка инфраструктуры не найдена.")
             : Result.Ok(mapper.Map<InfrastructureScoreDto>(score));
     }
 }

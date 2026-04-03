@@ -27,7 +27,7 @@ public sealed class ResolveLocationHandler(
 
             var resolved = await yandexGeocoderClient.ResolveAsync(request.Request.AddressText, cancellationToken);
             if (resolved is null)
-                return Result.NotFound<LocationDto>("Location was not resolved.");
+                return Result.NotFound<LocationDto>("Не удалось определить локацию.");
 
             var resolvedCached = await locationRepository.GetByNormalizedAddressAsync(resolved.NormalizedAddressText, cancellationToken);
             if (resolvedCached is not null)
@@ -67,7 +67,7 @@ public sealed class ResolveLocationHandler(
         }
 
         if (request.Request.Latitude is null || request.Request.Longitude is null)
-            return Result.Validation<LocationDto>("AddressText or coordinates are required.");
+            return Result.Validation<LocationDto>("Необходимо передать `addressText` или координаты.");
 
         var byCoordinates = await locationRepository.GetByCoordinatesAsync(
             request.Request.Latitude.Value,
@@ -75,7 +75,7 @@ public sealed class ResolveLocationHandler(
             cancellationToken);
 
         if (byCoordinates is null)
-            return Result.NotFound<LocationDto>("Location by coordinates was not found.");
+            return Result.NotFound<LocationDto>("Локация по указанным координатам не найдена.");
 
         return Result.Ok(mapper.Map<LocationDto>(byCoordinates));
     }

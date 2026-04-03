@@ -15,7 +15,7 @@ public sealed class GetSearchListingByIdHandler(ISearchListingRepository reposit
     {
         var listing = await repository.GetByListingIdAsync(request.ListingId, cancellationToken);
         return listing is null
-            ? Result.NotFound<SearchListingDto>("Indexed listing was not found.")
+            ? Result.NotFound<SearchListingDto>("Индексированное объявление не найдено.")
             : Result.Ok(mapper.Map<SearchListingDto>(listing));
     }
 }

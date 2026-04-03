@@ -109,7 +109,7 @@ export type ListingDto = {
   areaTotal: number;
   buildYear: number | null;
   publishedDate: string | null;
-  status: string;
+  status?: string | null;
   buildingType: string | null;
   listingType: string;
   mainMedia: string | null;

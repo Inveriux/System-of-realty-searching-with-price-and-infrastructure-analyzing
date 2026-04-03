@@ -2,6 +2,9 @@
 
 import {
   Camera,
+  CircleDollarSign,
+  Eye,
+  FilePenLine,
   EyeOff,
   Heart,
   MapPin,
@@ -17,7 +20,6 @@ import {
   formatPricePeriodSuffix,
   formatInfrastructureScore,
   formatMeters,
-  getBuildingTypeLabel,
   getDealBadgeTone,
   getMaterialLabel,
   getPropertyBadgeTone,
@@ -129,11 +131,49 @@ export function ListingCard({ item }: ListingCardProps) {
     await item.onHide(item.id);
   }
 
+  async function handleUnhide(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!item.onUnhide || item.isUnhiding) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Вернуть объявление "${item.title}" в общий каталог?`);
+    if (!confirmed) {
+      return;
+    }
+
+    await item.onUnhide(item.id);
+  }
+
   async function handleToggleFavorite(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
 
     await item.onToggleFavorite?.(item.id);
+  }
+
+  async function handleEdit(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!item.onEdit || item.isEditing) {
+      return;
+    }
+
+    await item.onEdit(item.id);
+  }
+
+  async function handleEditPrice(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!item.onEditPrice || item.isEditingPrice) {
+      return;
+    }
+
+    await item.onEditPrice(item.id);
   }
 
   return (
@@ -164,7 +204,31 @@ export function ListingCard({ item }: ListingCardProps) {
               ) : null}
             </div>
 
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center justify-end gap-2">
+              {item.canEditPrice ? (
+                <button
+                  type="button"
+                  onClick={handleEditPrice}
+                  disabled={item.isEditingPrice}
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#dcfce7_82%,white)] text-[#166534] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={item.isEditingPrice ? "Открытие изменения цены" : "Изменить цену"}
+                  title={item.isEditingPrice ? "Открытие изменения цены" : "Изменить цену"}
+                >
+                  <CircleDollarSign className="h-4.5 w-4.5" />
+                </button>
+              ) : null}
+              {item.canEdit ? (
+                <button
+                  type="button"
+                  onClick={handleEdit}
+                  disabled={item.isEditing}
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--background-elevated)_86%,var(--color-primary-soft))] text-[color:var(--foreground)] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={item.isEditing ? "Открытие редактирования" : "Редактировать"}
+                  title={item.isEditing ? "Открытие редактирования" : "Редактировать"}
+                >
+                  <FilePenLine className="h-4.5 w-4.5" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={handleToggleFavorite}
@@ -190,6 +254,18 @@ export function ListingCard({ item }: ListingCardProps) {
                   title="Скрыть объявление"
                 >
                   <EyeOff className="h-4.5 w-4.5" />
+                </button>
+              ) : null}
+              {item.canUnhide ? (
+                <button
+                  type="button"
+                  onClick={handleUnhide}
+                  disabled={item.isUnhiding}
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#ecfccb_88%,white)] text-[#3f6212] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label="Вернуть объявление"
+                  title="Вернуть объявление"
+                >
+                  <Eye className="h-4.5 w-4.5" />
                 </button>
               ) : null}
               {item.canDelete ? (
@@ -309,7 +385,7 @@ export function ListingCard({ item }: ListingCardProps) {
 
           {bottomFeatures.length > 0 ? (
             <div className="mt-2.5 flex flex-wrap gap-2">
-              {bottomFeatures.slice(0, 4).map((feature) => (
+              {bottomFeatures.slice(0, 6).map((feature) => (
                 <span
                   key={feature.label}
                   className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,var(--color-primary-soft))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]"
@@ -352,9 +428,6 @@ export function ListingCard({ item }: ListingCardProps) {
                   На карте пока недоступно
                 </span>
               ) : null}
-              <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_58%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:color-mix(in_srgb,var(--foreground-muted)_82%,var(--foreground))]">
-                {getBuildingTypeLabel(item.buildingType)}
-              </span>
             </div>
 
             {compactTransportSummary.length > 0 ? (
@@ -399,10 +472,12 @@ export function ListingCard({ item }: ListingCardProps) {
         </div>
 
         <div className={listingCardClasses.footer}>
-          <span className={listingCardClasses.button}>
-            Подробнее
-            <MoveRight className="h-4 w-4" />
-          </span>
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <span className={`${listingCardClasses.button} ml-auto`}>
+              Подробнее
+              <MoveRight className="h-4 w-4" />
+            </span>
+          </div>
         </div>
       </Link>
     </article>

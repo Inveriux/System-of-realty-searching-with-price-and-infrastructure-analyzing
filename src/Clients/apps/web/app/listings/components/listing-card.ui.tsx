@@ -39,6 +39,7 @@ export function getSpecIcon(label: string): LucideIcon {
       return BedDouble;
     case "Участок":
       return LandPlot;
+    case "Тип":
     case "Этаж":
     case "Этажей":
     case "Класс":
@@ -70,6 +71,8 @@ export function getInlineSpecLabel(label: string) {
       return "Кухня";
     case "Участок":
       return "Участок";
+    case "Тип":
+      return "Тип";
     case "Потолки":
       return "Потолки";
     case "Категория":

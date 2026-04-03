@@ -11,8 +11,8 @@ public class DeleteWaterSupplyTypeValidator : AbstractValidator<DeleteWaterSuppl
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .WithMessage("Максимальная длина должна быть не более 100 символов.")
             .NotEmpty()
-            .WithMessage("Name of water supply type shouldn't be empty.");
+            .WithMessage("Название типа водоснабжения не должно быть пустым.");
     }
 }

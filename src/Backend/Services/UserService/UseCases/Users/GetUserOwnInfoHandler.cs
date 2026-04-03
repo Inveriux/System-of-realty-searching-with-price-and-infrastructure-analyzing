@@ -22,8 +22,8 @@ public class GetUserOwnInfoHandler(IUserRepository userRepository,
         var user = await userRepository.GetByIdAsync(userId, false);
         
         if (user is null)
-            return Result.Fail<GetUserDto>("User not found.")
-                .WithError($"User with {userId} id not found.", propertyName: nameof(User));
+            return Result.Fail<GetUserDto>("Пользователь не найден.")
+                .WithError("Пользователь с таким идентификатором не найден.", propertyName: nameof(User));
 
         var userDto = mapper.Map<GetUserDto>(user);
         var userRole = await userRepository.GetUserRoleAsync(user);

@@ -265,17 +265,16 @@ export default function ProfilePage() {
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="surface grid gap-4 rounded-[30px] p-7">
             <div>
-              <div className="eyebrow">Управление объектами</div>
-              <h2 className="section-title" style={{ marginTop: 8 }}>Каталог ваших объявлений</h2>
+              <div className="eyebrow">Быстрые действия</div>
+              <h2 className="section-title" style={{ marginTop: 8 }}>Управление объявлениями</h2>
             </div>
 
-            <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 560 }}>
-              Список ваших объектов вынесен на отдельную страницу, чтобы редактирование профиля оставалось компактным.
-            </p>
-
-            <div>
+            <div className="grid gap-3 sm:grid-cols-2">
               <Link className="button-primary" href="/profile/listings">
-                Открыть мой каталог
+                Открыть мои объявления
+              </Link>
+              <Link className="button-secondary" href="/create-listing">
+                Добавить новое объявление
               </Link>
             </div>
           </section>

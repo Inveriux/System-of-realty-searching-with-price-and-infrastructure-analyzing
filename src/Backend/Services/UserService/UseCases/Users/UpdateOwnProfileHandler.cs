@@ -24,8 +24,8 @@ public sealed class UpdateOwnProfileCommandHandler(
 
         if (user is null)
         {
-            return Result.Fail<GetUserDto>("User not found.")
-                .WithError($"User with {userId} id not found.", propertyName: nameof(User));
+            return Result.Fail<GetUserDto>("Пользователь не найден.")
+                .WithError("Пользователь с таким идентификатором не найден.", propertyName: nameof(User));
         }
 
         user.Name = request.Dto.Name.Trim();
@@ -38,6 +38,6 @@ public sealed class UpdateOwnProfileCommandHandler(
         var userDto = mapper.Map<GetUserDto>(user);
         userDto.Role = await userRepository.GetUserRoleAsync(user) ?? string.Empty;
 
-        return Result.Ok(userDto, "Profile updated.");
+        return Result.Ok(userDto, "Профиль обновлен.");
     }
 }

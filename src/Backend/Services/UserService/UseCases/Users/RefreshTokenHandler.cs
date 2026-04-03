@@ -25,12 +25,12 @@ public class RefreshTokenCommandHandler(IUserRepository userRepository,
         var user = await userRepository.GetByRefreshTokenAsync(tokenHash);
 
         if (user is null)
-            return Result.Fail<RefreshTokenResponseDto>("Invalid refresh token.")
-                .WithError($"User with {request.Dto.RefreshToken} refresh token not found.", propertyName: nameof(RefreshToken));
+            return Result.Fail<RefreshTokenResponseDto>("Некорректный refresh token.")
+                .WithError("Пользователь с таким refresh token не найден.", propertyName: nameof(RefreshToken));
 
         if (user.RefreshToken.TokenHash != tokenHash || user.RefreshToken.ExpiresAt < DateTimeOffset.UtcNow)
-            return Result.Fail<RefreshTokenResponseDto>("Invalid or expired refresh token.")
-                .WithError("Refresh token is expired sign up again.", propertyName: nameof(RefreshToken));
+            return Result.Fail<RefreshTokenResponseDto>("Некорректный или просроченный refresh token.")
+                .WithError("Срок действия refresh token истек. Войдите снова.", propertyName: nameof(RefreshToken));
 
         var newRefreshToken = refreshTokenProvider.GenerateRefreshToken();
         user.RefreshToken.TokenHash = refreshTokenProvider.HashToken(newRefreshToken);

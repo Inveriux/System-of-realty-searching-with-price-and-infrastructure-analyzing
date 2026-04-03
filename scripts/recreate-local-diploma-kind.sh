@@ -17,6 +17,8 @@ K8S_ROOT="${REPO_ROOT}/src/K8S"
 BACKEND_K8S_ROOT="${K8S_ROOT}/backend"
 CERT_DIR="${K8S_ROOT}/cert"
 BACKEND_ROOT="${REPO_ROOT}/src/Backend"
+KIND_HOST_DATA_ROOT="${KIND_HOST_DATA_ROOT:-${REPO_ROOT}/.local/kind-data}"
+KIND_GENERATED_CONFIG_PATH=""
 
 readonly APP_IMAGES=(
   "diploma.listingservice:1.0|${BACKEND_ROOT}/Services/ListingService/Dockerfile"
@@ -25,6 +27,7 @@ readonly APP_IMAGES=(
   "diploma.infrastructureservice:1.0|${BACKEND_ROOT}/Services/InfrastructureService/Dockerfile"
   "diploma.imageservice:latest|${BACKEND_ROOT}/Services/ImageService/Dockerfile"
   "diploma.listingpagebff:1.0|${BACKEND_ROOT}/Services/ListingPageBff/Dockerfile"
+  "diploma.pricinganalyticsservice:1.0|${BACKEND_ROOT}/Services/PricingAnalyticsService/Dockerfile"
 )
 
 log() {
@@ -35,6 +38,12 @@ require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "Missing required command: $1" >&2
     exit 1
+  fi
+}
+
+cleanup() {
+  if [[ -n "${KIND_GENERATED_CONFIG_PATH}" && -f "${KIND_GENERATED_CONFIG_PATH}" ]]; then
+    rm -f "${KIND_GENERATED_CONFIG_PATH}"
   fi
 }
 
@@ -70,9 +79,44 @@ remove_previous_builds() {
   done
 }
 
+prepare_host_directories() {
+  log "Preparing persistent host directories under ${KIND_HOST_DATA_ROOT}"
+
+  mkdir -p \
+    "${KIND_HOST_DATA_ROOT}/listing-service-data" \
+    "${KIND_HOST_DATA_ROOT}/user-service-data" \
+    "${KIND_HOST_DATA_ROOT}/search-service-data" \
+    "${KIND_HOST_DATA_ROOT}/infrastructure-service-data" \
+    "${KIND_HOST_DATA_ROOT}/overpass-belarus-db"
+}
+
+generate_kind_config() {
+  log "Generating kind config with host mounts from ${KIND_HOST_DATA_ROOT}"
+
+  KIND_GENERATED_CONFIG_PATH="$(mktemp "${TMPDIR:-/tmp}/kind-${CLUSTER_NAME}-XXXX.yaml")"
+
+  cat >"${KIND_GENERATED_CONFIG_PATH}" <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: ${KIND_HOST_DATA_ROOT}
+        containerPath: /mnt/diploma
+  - role: worker
+    extraMounts:
+      - hostPath: ${KIND_HOST_DATA_ROOT}
+        containerPath: /mnt/diploma
+  - role: worker
+    extraMounts:
+      - hostPath: ${KIND_HOST_DATA_ROOT}
+        containerPath: /mnt/diploma
+EOF
+}
+
 create_cluster() {
   log "Creating kind cluster ${CLUSTER_NAME}"
-  kind create cluster --name "${CLUSTER_NAME}" --config "${KIND_CONFIG_PATH}"
+  kind create cluster --name "${CLUSTER_NAME}" --config "${KIND_GENERATED_CONFIG_PATH:-${KIND_CONFIG_PATH}}"
 }
 
 build_images() {
@@ -130,7 +174,17 @@ apply_manifests() {
     --dry-run=client \
     -o yaml | kubectl --context "${CLUSTER_CONTEXT}" apply -f -
 
-  kubectl --context "${CLUSTER_CONTEXT}" apply -R -f "${BACKEND_K8S_ROOT}"
+  kubectl --context "${CLUSTER_CONTEXT}" apply -f "${BACKEND_K8S_ROOT}/envoy-gateway-class.yaml"
+  kubectl --context "${CLUSTER_CONTEXT}" apply -f "${BACKEND_K8S_ROOT}/gateway.yaml"
+
+  local manifest_dir
+  for manifest_dir in "${BACKEND_K8S_ROOT}"/*; do
+    if [[ ! -d "${manifest_dir}" ]]; then
+      continue
+    fi
+
+    kubectl --context "${CLUSTER_CONTEXT}" apply -R -f "${manifest_dir}"
+  done
 }
 
 wait_for_rollouts() {
@@ -142,6 +196,8 @@ wait_for_rollouts() {
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/infrastructure-service-deployment -n "${NAMESPACE}" --timeout=5m
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/image-service-deployment -n "${NAMESPACE}" --timeout=5m
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/listing-page-bff -n "${NAMESPACE}" --timeout=5m
+  kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/pricing-analytics-service -n "${NAMESPACE}" --timeout=5m
+  kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/overpass-belarus-deployment -n "${NAMESPACE}" --timeout=15m
 }
 
 print_summary() {
@@ -150,6 +206,8 @@ print_summary() {
 }
 
 main() {
+  trap cleanup EXIT
+
   require_command docker
   require_command kind
   require_command kubectl
@@ -158,6 +216,8 @@ main() {
   delete_previous_namespace
   delete_previous_cluster
   remove_previous_builds
+  prepare_host_directories
+  generate_kind_config
   create_cluster
   build_images
   load_images_into_kind

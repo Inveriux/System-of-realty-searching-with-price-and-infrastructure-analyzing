@@ -136,7 +136,7 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.User))
-            return Results.BadRequest("`user` json payload is required.");
+            return Results.BadRequest("Необходимо передать JSON-поле `user`.");
 
         SignUpUserDto? dto;
         try
@@ -149,7 +149,7 @@ public class UserEndpoints : IEndpointRegistrar
         }
 
         if (dto is null)
-            return Results.BadRequest("Failed to deserialize user payload.");
+            return Results.BadRequest("Не удалось разобрать данные пользователя.");
 
         if (request.Image is not null)
         {
@@ -272,7 +272,7 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         if (request.Image is null)
-            return Results.BadRequest("Image file is required.");
+            return Results.BadRequest("Файл изображения обязателен.");
 
         var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
         if (!uploadResult.IsSuccess || uploadResult.Data is null)
@@ -293,7 +293,7 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         if (request.Image is null)
-            return Results.BadRequest("Image file is required.");
+            return Results.BadRequest("Файл изображения обязателен.");
 
         var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
         if (!uploadResult.IsSuccess || uploadResult.Data is null)

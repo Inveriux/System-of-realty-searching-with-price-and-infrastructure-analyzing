@@ -475,7 +475,7 @@ public class CreateListingHandler(IRepositoryManager manager,
             return Result.Ok(id);
 
         return Result.Validation<Guid>(
-            $"{lookupName} was not found.",
-            [new ResultError($"{lookupName} '{value}' was not found.", 0, propertyName)]);
+            $"Значение справочника {lookupName} не найдено.",
+            [new ResultError($"Значение '{value}' для справочника {lookupName} не найдено.", 0, propertyName)]);
     }
 }

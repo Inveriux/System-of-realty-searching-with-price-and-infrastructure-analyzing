@@ -24,7 +24,7 @@ public class OwnerOrAdminAccessEndpointFilter
             ?? context.HttpContext.GetRouteValue("id");
 
         if (!Guid.TryParse(routeValue?.ToString(), out var parsedListingId))
-            return Results.BadRequest("Listing id is invalid.");
+            return Results.BadRequest("Некорректный идентификатор объявления.");
 
         var listing = await repositoryManager.Listing.GetByIdAsync(parsedListingId, false, context.HttpContext.RequestAborted);
         if (listing is null)

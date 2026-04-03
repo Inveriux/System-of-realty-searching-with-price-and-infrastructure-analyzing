@@ -19,7 +19,7 @@ public sealed class GetInfrastructureSummaryByLocationHandler(
     {
         var location = await locationRepository.GetByIdAsync(request.LocationId, cancellationToken);
         if (location is null)
-            return Result.NotFound<InfrastructureSummaryDto>("Location was not found.");
+            return Result.NotFound<InfrastructureSummaryDto>("Локация не найдена.");
 
         var scoreResult = await sender.Send(new GetInfrastructureByLocationQuery(request.LocationId), cancellationToken);
         if (!scoreResult.IsSuccess || scoreResult.Data is null)

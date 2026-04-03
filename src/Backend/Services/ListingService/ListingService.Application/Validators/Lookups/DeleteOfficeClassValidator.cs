@@ -11,8 +11,8 @@ public class DeleteOfficeClassValidator : AbstractValidator<DeleteOfficeClassCom
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .WithMessage("Максимальная длина должна быть не более 100 символов.")
             .NotEmpty()
-            .WithMessage("Name of office class shouldn't be empty.");
+            .WithMessage("Название офисного класса не должно быть пустым.");
     }
 }

@@ -11,10 +11,18 @@ import type { ListingCardItem } from "./components/listing-card.types";
 type MapListingOptions = {
   canDelete: boolean;
   canHide?: boolean;
+  canUnhide?: boolean;
+  canEdit?: boolean;
+  canEditPrice?: boolean;
   deletingId: string | null;
   hidingId?: string | null;
+  unhidingId?: string | null;
+  compactLikeCatalog?: boolean;
   onDelete: (id: string) => Promise<void>;
   onHide?: (id: string) => Promise<void>;
+  onUnhide?: (id: string) => Promise<void>;
+  onEdit?: (id: string) => void | Promise<void>;
+  onEditPrice?: (id: string) => void | Promise<void>;
   isFavorite?: boolean;
   onToggleFavorite?: (id: string) => void | Promise<void>;
 };
@@ -43,12 +51,35 @@ function normalizeOfficeDetails(details: OfficeDetailsDto | Record<string, unkno
   });
 }
 
+function mapCompactDetails(listing: ListingDto): ListingCardItem["details"] {
+  switch (listing.listingDetailsType) {
+    case "House": {
+      const details = listing.listingDetails as HouseDetailsDto;
+      return stripNulls({
+        kind: "house" as const,
+        plotArea: details?.plotArea ?? undefined,
+        floors: details?.floors ?? undefined,
+      });
+    }
+    case "Land":
+      return { kind: "land" };
+    case "Office":
+      return { kind: "office" };
+    case "Warehouse":
+      return { kind: "warehouse" };
+    case "Apartment":
+    default:
+      return { kind: "apartment" };
+  }
+}
+
 export function mapApiListingToCard(
   listing: ListingDto,
   options: MapListingOptions,
 ): ListingCardItem {
   const listingType = listing.listingType === "Rent" ? "Аренда" : "Продажа";
   const href = `/listings/${listing.id}`;
+  const compactDetails = options.compactLikeCatalog ? mapCompactDetails(listing) : null;
 
   switch (listing.listingDetailsType) {
     case "House":
@@ -72,11 +103,18 @@ export function mapApiListingToCard(
         isDeleting: options.deletingId === listing.id,
         canHide: options.canHide,
         isHiding: options.hidingId === listing.id,
+        canUnhide: options.canUnhide,
+        isUnhiding: options.unhidingId === listing.id,
+        canEdit: options.canEdit,
+        canEditPrice: options.canEditPrice,
         onDelete: options.onDelete,
         onHide: options.onHide,
+        onUnhide: options.onUnhide,
+        onEdit: options.onEdit,
+        onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: {
+        details: compactDetails ?? {
           kind: "house",
           ...stripNulls(listing.listingDetails as HouseDetailsDto),
         },
@@ -102,11 +140,18 @@ export function mapApiListingToCard(
         isDeleting: options.deletingId === listing.id,
         canHide: options.canHide,
         isHiding: options.hidingId === listing.id,
+        canUnhide: options.canUnhide,
+        isUnhiding: options.unhidingId === listing.id,
+        canEdit: options.canEdit,
+        canEditPrice: options.canEditPrice,
         onDelete: options.onDelete,
         onHide: options.onHide,
+        onUnhide: options.onUnhide,
+        onEdit: options.onEdit,
+        onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: {
+        details: compactDetails ?? {
           kind: "land",
           ...stripNulls(listing.listingDetails as LandDetailsDto),
         },
@@ -132,11 +177,18 @@ export function mapApiListingToCard(
         isDeleting: options.deletingId === listing.id,
         canHide: options.canHide,
         isHiding: options.hidingId === listing.id,
+        canUnhide: options.canUnhide,
+        isUnhiding: options.unhidingId === listing.id,
+        canEdit: options.canEdit,
+        canEditPrice: options.canEditPrice,
         onDelete: options.onDelete,
         onHide: options.onHide,
+        onUnhide: options.onUnhide,
+        onEdit: options.onEdit,
+        onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: {
+        details: compactDetails ?? {
           kind: "office",
           ...normalizeOfficeDetails(listing.listingDetails as OfficeDetailsDto),
         },
@@ -162,11 +214,18 @@ export function mapApiListingToCard(
         isDeleting: options.deletingId === listing.id,
         canHide: options.canHide,
         isHiding: options.hidingId === listing.id,
+        canUnhide: options.canUnhide,
+        isUnhiding: options.unhidingId === listing.id,
+        canEdit: options.canEdit,
+        canEditPrice: options.canEditPrice,
         onDelete: options.onDelete,
         onHide: options.onHide,
+        onUnhide: options.onUnhide,
+        onEdit: options.onEdit,
+        onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: {
+        details: compactDetails ?? {
           kind: "warehouse",
           ...stripNulls(listing.listingDetails as WarehouseDetailsDto),
         },
@@ -193,11 +252,18 @@ export function mapApiListingToCard(
         isDeleting: options.deletingId === listing.id,
         canHide: options.canHide,
         isHiding: options.hidingId === listing.id,
+        canUnhide: options.canUnhide,
+        isUnhiding: options.unhidingId === listing.id,
+        canEdit: options.canEdit,
+        canEditPrice: options.canEditPrice,
         onDelete: options.onDelete,
         onHide: options.onHide,
+        onUnhide: options.onUnhide,
+        onEdit: options.onEdit,
+        onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: {
+        details: compactDetails ?? {
           kind: "apartment",
           ...stripNulls(listing.listingDetails as ApartmentDetailsDto),
         },

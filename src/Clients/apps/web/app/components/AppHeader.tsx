@@ -113,12 +113,14 @@ export function AppHeader() {
         <div
           className="surface"
           style={{
-            borderRadius: 22,
-            padding: "12px 16px",
+            borderRadius: 28,
+            padding: "12px 14px",
             display: "grid",
-            gap: 12,
+            gap: 10,
             backdropFilter: "blur(18px)",
-            background: "color-mix(in srgb, var(--background-elevated) 88%, transparent)",
+            background: "color-mix(in srgb, var(--background-elevated) 90%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--border-color) 70%, transparent)",
+            boxShadow: "0 18px 42px rgba(15, 23, 42, 0.08)",
           }}
         >
           <div
@@ -126,7 +128,7 @@ export function AppHeader() {
               display: "flex",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: 14,
+              gap: 10,
               alignItems: "center",
             }}
           >
@@ -135,18 +137,26 @@ export function AppHeader() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
                 minWidth: 0,
+                padding: "8px 12px",
+                borderRadius: 22,
+                textDecoration: "none",
+                color: "inherit",
+                background: "color-mix(in srgb, var(--background) 76%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--border-color) 60%, transparent)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.24)",
               }}
             >
               <div
                 style={{
-                  width: 74,
-                  height: 42,
-                  borderRadius: 14,
+                  width: 78,
+                  height: 44,
+                  borderRadius: 16,
                   overflow: "visible",
                   display: "grid",
                   placeItems: "center",
+                  background: "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-soft) 84%, white), color-mix(in srgb, var(--background) 70%, white))",
                 }}
               >
                 <img
@@ -164,15 +174,23 @@ export function AppHeader() {
                 <div
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "1.32rem",
-                    letterSpacing: "-0.075em",
+                    fontSize: "1.22rem",
+                    letterSpacing: "-0.07em",
                     fontWeight: 800,
                     lineHeight: 1,
                   }}
                 >
                   Realt
                 </div>
-                <div className="eyebrow" style={{ marginTop: 2 }}>
+                <div
+                  className="eyebrow"
+                  style={{
+                    marginTop: 4,
+                    fontSize: "0.66rem",
+                    letterSpacing: "0.12em",
+                    color: "var(--foreground-muted)",
+                  }}
+                >
                   Недвижимость
                 </div>
               </div>
@@ -183,11 +201,27 @@ export function AppHeader() {
                 onSubmit={handleSearchSubmit}
                 style={{
                   position: "relative",
-                  flex: "1 1 420px",
+                  flex: "1 1 520px",
                   minWidth: "min(100%, 220px)",
-                  maxWidth: 620,
+                  maxWidth: 760,
                 }}
               >
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  src="/icons/search.svg"
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: "50%",
+                    width: 18,
+                    height: 18,
+                    transform: "translateY(-50%)",
+                    filter: iconFilter,
+                    opacity: 0.62,
+                    pointerEvents: "none",
+                  }}
+                />
                 <input
                   className="field"
                   aria-label="Поиск"
@@ -195,10 +229,16 @@ export function AppHeader() {
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   style={{
-                    borderRadius: 999,
-                    padding: "0.8rem 1.1rem",
-                    paddingLeft: "1.2rem",
-                    background: "color-mix(in srgb, var(--background) 55%, var(--background-elevated))",
+                    borderRadius: 22,
+                    minHeight: 52,
+                    padding: "0.92rem 1.1rem",
+                    paddingLeft: "2.85rem",
+                    paddingRight: "1.15rem",
+                    fontSize: "0.98rem",
+                    fontWeight: 500,
+                    background: "color-mix(in srgb, var(--background) 84%, var(--background-elevated))",
+                    border: "1px solid color-mix(in srgb, var(--border-color) 72%, transparent)",
+                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.38)",
                   }}
                 />
               </form>
@@ -206,44 +246,111 @@ export function AppHeader() {
               <div style={{ flex: "1 1 auto" }} />
             )}
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <Link
-                aria-label="Ценовая аналитика"
-                className="icon-button"
-                href="/analytics/pricing"
-                style={{
-                  width: 42,
-                  height: 42,
-                  display: "grid",
-                  placeItems: "center",
-                  textDecoration: "none",
-                }}
-                title="Ценовая аналитика"
-              >
-                <img alt="" src="/icons/chart.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
-              </Link>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               {status === "authenticated" ? (
                 <Link
-                  aria-label="Создать объявление"
-                  className="icon-button"
+                  aria-label="Добавить объявление"
                   href="/create-listing"
                   style={{
-                    width: 42,
-                    height: 42,
+                    minHeight: 46,
+                    padding: "0 16px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    textDecoration: "none",
+                    borderRadius: 18,
+                    fontSize: "0.95rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.02em",
+                    background: isCreateListingPage
+                      ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-strong) 86%, black), color-mix(in srgb, var(--color-primary) 86%, black))"
+                      : "linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 84%, white), color-mix(in srgb, var(--color-primary-strong) 88%, black))",
+                    color: "white",
+                    boxShadow: "0 14px 26px color-mix(in srgb, var(--color-primary) 28%, transparent)",
+                  }}
+                  title="Добавить объявление"
+                >
+                  <span
+                    style={{
+                      width: 20,
+                      height: 20,
+                      display: "grid",
+                      placeItems: "center",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,0.18)",
+                      fontSize: "1rem",
+                      lineHeight: 1,
+                    }}
+                  >
+                    +
+                  </span>
+                  <span>Добавить</span>
+                </Link>
+              ) : null}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: 6,
+                  borderRadius: 18,
+                  background: "color-mix(in srgb, var(--background) 82%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--border-color) 64%, transparent)",
+                }}
+              >
+                <Link
+                  aria-label="Ценовая аналитика"
+                  href="/analytics/pricing"
+                  style={{
+                    width: 40,
+                    height: 40,
                     display: "grid",
                     placeItems: "center",
                     textDecoration: "none",
-                    fontSize: "1.55rem",
-                    fontWeight: 500,
-                    lineHeight: 1,
-                    background: isCreateListingPage ? "var(--color-primary-soft)" : undefined,
-                    color: isCreateListingPage ? "var(--color-primary-strong)" : "inherit",
+                    borderRadius: 14,
+                    background: "color-mix(in srgb, var(--background-elevated) 88%, white)",
+                    color: "inherit",
+                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
                   }}
-                  title="Создать объявление"
+                  title="Ценовая аналитика"
                 >
-                  +
+                  <img alt="" src="/icons/chart.svg" style={{ width: 18, height: 18, filter: iconFilter }} />
                 </Link>
-              ) : null}
+                <Link
+                  aria-label="Избранное"
+                  href="/favorites"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    display: "grid",
+                    placeItems: "center",
+                    textDecoration: "none",
+                    borderRadius: 14,
+                    background: isFavoritesPage
+                      ? "color-mix(in srgb, var(--color-primary-soft) 92%, white)"
+                      : "color-mix(in srgb, var(--background-elevated) 88%, white)",
+                    color: isFavoritesPage ? "var(--color-primary-strong)" : "inherit",
+                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                  }}
+                  title="Избранное"
+                >
+                  <img alt="" src="/icons/favorites.svg" style={{ width: 18, height: 18, filter: iconFilter }} />
+                </Link>
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    display: "grid",
+                    placeItems: "center",
+                    borderRadius: 14,
+                    background: "color-mix(in srgb, var(--background-elevated) 88%, white)",
+                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                  }}
+                >
+                  <ThemeToggle />
+                </div>
+              </div>
 
               {status === "authenticated" && user ? (
                 <div
@@ -260,11 +367,15 @@ export function AppHeader() {
                     onClick={() => setIsAccountMenuOpen((current) => !current)}
                     type="button"
                     style={{
-                      width: 42,
-                      height: 42,
+                      width: 46,
+                      height: 46,
                       display: "grid",
                       placeItems: "center",
                       overflow: "hidden",
+                      borderRadius: 16,
+                      background: "color-mix(in srgb, var(--background) 84%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--border-color) 68%, transparent)",
+                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
                     }}
                     title={user.name}
                   >
@@ -325,7 +436,7 @@ export function AppHeader() {
                         }}
                       >
                         <Link
-                          href="/profile"
+                          href="/profile/listings"
                           onClick={() => setIsAccountMenuOpen(false)}
                           role="menuitem"
                           style={{
@@ -427,32 +538,19 @@ export function AppHeader() {
                   }}
                   type="button"
                   style={{
-                    width: 42,
-                    height: 42,
+                    width: 46,
+                    height: 46,
                     display: "grid",
                     placeItems: "center",
+                    borderRadius: 16,
+                    background: "color-mix(in srgb, var(--background) 84%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--border-color) 68%, transparent)",
+                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
                   }}
                 >
                   <img alt="" src="/icons/account.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
                 </button>
               )}
-
-              <Link
-                aria-label="Избранное"
-                className="icon-button"
-                href="/favorites"
-                style={{
-                  width: 42,
-                  height: 42,
-                  display: "grid",
-                  placeItems: "center",
-                  background: isFavoritesPage ? "var(--color-primary-soft)" : undefined,
-                  color: isFavoritesPage ? "var(--color-primary-strong)" : undefined,
-                }}
-              >
-                <img alt="" src="/icons/favorites.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
-              </Link>
-              <ThemeToggle />
             </div>
           </div>
         </div>

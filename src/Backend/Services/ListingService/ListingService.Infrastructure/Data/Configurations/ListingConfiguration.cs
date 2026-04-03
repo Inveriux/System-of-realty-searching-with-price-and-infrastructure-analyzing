@@ -63,9 +63,12 @@ internal class ListingConfiguration : IEntityTypeConfiguration<Listing>
         builder.Property(x => x.PricePeriod)
             .HasMaxLength(StringMaxLength);
 
+        builder.Property(x => x.Status)
+            .HasMaxLength(StringMaxLength)
+            .IsRequired();
+
         builder.Property(x => x.AreaTotal)
             .IsRequired();
-        builder.Ignore(x => x.Status);
 
         builder.HasIndex(x => x.LocationId);
 

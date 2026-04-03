@@ -34,8 +34,8 @@ public class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TReq
                 : $"{error.PropertyName}: {error.ErrorMessage}"));
 
         var message = string.IsNullOrWhiteSpace(summary)
-            ? "Validation failed."
-            : $"Validation failed. {summary}";
+            ? "Ошибка валидации."
+            : $"Ошибка валидации. {summary}";
 
         return TResponse.Fail(ResultStatusCode.Validation, message, resultErrors);
     }

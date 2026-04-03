@@ -18,16 +18,16 @@ public sealed class VerifyEmailCodeHandler(
     {
         var user = await userRepository.GetByEmailAsync(request.Dto.Email, true);
         if (user is null)
-            return Result.Fail<bool>("Invalid email.")
-                .WithError("User not found.", propertyName: nameof(User.Email));
+            return Result.Fail<bool>("Некорректный email.")
+                .WithError("Пользователь не найден.", propertyName: nameof(User.Email));
 
         if (user.EmailConfirmed)
             return Result.Ok(true);
 
         var isCodeValid = await emailVerificationService.VerifyCodeAsync(user, request.Dto.Code, cancellationToken);
         if (!isCodeValid)
-            return Result.Fail<bool>("Invalid verification code.")
-                .WithError("Verification code is invalid or expired.", propertyName: nameof(VerifyEmailCodeDto.Code));
+            return Result.Fail<bool>("Некорректный код подтверждения.")
+                .WithError("Код подтверждения неверный или срок его действия истек.", propertyName: nameof(VerifyEmailCodeDto.Code));
 
         user.EmailConfirmed = true;
         await userRepository.SaveChangesAsync();

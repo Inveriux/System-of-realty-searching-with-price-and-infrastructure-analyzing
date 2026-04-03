@@ -22,17 +22,17 @@ public class SignInHandler(IUserRepository userRepository,
         var dto = request.SignInUserDto;
         var user = await userRepository.GetByEmailAsync(dto.Email, true);
         if (user is null)
-            return Result.Fail<SignInUserResponseDto>("Invalid email.")
-                .WithError($"User with {dto.Email} email not found.", propertyName: nameof(User)); 
+            return Result.Fail<SignInUserResponseDto>("Некорректный email.")
+                .WithError("Пользователь с таким email не найден.", propertyName: nameof(User)); 
 
         if (!user.EmailConfirmed)
-            return Result.Fail<SignInUserResponseDto>("Email is not verified.")
-                .WithError("Confirm your email before signing in.", propertyName: nameof(User.EmailConfirmed));
+            return Result.Fail<SignInUserResponseDto>("Электронная почта не подтверждена.")
+                .WithError("Подтвердите email перед входом.", propertyName: nameof(User.EmailConfirmed));
 
         var isPasswordValid = await userManager.CheckPasswordAsync(user, dto.Password);
         if (!isPasswordValid)
-            return Result.Fail<SignInUserResponseDto>("Invalid password.")
-                .WithError("Incorrect password.", propertyName: nameof(User));
+            return Result.Fail<SignInUserResponseDto>("Некорректный пароль.")
+                .WithError("Неверный пароль.", propertyName: nameof(User));
 
         var email = dto.Email;
         var userRole = await userRepository.GetUserRoleAsync(user)

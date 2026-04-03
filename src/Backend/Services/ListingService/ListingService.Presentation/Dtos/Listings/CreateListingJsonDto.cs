@@ -25,6 +25,7 @@ public sealed class CreateListingJsonDto
     public required string ListingType { get; set; }
     public string? Status { get; set; }
     public required string ListingDetailsType { get; init; }
+    public List<string>? MediaUrls { get; set; }
 
 
     public CreateListingDto ToApplicationDto(IListingDetailsDto listingDetails)
@@ -50,6 +51,34 @@ public sealed class CreateListingJsonDto
             ListingType = ListingType,
             Status = Status,
             ListingDetailsType = ListingDetailsType,
+            MediaUrls = MediaUrls,
+            ListingDetails = listingDetails
+        };
+
+    public UpdateListingRequestDto ToUpdateApplicationDto(IListingDetailsDto listingDetails)
+        => new()
+        {
+            AgentId = AgentId,
+            AddressText = AddressText,
+            LocationId = LocationId,
+            Latitude = Latitude,
+            Longitude = Longitude,
+            Title = Title,
+            Description = Description,
+            PriceAmount = PriceAmount,
+            PriceCurrency = PriceCurrency,
+            PriceAmountByn = PriceAmountByn,
+            PriceAmountUsd = PriceAmountUsd,
+            PricePeriod = PricePeriod,
+            AreaTotal = AreaTotal,
+            BuildYear = BuildYear,
+            PublishedDate = PublishedDate,
+            AddressId = AddressId,
+            BuildingType = BuildingType,
+            ListingType = ListingType,
+            Status = Status,
+            ListingDetailsType = ListingDetailsType,
+            MediaUrls = MediaUrls,
             ListingDetails = listingDetails
         };
 }

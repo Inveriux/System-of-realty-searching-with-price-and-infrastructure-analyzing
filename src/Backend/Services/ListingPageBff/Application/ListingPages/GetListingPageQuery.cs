@@ -37,7 +37,7 @@ public sealed class GetListingPageHandler(
         if (listing is null)
         {
             await TryDeleteStaleSearchEntryAsync(request.ListingId, cancellationToken);
-            return Result.NotFound<ListingPageDto>($"Listing '{request.ListingId}' was not found.");
+            return Result.NotFound<ListingPageDto>("Объявление не найдено.");
         }
 
         var warnings = new List<ListingPageWarningDto>();
@@ -81,7 +81,7 @@ public sealed class GetListingPageHandler(
                 {
                     Code = "infrastructure_not_found",
                     Source = "InfrastructureService",
-                    Message = "Infrastructure summary was not found for the listing location."
+                    Message = "Сводка по инфраструктуре для локации объявления не найдена."
                 });
             }
 

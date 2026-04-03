@@ -11,14 +11,14 @@ public sealed class AddListingMediaUrlsHandler(IRepositoryManager repositoryMana
     public async Task<Result> Handle(AddListingMediaUrlsCommand request, CancellationToken cancellationToken)
     {
         if (request.MediaUrls.Count == 0)
-            return Result.Validation("At least one media url is required.");
+            return Result.Validation("Необходимо передать хотя бы один URL медиафайла.");
 
         var listing = await repositoryManager.Listing.GetDetailedByIdAsync(request.ListingId, true, cancellationToken);
         if (listing is null)
         {
             return Result.NotFound(
-                "Listing not found.",
-                [new ResultError("Listing not found.", 0, nameof(request.ListingId))]);
+                "Объявление не найдено.",
+                [new ResultError("Объявление не найдено.", 0, nameof(request.ListingId))]);
         }
 
         listing.Media ??= [];

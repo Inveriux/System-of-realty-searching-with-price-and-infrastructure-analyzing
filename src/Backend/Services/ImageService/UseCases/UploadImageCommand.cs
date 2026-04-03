@@ -15,11 +15,11 @@ public sealed class UploadImageCommandHandler(IImageUploadService imageUploadSer
         if (request.Request.Expiration is not null &&
             (request.Request.Expiration < 60 || request.Request.Expiration > 15552000))
         {
-            return Result.Validation<ImageUploadResponseDto>("`expiration` must be between 60 and 15552000 seconds.");
+            return Result.Validation<ImageUploadResponseDto>("`expiration` должен быть в диапазоне от 60 до 15552000 секунд.");
         }
 
         if (request.Request.Image is null)
-            return Result.Validation<ImageUploadResponseDto>("Image file is required.");
+            return Result.Validation<ImageUploadResponseDto>("Файл изображения обязателен.");
 
         return await imageUploadService.UploadFileAsync(
             request.Request.Image,

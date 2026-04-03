@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using BasicBuildingBlocks.BusinessResults;
 using PricingAnalyticsService.DTOs;
 
 namespace PricingAnalyticsService.Services;
@@ -53,11 +54,43 @@ public sealed class ListingPriceHistoryClient(HttpClient httpClient) : IListingP
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            return null;
+            var errorText = await response.Content.ReadAsStringAsync(cancellationToken);
+            var message = TryGetProblemMessage(errorText);
+
+            throw new InvalidOperationException(message ?? "Не удалось обновить историю цен объявления.");
         }
 
         var payload = await response.Content.ReadFromJsonAsync<ResultEnvelope<ListingPriceHistoryDto>>(JsonOptions, cancellationToken);
         return payload?.Data;
+    }
+
+    private static string? TryGetProblemMessage(string? payload)
+    {
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            return null;
+        }
+
+        try
+        {
+            var problem = JsonSerializer.Deserialize<ApiProblemDetails>(payload, JsonOptions);
+            if (!string.IsNullOrWhiteSpace(problem?.Detail))
+            {
+                return problem.Detail;
+            }
+
+            var firstError = problem?.Errors.FirstOrDefault(static error => !string.IsNullOrWhiteSpace(error.Message));
+            if (!string.IsNullOrWhiteSpace(firstError?.Message))
+            {
+                return firstError.Message;
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall back to the raw payload below.
+        }
+
+        return payload.Trim();
     }
 
     private sealed class ResultEnvelope<T>

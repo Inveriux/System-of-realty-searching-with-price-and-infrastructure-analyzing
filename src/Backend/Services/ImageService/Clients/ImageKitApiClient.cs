@@ -93,7 +93,7 @@ public sealed class ImageKitApiClient(
                 _logger.LogError("ImageKit returned an unreadable success payload for file {FileName}.", fileName);
                 return Result.Fail<ImageKitUploadResponseDto>(
                     ResultStatusCode.Fail,
-                    "Failed to upload image to external storage.");
+                    "Не удалось загрузить изображение во внешнее хранилище.");
             }
 
             _logger.LogInformation(
@@ -109,14 +109,14 @@ public sealed class ImageKitApiClient(
             _logger.LogWarning("ImageKit upload timed out for file {FileName}.", fileName);
             return Result.Fail<ImageKitUploadResponseDto>(
                 ResultStatusCode.Fail,
-                "Image upload timed out.");
+                "Превышено время ожидания загрузки изображения.");
         }
         catch (HttpRequestException exception)
         {
             _logger.LogError(exception, "ImageKit upload request failed for file {FileName}.", fileName);
             return Result.Fail<ImageKitUploadResponseDto>(
                 ResultStatusCode.Fail,
-                "Failed to upload image to external storage.");
+                "Не удалось загрузить изображение во внешнее хранилище.");
         }
     }
 
@@ -143,10 +143,10 @@ public sealed class ImageKitApiClient(
 
         var message = statusCode switch
         {
-            HttpStatusCode.BadRequest => "Failed to upload image to external storage.",
-            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "External image storage authentication failed.",
-            HttpStatusCode.RequestEntityTooLarge => "Image is too large for external storage.",
-            _ => "Failed to upload image to external storage."
+            HttpStatusCode.BadRequest => "Не удалось загрузить изображение во внешнее хранилище.",
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Ошибка авторизации во внешнем хранилище изображений.",
+            HttpStatusCode.RequestEntityTooLarge => "Изображение слишком большое для внешнего хранилища.",
+            _ => "Не удалось загрузить изображение во внешнее хранилище."
         };
 
         return Result.Fail<ImageKitUploadResponseDto>(ResultStatusCode.Fail, message);

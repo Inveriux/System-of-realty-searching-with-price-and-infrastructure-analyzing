@@ -9,19 +9,19 @@ public class SignInCommandValidator : AbstractValidator<SignInCommand>
     {
         RuleFor(x => x.SignInUserDto)
             .NotNull()
-            .WithMessage("Sign in data must be provided.");
+            .WithMessage("Необходимо передать данные для входа.");
 
         When(x => x.SignInUserDto is not null, () =>
         {
             RuleFor(x => x.SignInUserDto.Email)
                 .NotEmpty()
-                .WithMessage("Email is required.")
+                .WithMessage("Электронная почта обязательна.")
                 .EmailAddress()
-                .WithMessage("Email format is invalid.");
+                .WithMessage("Некорректный формат email.");
 
             RuleFor(x => x.SignInUserDto.Password)
                 .NotEmpty()
-                .WithMessage("Password is required.");
+                .WithMessage("Пароль обязателен.");
         });
     }
 }

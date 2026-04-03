@@ -11,8 +11,8 @@ public class DeleteRenovationTypeValidator : AbstractValidator<DeleteRenovationT
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .WithMessage("Максимальная длина должна быть не более 100 символов.")
             .NotEmpty()
-            .WithMessage("Name of renovation type shouldn't be empty.");
+            .WithMessage("Название типа ремонта не должно быть пустым.");
     }
 }

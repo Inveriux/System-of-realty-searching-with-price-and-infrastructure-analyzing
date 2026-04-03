@@ -25,12 +25,12 @@ public class DeleteListingHandler(
                     "Listing {ListingId} was not found in ListingService, but stale search index entry was removed.",
                     request.Id);
 
-                return Result.Ok("Listing was already removed from the main store. Stale search entry deleted.");
+                return Result.Ok("Объявление уже было удалено из основного хранилища. Устаревшая запись из поиска удалена.");
             }
 
             return Result.NotFound(
-                "Listing not found.",
-                [new ResultError("Listing not found.", 0, nameof(request.Id))]);
+                "Объявление не найдено.",
+                [new ResultError("Объявление не найдено.", 0, nameof(request.Id))]);
         }
 
         await repositoryManager.Listing.DeleteAsync(request.Id, cancellationToken);

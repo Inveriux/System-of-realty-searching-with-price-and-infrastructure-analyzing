@@ -77,7 +77,7 @@ public sealed class ImageUploadService(
         CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var imageUri))
-            return Result.Validation<ImageUploadResponseDto>("`imageUrl` must be a valid absolute URL.");
+            return Result.Validation<ImageUploadResponseDto>("`imageUrl` должен быть корректным абсолютным URL.");
 
         if (expiration is not null)
         {
@@ -107,29 +107,29 @@ public sealed class ImageUploadService(
     private async Task<Result> ValidateFileAsync(IFormFile? file, CancellationToken cancellationToken)
     {
         if (file is null)
-            return Result.Validation("Image file is required.");
+            return Result.Validation("Файл изображения обязателен.");
 
         if (file.Length <= 0)
-            return Result.Validation("Image file must not be empty.");
+            return Result.Validation("Файл изображения не должен быть пустым.");
 
         if (file.Length > _options.MaxFileSizeInBytes)
         {
             return Result.Validation(
-                $"Image file exceeds the size limit of {_options.MaxFileSizeInBytes} bytes.");
+                $"Размер файла изображения превышает лимит {_options.MaxFileSizeInBytes} байт.");
         }
 
         var extension = Path.GetExtension(file.FileName);
         if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
-            return Result.Validation("Unsupported image extension. Allowed: .jpg, .jpeg, .png, .webp.");
+            return Result.Validation("Неподдерживаемое расширение изображения. Допустимо: .jpg, .jpeg, .png, .webp.");
 
         if (!string.IsNullOrWhiteSpace(file.ContentType) && !AllowedContentTypes.Contains(file.ContentType))
-            return Result.Validation("Unsupported image content type. Allowed: image/jpeg, image/png, image/webp.");
+            return Result.Validation("Неподдерживаемый content type изображения. Допустимо: image/jpeg, image/png, image/webp.");
 
         await using var stream = file.OpenReadStream();
         var header = new byte[12];
         var read = await stream.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
         if (!IsSupportedImageSignature(header.AsSpan(0, read)))
-            return Result.Validation("File signature does not match a supported image format.");
+            return Result.Validation("Сигнатура файла не соответствует поддерживаемому формату изображения.");
 
         return Result.Ok();
     }

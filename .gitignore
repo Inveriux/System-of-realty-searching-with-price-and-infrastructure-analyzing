@@ -26,6 +26,7 @@ src/Backend/_Artifacts/
 *.log
 *.zip
 tmp/
+*.tmp
 
 # Local configs and certs
 *.Development.json
@@ -33,4 +34,8 @@ Directory.Build.props
 /src/Backend/certs/
 
 # Local runtime data
+.local/
 src/.local/
+
+# Seed/debug outputs
+*.jsonl

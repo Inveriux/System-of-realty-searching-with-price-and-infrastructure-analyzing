@@ -17,8 +17,8 @@ public class GetListingByIdHandler(IRepositoryManager repositoryManager,
         if (listing is null)
         {
             return Result.NotFound<GetListingDto>(
-                "Listing not found.",
-                [new ResultError("Listing not found.", 0, nameof(request.Id))]);
+                "Объявление не найдено.",
+                [new ResultError("Объявление не найдено.", 0, nameof(request.Id))]);
         }
 
         return Result.Ok(mapper.Map<GetListingDto>(listing));

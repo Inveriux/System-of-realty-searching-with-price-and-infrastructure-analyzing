@@ -15,7 +15,7 @@ public sealed class GetLocationByCoordinatesHandler(ILocationRepository location
     {
         var location = await locationRepository.GetByCoordinatesAsync(request.Latitude, request.Longitude, cancellationToken);
         return location is null
-            ? Result.NotFound<LocationDto>("Location was not found.")
+            ? Result.NotFound<LocationDto>("Локация не найдена.")
             : Result.Ok(mapper.Map<LocationDto>(location));
     }
 }

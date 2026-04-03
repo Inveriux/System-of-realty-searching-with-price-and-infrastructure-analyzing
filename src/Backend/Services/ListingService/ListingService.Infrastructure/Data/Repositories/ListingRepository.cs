@@ -124,16 +124,35 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
         var details = listing.ListingDetails;
         
         if(Guid.Empty == listing.Id)
-            throw new ArgumentException("Id must be not empty.");
+            throw new ArgumentException("Идентификатор не должен быть пустым.");
 
         if (!CheckDetailsType(listing.ListingDetailsType, details))
-            throw new ArgumentException("Details type mismatch.");
+            throw new ArgumentException("Тип деталей объявления не соответствует ожидаемому.");
 
         var listingEntity = await context.AddAsync(listing, cancellationToken);
         details.ListingId = listingEntity.Entity.Id;
         
         await SaveDetails(listing.ListingDetailsType, details);
         await SavePriceHistoryAsync(listing, cancellationToken);
+    }
+
+    public async Task ReplaceDetailsAsync(
+        Guid listingId,
+        string listingDetailsType,
+        IListingDetails details,
+        CancellationToken cancellationToken)
+    {
+        if (!CheckDetailsType(listingDetailsType, details))
+            throw new ArgumentException("Тип деталей объявления не соответствует ожидаемому.");
+
+        await RemoveDetailsAsync<ApartmentDetails>(listingId, cancellationToken);
+        await RemoveDetailsAsync<HouseDetails>(listingId, cancellationToken);
+        await RemoveDetailsAsync<LandDetails>(listingId, cancellationToken);
+        await RemoveDetailsAsync<OfficeDetails>(listingId, cancellationToken);
+        await RemoveDetailsAsync<WarehouseDetails>(listingId, cancellationToken);
+
+        details.ListingId = listingId;
+        await SaveDetails(listingDetailsType, details);
     }
 
     private bool CheckDetailsType(string type, IListingDetails details)
@@ -189,6 +208,16 @@ public class ListingRepository(ApplicationDbContext context) : IListingRepositor
                 .AddAsync(landDetails);  
 
         return null;
+    }
+
+    private async Task RemoveDetailsAsync<TDetails>(Guid listingId, CancellationToken cancellationToken)
+        where TDetails : class, IListingDetails
+    {
+        var entity = await context.Set<TDetails>().FirstOrDefaultAsync(x => x.ListingId == listingId, cancellationToken);
+        if (entity is not null)
+        {
+            context.Set<TDetails>().Remove(entity);
+        }
     }
 
     public async Task<ListingPriceHistory?> GetLastPriceAsync(Guid listingId, CancellationToken cancellationToken)

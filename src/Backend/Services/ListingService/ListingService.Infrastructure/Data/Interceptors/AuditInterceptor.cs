@@ -8,6 +8,8 @@ namespace ListingService.Infrastructure.Data.Interceptors;
 
 public class AuditInterceptor(ICurrentUserProvider currentUserProvider) : ISaveChangesInterceptor
 {
+    private const string InternalActor = "system@internal";
+
     public ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData evnetData, 
         InterceptionResult<int> result, 
         CancellationToken cancellationToken = default)
@@ -33,6 +35,7 @@ public class AuditInterceptor(ICurrentUserProvider currentUserProvider) : ISaveC
 
     private void UpdateEntries(DbContext context)
     {
+        var actor = ResolveActor();
         var entries = context.ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added 
                 || e.State == EntityState.Modified
@@ -47,13 +50,26 @@ public class AuditInterceptor(ICurrentUserProvider currentUserProvider) : ISaveC
                 if (entry.State == EntityState.Added)
                 {
                     entity.Created = now;
-                    entity.CreatedBy = currentUserProvider.GetEmail();
+                    entity.CreatedBy = actor;
                 }
 
                 entity.LastModified = now;
-                entity.LastModifiedBy = currentUserProvider.GetEmail();
+                entity.LastModifiedBy = actor;
 
             }
+        }
+    }
+
+    private string ResolveActor()
+    {
+        try
+        {
+            return currentUserProvider.GetEmail();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Internal service-to-service updates may legitimately run without an end-user JWT.
+            return InternalActor;
         }
     }
 

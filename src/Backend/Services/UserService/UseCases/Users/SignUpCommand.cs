@@ -22,15 +22,15 @@ public class SignUpHandler(
     {
         var dto = request.SignUpUserDto;
         if (!emailVerificationService.IsConfigured)
-            return Result.Fail<bool>("Email verification is not configured.")
-                .WithError("SMTP sender is not configured.", propertyName: nameof(SignUpUserDto.Email));
+            return Result.Fail<bool>("Подтверждение email не настроено.")
+                .WithError("SMTP-отправитель не настроен.", propertyName: nameof(SignUpUserDto.Email));
 
         var existingUser = await userRepository.GetByEmailAsync(dto.Email, true);
         if (existingUser is not null)
         {
             if (existingUser.EmailConfirmed)
-                return Result.Fail<bool>("Email is already in use.")
-                    .WithError($"User with {dto.Email} email already exists.", propertyName: nameof(User.Email));
+                return Result.Fail<bool>("Электронная почта уже используется.")
+                    .WithError("Пользователь с таким email уже существует.", propertyName: nameof(User.Email));
 
             var deleteResult = await userManager.DeleteAsync(existingUser);
             if (!deleteResult.Succeeded)

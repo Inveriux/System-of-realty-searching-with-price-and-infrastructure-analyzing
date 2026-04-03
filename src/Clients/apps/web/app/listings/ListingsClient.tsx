@@ -24,7 +24,7 @@ import { getSearchPropertyTypeLabel, mapSearchListingToCard } from "./search-lis
 import { listingsClientStyles } from "./styles/listings-client.styles";
 import { listingsPageClasses } from "./styles/listings-page.styles";
 
-const LISTINGS_PAGE_SIZE = 10;
+const LISTINGS_PAGE_SIZE = 12;
 const PAGINATION_WINDOW = 9;
 
 type SearchFormState = {
@@ -416,7 +416,10 @@ export function ListingsClient({
       propertyType: getSearchPropertyTypeLabel(listing),
       latitude: listing.latitude as number,
       longitude: listing.longitude as number,
-      priceText: `${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(listing.priceAmount ?? 0)} ${listing.priceCurrency ?? "BYN"}`,
+      priceText: `${new Intl.NumberFormat("ru-RU", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: listing.priceAmount != null && Number.isInteger(listing.priceAmount) ? 0 : 2,
+      }).format(listing.priceAmount ?? 0)} ${listing.priceCurrency ?? "BYN"}`,
       publishedDate: listing.publishedDate,
     }));
   const listingsWithoutCoordinates = (data?.items ?? []).filter(
@@ -732,9 +735,6 @@ export function ListingsClient({
           ) : null}
 
           <div style={listingsClientStyles.footerRow}>
-            <div style={listingsClientStyles.footerMeta}>
-              Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
-            </div>
             <div style={listingsClientStyles.footerActions}>
               <select
                 className="field"
@@ -759,9 +759,6 @@ export function ListingsClient({
           ) : null}
 
           <div style={listingsClientStyles.footerRow}>
-            <div style={listingsClientStyles.footerMeta}>
-              Показано {(data?.items?.length ?? 0)} из {data?.totalCount ?? 0}
-            </div>
           </div>
 
           {paginationBlock}

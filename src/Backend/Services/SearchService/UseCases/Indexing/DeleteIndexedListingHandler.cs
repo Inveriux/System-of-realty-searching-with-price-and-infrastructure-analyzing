@@ -12,7 +12,7 @@ public sealed class DeleteIndexedListingHandler(ISearchListingRepository reposit
     {
         var listing = await repository.GetByListingIdAsync(request.ListingId, cancellationToken);
         if (listing is null)
-            return Result.NotFound("Indexed listing was not found.");
+            return Result.NotFound("Индексированное объявление не найдено.");
 
         repository.Remove(listing);
         await repository.SaveChangesAsync(cancellationToken);

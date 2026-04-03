@@ -14,10 +14,10 @@ public static class PaginationExtension
         int pageSize)
     {
         if(pageNumber < 0)
-            throw new ArgumentException("Page number must be greater than or equal to zero.", nameof(pageNumber));
+            throw new ArgumentException("Номер страницы должен быть больше или равен нулю.", nameof(pageNumber));
 
         if(pageSize < 0)
-            throw new ArgumentException("Page size must be equal or greater than zero.", nameof(pageSize));
+            throw new ArgumentException("Размер страницы должен быть больше или равен нулю.", nameof(pageSize));
 
         if(pageSize == 0 && pageNumber == 0)
             return query;

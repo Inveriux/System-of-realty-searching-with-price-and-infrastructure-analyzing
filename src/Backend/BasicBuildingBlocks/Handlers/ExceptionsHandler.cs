@@ -43,7 +43,7 @@ public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHand
     public ApiProblemDetails HandleValidationException(ValidationException exception)
         => new()
         {
-            Title = "Validation failed",
+            Title = "Ошибка валидации",
             Status = StatusCodes.Status400BadRequest,
             Detail = exception.Message,
             Errors = exception.Errors
@@ -54,9 +54,9 @@ public class ExceptionHandler(ILogger<ExceptionHandler> logger) : IExceptionHand
     public ApiProblemDetails HandleUndefindedExcetipn(Exception exception)
         => new()
         {
-            Title = "Undefinded fauilure",
+            Title = "Внутренняя ошибка",
             Status = StatusCodes.Status500InternalServerError,
-            Detail = "Unexpected server error.",
+            Detail = "Произошла непредвиденная ошибка сервера.",
             Errors =
             [
                 new ApiErrorItem(exception.Message + "\n" + exception.InnerException?.Message)

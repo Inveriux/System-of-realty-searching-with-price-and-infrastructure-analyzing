@@ -17,7 +17,7 @@ public sealed class SearchListingsQueryValidator : AbstractValidator<SearchListi
                 var maxPrice = r.PriceMax ?? r.MaxPrice;
                 return !minPrice.HasValue || !maxPrice.HasValue || maxPrice.Value >= minPrice.Value;
             })
-            .WithMessage("Max price must be greater than or equal to min price.");
+            .WithMessage("Максимальная цена должна быть больше или равна минимальной.");
         RuleFor(x => x.Request)
             .Must(r =>
             {
@@ -25,7 +25,7 @@ public sealed class SearchListingsQueryValidator : AbstractValidator<SearchListi
                 var maxArea = r.AreaMax ?? r.MaxArea;
                 return !minArea.HasValue || !maxArea.HasValue || maxArea.Value >= minArea.Value;
             })
-            .WithMessage("Max area must be greater than or equal to min area.");
+            .WithMessage("Максимальная площадь должна быть больше или равна минимальной.");
         RuleFor(x => x.Request.RadiusMeters)
             .GreaterThan(0)
             .When(x => x.Request.RadiusMeters.HasValue);
@@ -33,17 +33,17 @@ public sealed class SearchListingsQueryValidator : AbstractValidator<SearchListi
             .Must(request =>
                 (!ResolveLatitude(request).HasValue && !ResolveLongitude(request).HasValue && !request.RadiusMeters.HasValue) ||
                 (ResolveLatitude(request).HasValue && ResolveLongitude(request).HasValue && request.RadiusMeters.HasValue))
-            .WithMessage("Latitude/Longitude and RadiusMeters must be passed together.");
+            .WithMessage("`latitude`, `longitude` и `radiusMeters` должны передаваться вместе.");
         RuleFor(x => x.Request)
             .Must(request =>
                 (!request.BoundsMinLatitude.HasValue && !request.BoundsMinLongitude.HasValue &&
                  !request.BoundsMaxLatitude.HasValue && !request.BoundsMaxLongitude.HasValue) ||
                 (request.BoundsMinLatitude.HasValue && request.BoundsMinLongitude.HasValue &&
                  request.BoundsMaxLatitude.HasValue && request.BoundsMaxLongitude.HasValue))
-            .WithMessage("All bounds coordinates must be passed together.");
+            .WithMessage("Все координаты границ должны передаваться вместе.");
         RuleFor(x => x.Request.Sort ?? x.Request.SortBy)
             .Must(sort => sort is null || AllowedSorts.Contains(sort.Trim().ToLowerInvariant()))
-            .WithMessage("Unsupported sort mode.");
+            .WithMessage("Неподдерживаемый режим сортировки.");
     }
 
     private static readonly HashSet<string> AllowedSorts =

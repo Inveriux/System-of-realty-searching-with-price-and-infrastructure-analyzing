@@ -15,6 +15,6 @@ public sealed class UpdateOwnProfileCommandValidator : AbstractValidator<UpdateO
             .MaximumLength(32)
             .Matches(@"^[\d\s+\-()]*$")
             .When(x => !string.IsNullOrWhiteSpace(x.Dto.PhoneNumber))
-            .WithMessage("Phone number contains invalid characters.");
+            .WithMessage("Номер телефона содержит недопустимые символы.");
     }
 }

@@ -18,16 +18,16 @@ public sealed class ResendEmailVerificationCodeHandler(
     {
         var user = await userRepository.GetByEmailAsync(request.Dto.Email, true);
         if (user is null)
-            return Result.Fail<bool>("Invalid email.")
-                .WithError("User not found.", propertyName: nameof(User.Email));
+            return Result.Fail<bool>("Некорректный email.")
+                .WithError("Пользователь не найден.", propertyName: nameof(User.Email));
 
         if (user.EmailConfirmed)
-            return Result.Fail<bool>("Email is already verified.")
-                .WithError("Email is already verified.", propertyName: nameof(User.EmailConfirmed));
+            return Result.Fail<bool>("Электронная почта уже подтверждена.")
+                .WithError("Email уже подтвержден.", propertyName: nameof(User.EmailConfirmed));
 
         if (!emailVerificationService.IsConfigured)
-            return Result.Fail<bool>("Email verification is not configured.")
-                .WithError("SMTP sender is not configured.", propertyName: nameof(ResendEmailVerificationCodeDto.Email));
+            return Result.Fail<bool>("Подтверждение email не настроено.")
+                .WithError("SMTP-отправитель не настроен.", propertyName: nameof(ResendEmailVerificationCodeDto.Email));
 
         await emailVerificationService.SendCodeAsync(user, cancellationToken);
         return Result.Ok(true);

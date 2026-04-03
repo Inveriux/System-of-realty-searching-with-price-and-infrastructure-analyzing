@@ -79,7 +79,7 @@ public sealed class RefreshInfrastructureHandler(
     {
         var location = await ResolveLocationAsync(request.Request, cancellationToken);
         if (location is null)
-            return Result.NotFound<InfrastructureSummaryDto>("Location was not found.");
+            return Result.NotFound<InfrastructureSummaryDto>("Локация не найдена.");
 
         var categories = await EnsureDefaultCategoriesAsync(cancellationToken);
         var requestedRadius = request.Request.SearchRadiusMeters > 0

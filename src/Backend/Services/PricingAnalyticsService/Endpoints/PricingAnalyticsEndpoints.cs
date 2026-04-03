@@ -17,6 +17,7 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         group.MapGet("/summary", GetSummaryAsync);
         group.MapGet("/timeseries", GetTimeSeriesAsync);
         group.MapGet("/categories", GetCategoriesAsync);
+        group.MapGet("/cities", GetCitiesAsync);
         group.MapGet("/listings/{listingId:guid}/comparison", GetListingComparisonAsync);
         group.MapPost("/estimate", EstimateAsync);
         group.MapGet("/listings/{listingId:guid}/price-history", GetPriceHistoryAsync);
@@ -46,6 +47,9 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
         => Result.Ok(await repository.GetCategoriesAsync(query, cancellationToken)).ToHttpResult();
 
+    public Microsoft.AspNetCore.Http.IResult GetCitiesAsync()
+        => Result.Ok(BelarusCityCatalog.Cities).ToHttpResult();
+
     public async Task<Microsoft.AspNetCore.Http.IResult> GetListingComparisonAsync(
         IPricingAnalyticsRepository repository,
         Guid listingId,
@@ -53,7 +57,7 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
     {
         var comparison = await repository.GetListingComparisonAsync(listingId, cancellationToken);
         return comparison is null
-            ? Result.NotFound<ListingPriceComparisonDto>("Listing was not found.").ToHttpResult()
+            ? Result.NotFound<ListingPriceComparisonDto>("Объявление не найдено.").ToHttpResult()
             : Result.Ok(comparison).ToHttpResult();
     }
 
@@ -70,7 +74,7 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
     {
         var history = await client.GetPriceHistoryAsync(listingId, cancellationToken);
         return history is null
-            ? Result.NotFound<ListingPriceHistoryDto>("Listing price history was not found.").ToHttpResult()
+            ? Result.NotFound<ListingPriceHistoryDto>("История цен объявления не найдена.").ToHttpResult()
             : Result.Ok(history).ToHttpResult();
     }
 
@@ -80,10 +84,17 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         UpdateListingPriceRequestDto request,
         CancellationToken cancellationToken)
     {
-        var history = await client.UpdatePriceAsync(listingId, request, cancellationToken);
-        return history is null
-            ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Failed to update listing price history.").ToHttpResult()
-            : Result.Ok(history).ToHttpResult();
+        try
+        {
+            var history = await client.UpdatePriceAsync(listingId, request, cancellationToken);
+            return history is null
+                ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Не удалось обновить историю цен объявления.").ToHttpResult()
+                : Result.Ok(history).ToHttpResult();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, exception.Message).ToHttpResult();
+        }
     }
 
     public async Task<Microsoft.AspNetCore.Http.IResult> AddPriceHistoryEntryAsync(
@@ -92,10 +103,17 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         CreateListingPriceHistoryEntryRequestDto request,
         CancellationToken cancellationToken)
     {
-        var history = await client.AddPriceHistoryEntryAsync(listingId, request, cancellationToken);
-        return history is null
-            ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Failed to add listing price history entry.").ToHttpResult()
-            : Result.Ok(history).ToHttpResult();
+        try
+        {
+            var history = await client.AddPriceHistoryEntryAsync(listingId, request, cancellationToken);
+            return history is null
+                ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Не удалось добавить запись в историю цен объявления.").ToHttpResult()
+                : Result.Ok(history).ToHttpResult();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, exception.Message).ToHttpResult();
+        }
     }
 
     public async Task<Microsoft.AspNetCore.Http.IResult> UpdatePriceHistoryEntryAsync(
@@ -105,10 +123,17 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         UpdateListingPriceHistoryEntryRequestDto request,
         CancellationToken cancellationToken)
     {
-        var history = await client.UpdatePriceHistoryEntryAsync(listingId, historyEntryId, request, cancellationToken);
-        return history is null
-            ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Failed to update listing price history entry.").ToHttpResult()
-            : Result.Ok(history).ToHttpResult();
+        try
+        {
+            var history = await client.UpdatePriceHistoryEntryAsync(listingId, historyEntryId, request, cancellationToken);
+            return history is null
+                ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Не удалось обновить запись истории цен объявления.").ToHttpResult()
+                : Result.Ok(history).ToHttpResult();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, exception.Message).ToHttpResult();
+        }
     }
 
     public async Task<Microsoft.AspNetCore.Http.IResult> DeletePriceHistoryEntryAsync(
@@ -117,9 +142,16 @@ public sealed class PricingAnalyticsEndpoints : IEndpointRegistrar
         Guid historyEntryId,
         CancellationToken cancellationToken)
     {
-        var history = await client.DeletePriceHistoryEntryAsync(listingId, historyEntryId, cancellationToken);
-        return history is null
-            ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Failed to delete listing price history entry.").ToHttpResult()
-            : Result.Ok(history).ToHttpResult();
+        try
+        {
+            var history = await client.DeletePriceHistoryEntryAsync(listingId, historyEntryId, cancellationToken);
+            return history is null
+                ? Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, "Не удалось удалить запись истории цен объявления.").ToHttpResult()
+                : Result.Ok(history).ToHttpResult();
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Result.Fail<ListingPriceHistoryDto>(ResultStatusCode.Fail, exception.Message).ToHttpResult();
+        }
     }
 }

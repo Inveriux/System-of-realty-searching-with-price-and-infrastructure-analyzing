@@ -67,7 +67,7 @@ public sealed class ImageServiceClient(HttpClient httpClient, IOptions<ImageServ
         }
 
         if (!response.IsSuccessStatusCode || result?.IsSuccess != true || result.Data is null)
-            return Result.Fail<T>(result?.Message ?? payload ?? "Image service request failed.");
+            return Result.Fail<T>(result?.Message ?? payload ?? "Ошибка запроса к сервису изображений.");
 
         return Result.Ok(result.Data, result.Message);
     }

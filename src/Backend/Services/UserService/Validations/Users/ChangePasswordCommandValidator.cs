@@ -14,21 +14,21 @@ public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCo
     {
         RuleFor(x => x.ChangePasswordDto)
             .NotNull()
-            .WithMessage("Password change data must be provided.");
+            .WithMessage("Необходимо передать данные для смены пароля.");
 
         When(x => x.ChangePasswordDto is not null, () =>
         {
             RuleFor(x => x.ChangePasswordDto.Email)
                 .NotEmpty()
-                .WithMessage("Email is required.")
+                .WithMessage("Электронная почта обязательна.")
                 .EmailAddress()
-                .WithMessage("Email format is invalid.");
+                .WithMessage("Некорректный формат email.");
 
             RuleFor(x => x.ChangePasswordDto.NewPassword)
                 .NotEmpty()
-                .WithMessage("New password is required.")
+                .WithMessage("Новый пароль обязателен.")
                 .NotEqual(x => x.ChangePasswordDto.CurrentPassword!)
-                .WithMessage("New password must differ from current password.");
+                .WithMessage("Новый пароль должен отличаться от текущего.");
 
             RuleFor(x => x)
                 .CustomAsync(async (command, context, cancellationToken) =>
@@ -40,7 +40,7 @@ public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCo
 
                     if (!string.IsNullOrWhiteSpace(user.PasswordHash) && string.IsNullOrWhiteSpace(dto.CurrentPassword))
                     {
-                        context.AddFailure(nameof(command.ChangePasswordDto.CurrentPassword), "Current password is required.");
+                        context.AddFailure(nameof(command.ChangePasswordDto.CurrentPassword), "Текущий пароль обязателен.");
                     }
                 });
 

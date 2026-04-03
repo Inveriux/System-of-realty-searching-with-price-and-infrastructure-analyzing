@@ -6,7 +6,7 @@ metadata:
 data:
   OVERPASS_MODE: init
   OVERPASS_META: "no"
-  OVERPASS_PLANET_URL: https://download.geofabrik.de/europe/belarus-260327.osm.pbf
+  OVERPASS_PLANET_URL: https://download.geofabrik.de/europe/belarus-latest.osm.pbf
   OVERPASS_DIFF_URL: https://download.geofabrik.de/europe/belarus-updates/
   OVERPASS_COMPRESSION: gz
   OVERPASS_RULES_LOAD: "20"
@@ -23,6 +23,7 @@ metadata:
   name: overpass-belarus-pvc
   namespace: diploma
 spec:
+  storageClassName: ""
   accessModes:
     - ReadWriteOnce
   resources:

@@ -17,6 +17,7 @@ import type {
   ListingPriceComparison,
   ListingPriceHistory,
   PricingAnalyticsCategory,
+  PricingAnalyticsCity,
   PricingAnalyticsPoint,
   PricingAnalyticsQuery,
   PricingAnalyticsSummary,
@@ -57,6 +58,19 @@ const PricingAnalyticsCategoriesResultSchema = z.object({
   message: z.string().nullable(),
   statusCode: z.number(),
   data: z.array(PricingAnalyticsCategorySchema),
+  errors: z.array(z.object({
+    message: z.string().optional(),
+    errorMessage: z.string().optional(),
+    code: z.number().nullable().optional(),
+    propertyName: z.string().nullable().optional(),
+  })),
+});
+
+const PricingAnalyticsCitiesResultSchema = z.object({
+  isSuccess: z.boolean(),
+  message: z.string().nullable(),
+  statusCode: z.number(),
+  data: z.array(z.string()),
   errors: z.array(z.object({
     message: z.string().optional(),
     errorMessage: z.string().optional(),
@@ -131,6 +145,11 @@ export async function getPricingAnalyticsTimeSeries(api: ApiClient, query: Prici
 
 export async function getPricingAnalyticsCategories(api: ApiClient, query: PricingAnalyticsQuery): Promise<PricingAnalyticsCategory[]> {
   const result = await api.get(`/api/pricing-analytics/categories${buildQueryString(query)}`, PricingAnalyticsCategoriesResultSchema, { authMode: "optional" });
+  return result.data;
+}
+
+export async function getPricingAnalyticsCities(api: ApiClient): Promise<PricingAnalyticsCity[]> {
+  const result = await api.get("/api/pricing-analytics/cities", PricingAnalyticsCitiesResultSchema, { authMode: "optional" });
   return result.data;
 }
 

@@ -36,7 +36,7 @@ public sealed class UpdateListingPriceHandler(
         var listing = await manager.Listing.GetDetailedByIdAsync(request.ListingId, true, cancellationToken);
         if (listing is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Listing was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Объявление не найдено.");
         }
 
         var historyEntry = await BuildHistoryEntryAsync(
@@ -61,7 +61,7 @@ public sealed class UpdateListingPriceHandler(
         var listing = await manager.Listing.GetDetailedByIdAsync(request.ListingId, true, cancellationToken);
         if (listing is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Listing was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Объявление не найдено.");
         }
 
         var historyEntry = await BuildHistoryEntryAsync(
@@ -86,13 +86,13 @@ public sealed class UpdateListingPriceHandler(
         var entry = await manager.Listing.GetPriceHistoryEntryAsync(request.ListingId, request.HistoryEntryId, true, cancellationToken);
         if (entry is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Price history entry was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Запись истории цен не найдена.");
         }
 
         var listing = await manager.Listing.GetDetailedByIdAsync(request.ListingId, true, cancellationToken);
         if (listing is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Listing was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Объявление не найдено.");
         }
 
         if (request.Request.PriceAmountByn.HasValue)
@@ -130,13 +130,13 @@ public sealed class UpdateListingPriceHandler(
         var history = await manager.Listing.GetPriceHistoryAsync(request.ListingId, cancellationToken);
         if (history.Count <= 1)
         {
-            return Result.Fail<ListingPriceHistoryTimelineDto>(ResultStatusCode.Validation, "Cannot delete the last price history entry.");
+            return Result.Fail<ListingPriceHistoryTimelineDto>(ResultStatusCode.Validation, "Нельзя удалить последнюю запись истории цен.");
         }
 
         var entry = await manager.Listing.GetPriceHistoryEntryAsync(request.ListingId, request.HistoryEntryId, true, cancellationToken);
         if (entry is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Price history entry was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Запись истории цен не найдена.");
         }
 
         manager.Listing.RemovePriceHistoryEntry(entry);
@@ -174,7 +174,7 @@ public sealed class UpdateListingPriceHandler(
         var listing = await manager.Listing.GetDetailedByIdAsync(listingId, false, cancellationToken);
         if (listing is null)
         {
-            return Result.NotFound<ListingPriceHistoryTimelineDto>("Listing was not found.");
+            return Result.NotFound<ListingPriceHistoryTimelineDto>("Объявление не найдено.");
         }
 
         var history = await manager.Listing.GetPriceHistoryAsync(listingId, cancellationToken);

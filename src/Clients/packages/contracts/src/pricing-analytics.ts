@@ -53,6 +53,8 @@ export type PricingAnalyticsCategory = {
   hasEnoughData: boolean;
 };
 
+export type PricingAnalyticsCity = string;
+
 export type ListingPriceComparison = {
   currentListingPricePerSqm: number | null;
   localRadiusAveragePricePerSqm: number | null;

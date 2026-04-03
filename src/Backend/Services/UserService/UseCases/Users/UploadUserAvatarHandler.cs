@@ -17,8 +17,8 @@ public sealed class UploadUserAvatarCommandHandler(IUserRepository userRepositor
         var user = await userRepository.GetByEmailAsync(request.Email, true);
         if (user is null)
         {
-            return Result.Fail<GetUserDto>("User not found.")
-                .WithError($"User with {request.Email} email not found.", propertyName: nameof(User));
+            return Result.Fail<GetUserDto>("Пользователь не найден.")
+                .WithError("Пользователь с таким email не найден.", propertyName: nameof(User));
         }
 
         user.AccountImageUrl = request.AvatarUrl;
@@ -27,6 +27,6 @@ public sealed class UploadUserAvatarCommandHandler(IUserRepository userRepositor
         var userDto = mapper.Map<GetUserDto>(user);
         userDto.Role = await userRepository.GetUserRoleAsync(user) ?? string.Empty;
 
-        return Result.Ok(userDto, "Avatar updated.");
+        return Result.Ok(userDto, "Аватар обновлен.");
     }
 }

@@ -20,8 +20,8 @@ public class SignUpByGoogleHandler(IUserRepository userRepository,
     {
         var existingUser = await userManager.FindByEmailAsync(currentUserProvider.GetEmail());
         if (existingUser is not null)
-            return Result.Fail<bool>("Email is already in use.")
-                .WithError($"User with {currentUserProvider.GetEmail()} email already exists.", propertyName: nameof(User));
+            return Result.Fail<bool>("Электронная почта уже используется.")
+                .WithError("Пользователь с таким email уже существует.", propertyName: nameof(User));
 
         var user = User.Create(currentUserProvider.GetUserName(), 
             currentUserProvider.GetEmail(), 

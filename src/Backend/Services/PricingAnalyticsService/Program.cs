@@ -2,6 +2,8 @@ using System.Reflection;
 using BasicBuildingBlocks.Endpoints.Extensions;
 using BasicBuildingBlocks.Handlers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 using PricingAnalyticsService.Data;
 using PricingAnalyticsService.Repositories;
@@ -39,8 +41,55 @@ var app = builder.Build();
 
 app.UseCors("DefaultCors");
 app.UseExceptionHandler();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await EnsureSearchListingSchemaAsync(dbContext);
+}
+
 app.MapOpenApi();
 app.MapEndpoints(Assembly.GetExecutingAssembly());
 app.MapGet("/", () => "Pricing Analytics Service is working.");
 
 app.Run();
+
+static async Task EnsureSearchListingSchemaAsync(ApplicationDbContext dbContext)
+{
+    await dbContext.Database.EnsureCreatedAsync();
+
+    var shouldCloseConnection = dbContext.Database.GetDbConnection().State != System.Data.ConnectionState.Open;
+    if (shouldCloseConnection)
+    {
+        await dbContext.Database.OpenConnectionAsync();
+    }
+
+    await using var command = dbContext.Database.GetDbConnection().CreateCommand();
+    command.CommandText = """
+        SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name = 'search_listing')
+        """;
+
+    var existsResult = await command.ExecuteScalarAsync();
+    var tableExists = existsResult is bool value && value;
+
+    if (tableExists)
+    {
+        if (shouldCloseConnection)
+        {
+            await dbContext.Database.CloseConnectionAsync();
+        }
+
+        return;
+    }
+
+    var databaseCreator = dbContext.GetService<IRelationalDatabaseCreator>();
+    await databaseCreator.CreateTablesAsync();
+
+    if (shouldCloseConnection)
+    {
+        await dbContext.Database.CloseConnectionAsync();
+    }
+}

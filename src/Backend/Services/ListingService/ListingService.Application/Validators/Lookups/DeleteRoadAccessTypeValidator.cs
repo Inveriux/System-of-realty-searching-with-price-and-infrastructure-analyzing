@@ -11,8 +11,8 @@ public class DeleteRoadAccessTypeValidator : AbstractValidator<DeleteRoadAccessT
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .WithMessage("Максимальная длина должна быть не более 100 символов.")
             .NotEmpty()
-            .WithMessage("Name of road access type shouldn't be empty.");
+            .WithMessage("Название типа подъезда к дороге не должно быть пустым.");
     }
 }

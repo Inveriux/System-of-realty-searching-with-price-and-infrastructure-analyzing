@@ -3,8 +3,12 @@
 import {
   createListingWithImages,
   getCreateListingLookups,
+  updateListing,
+  uploadListingImage,
   type LookupOption,
 } from "@diploma/api/listings";
+import type { ListingDto } from "@diploma/contracts/listings";
+import { useListingsQuery } from "@diploma/features";
 import { estimateListingPrice } from "@diploma/api/pricing-analytics";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -92,6 +96,10 @@ type DraftLocation = {
 };
 
 type ListingDetailsType = CreateListingState["listingDetailsType"];
+type CreateListingClientProps = {
+  mode?: "create" | "edit";
+  listingId?: string;
+};
 
 const YANDEX_MAPS_API_KEY =
   process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY ??
@@ -375,6 +383,80 @@ function getListingSectionLabel(value: ListingDetailsType) {
   }
 }
 
+function stringifyNullableNumber(value: number | null | undefined) {
+  return value == null ? "" : String(value);
+}
+
+function buildStateFromListing(listing: ListingDto): CreateListingState {
+  const details = listing.listingDetails as Record<string, string | number | boolean | null | undefined>;
+
+  return {
+    ...initialState,
+    title: listing.title ?? "",
+    addressText: listing.addressText ?? "",
+    latitude: stringifyNullableNumber(listing.latitude),
+    longitude: stringifyNullableNumber(listing.longitude),
+    description: listing.description ?? "",
+    priceAmount: stringifyNullableNumber(listing.priceAmountByn),
+    areaTotal: stringifyNullableNumber(listing.areaTotal),
+    buildYear: stringifyNullableNumber(listing.buildYear),
+    buildingType: listing.buildingType ?? "",
+    listingType: listing.listingType ?? "",
+    listingDetailsType: (listing.listingDetailsType as ListingDetailsType | null) ?? "Apartment",
+    rooms: stringifyNullableNumber(details.rooms as number | null | undefined),
+    bedrooms: stringifyNullableNumber(details.bedrooms as number | null | undefined),
+    floorsTotal: stringifyNullableNumber(details.floorsTotal as number | null | undefined),
+    levels: stringifyNullableNumber(details.levels as number | null | undefined),
+    floor: stringifyNullableNumber(details.floor as number | null | undefined),
+    areaLiving: stringifyNullableNumber(details.areaLiving as number | null | undefined),
+    areaKitchen: stringifyNullableNumber(details.areaKitchen as number | null | undefined),
+    ceilingHeight: stringifyNullableNumber(details.ceilingHeight as number | null | undefined),
+    bathroomType: String(details.bathroomType ?? ""),
+    renovationType: String(details.renovationType ?? ""),
+    buildingMaterial: String(details.buildingMaterial ?? ""),
+    hasBalcony: Boolean(details.hasBalcony),
+    hasLoggia: Boolean(details.hasLoggia),
+    hasElevator: Boolean(details.hasElevator),
+    houseFloors: stringifyNullableNumber(details.floors as number | null | undefined),
+    houseArea: stringifyNullableNumber(details.houseArea as number | null | undefined),
+    plotArea: stringifyNullableNumber(details.plotArea as number | null | undefined),
+    hasElectricity: Boolean(details.hasElectricity),
+    hasGarage: Boolean(details.hasGarage),
+    hasBasement: Boolean(details.hasBasement),
+    hasFence: Boolean(details.hasFence),
+    wallMaterial: String(details.wallMaterial ?? ""),
+    heatingType: String(details.heatingType ?? ""),
+    sewerType: String(details.sewerType ?? ""),
+    gasType: String(details.gasType ?? ""),
+    roofMaterial: String(details.roofMaterial ?? ""),
+    waterSupplyType: String(details.waterSupplyType ?? ""),
+    allowedUse: String(details.allowedUse ?? ""),
+    hasGas: Boolean(details.hasGas),
+    hasWater: Boolean(details.hasWater),
+    hasSewer: Boolean(details.hasSewer),
+    hasBuildings: Boolean(details.hasBuildings),
+    landCategory: String(details.landCategory ?? ""),
+    roadAccessType: String(details.roadAccessType ?? ""),
+    officeClass: String(details.officeClass ?? ""),
+    layoutType: String(details.layoutType ?? ""),
+    officeRenovationType: String(details.renovationType ?? ""),
+    parkingType: String(details.parkingType ?? ""),
+    parkingSpaces: stringifyNullableNumber(details.parkingSpaces as number | null | undefined),
+    kitchenette: Boolean(details.kitchenette),
+    warehouseCeilingHeight: stringifyNullableNumber(details.ceilingHeight as number | null | undefined),
+    floorLoadTonsPerSquareMeter: stringifyNullableNumber(details.floorLoadTonsPerSquareMeter as number | null | undefined),
+    gateCount: stringifyNullableNumber(details.gateCount as number | null | undefined),
+    hasDockLevelers: Boolean(details.hasDockLevelers),
+    dockCount: stringifyNullableNumber(details.dockCount as number | null | undefined),
+    hasRamps: Boolean(details.hasRamps),
+    powerKw: stringifyNullableNumber(details.powerKw as number | null | undefined),
+    hasOffice: Boolean(details.hasOffice),
+    officeArea: stringifyNullableNumber(details.officeArea as number | null | undefined),
+    classType: String(details.classType ?? ""),
+    warehouseHeatingType: String(details.heatingType ?? ""),
+  };
+}
+
 function isWithinBelarusBounds(latitude: number, longitude: number) {
   return (
     latitude >= BELARUS_BOUNDS[0][0] &&
@@ -403,9 +485,11 @@ function getGeoObjectAddress(geoObject: YandexGeoObject | null) {
     return null;
   }
 
+  const text = geoObject.properties.get("text");
+
   return (
     geoObject.getAddressLine?.() ??
-    (typeof geoObject.properties.get("text") === "string" ? geoObject.properties.get("text") : null) ??
+    (typeof text === "string" ? text : null) ??
     null
   );
 }
@@ -456,12 +540,13 @@ function loadYandexMaps() {
   return window.__diplomaYandexMapsPromise;
 }
 
-export function CreateListingClient() {
+export function CreateListingClient({ mode = "create", listingId }: CreateListingClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { api, status } = useAuth();
   const [values, setValues] = useState(initialState);
   const [files, setFiles] = useState<File[]>([]);
+  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
@@ -475,11 +560,32 @@ export function CreateListingClient() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<YandexMapInstance | null>(null);
   const placemarkRef = useRef<YandexPlacemark | null>(null);
+  const hydratedListingIdRef = useRef<string | null>(null);
+
+  const listingsQuery = useListingsQuery(api);
+  const editingListing = useMemo(
+    () => (mode === "edit" && listingId ? (listingsQuery.data?.items ?? []).find((item) => item.id === listingId) ?? null : null),
+    [listingId, listingsQuery.data?.items, mode],
+  );
 
   const lookupsQuery = useQuery({
     queryKey: ["listing-create-lookups"],
     queryFn: () => getCreateListingLookups(api),
   });
+
+  useEffect(() => {
+    if (mode !== "edit" || !editingListing) {
+      return;
+    }
+
+    if (hydratedListingIdRef.current === editingListing.id) {
+      return;
+    }
+
+    hydratedListingIdRef.current = editingListing.id;
+    setValues(buildStateFromListing(editingListing));
+    setExistingMediaUrls((editingListing.media ?? []).map((item) => item.url).filter(Boolean));
+  }, [editingListing, mode]);
 
   const filePreviews = useMemo(
     () =>
@@ -978,16 +1084,39 @@ export function CreateListingClient() {
     };
 
     try {
-      const createdListingId = await createListingWithImages(api, payload, files);
-      await queryClient.invalidateQueries({ queryKey: ["listings"] });
-      await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
-      await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
-      router.push(`/listings/${createdListingId}`);
+      if (mode === "edit") {
+        if (!listingId || !editingListing) {
+          throw new Error("Объявление для редактирования не найдено.");
+        }
+
+        await updateListing(api, listingId, {
+          ...payload,
+          agentId: editingListing.agentId,
+          mediaUrls: existingMediaUrls,
+        });
+
+        for (const file of files) {
+          await uploadListingImage(api, listingId, file);
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ["listings"] });
+        await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+        await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
+        router.push(`/listings/${listingId}`);
+      } else {
+        const createdListingId = await createListingWithImages(api, payload, files);
+        await queryClient.invalidateQueries({ queryKey: ["listings"] });
+        await queryClient.invalidateQueries({ queryKey: ["search-listings"] });
+        await queryClient.invalidateQueries({ queryKey: ["search-listings-map"] });
+        router.push(`/listings/${createdListingId}`);
+      }
     } catch (submissionError) {
       setError(
         submissionError instanceof Error
           ? submissionError.message
-          : "Не удалось создать объявление.",
+          : mode === "edit"
+            ? "Не удалось сохранить объявление."
+            : "Не удалось создать объявление.",
       );
     } finally {
       setIsSubmitting(false);
@@ -1023,6 +1152,32 @@ export function CreateListingClient() {
     );
   }
 
+  if (mode === "edit" && listingsQuery.isLoading) {
+    return (
+      <AppShell>
+        <main style={{ display: "grid", gap: 20, paddingBottom: 36 }}>
+          <section className="surface" style={{ borderRadius: 28, padding: 28 }}>
+            <div className="eyebrow">Редактирование</div>
+            <h1 className="section-title" style={{ marginTop: 10 }}>Загружаем объявление</h1>
+          </section>
+        </main>
+      </AppShell>
+    );
+  }
+
+  if (mode === "edit" && !editingListing) {
+    return (
+      <AppShell>
+        <main style={{ display: "grid", gap: 20, paddingBottom: 36 }}>
+          <section className="surface" style={{ borderRadius: 28, padding: 28 }}>
+            <div className="eyebrow">Редактирование</div>
+            <h1 className="section-title" style={{ marginTop: 10 }}>Объявление не найдено</h1>
+          </section>
+        </main>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <main style={{ display: "grid", gap: 20, paddingBottom: 36 }}>
@@ -1035,12 +1190,14 @@ export function CreateListingClient() {
               "linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 80%, white), var(--background-elevated))",
           }}
         >
-          <div className="eyebrow">Новое объявление</div>
+          <div className="eyebrow">{mode === "edit" ? "Редактирование" : "Новое объявление"}</div>
           <h1 className="section-title" style={{ marginTop: 10 }}>
-            Создание объявления
+            {mode === "edit" ? "Изменение объявления" : "Создание объявления"}
           </h1>
           <p style={{ color: "var(--foreground-muted)", maxWidth: 720, marginBottom: 0 }}>
-            Укажите основные характеристики объекта и добавьте фотографии.
+            {mode === "edit"
+              ? "Измените характеристики объекта и обновите фотографии."
+              : "Укажите основные характеристики объекта и добавьте фотографии."}
           </p>
         </section>
 
@@ -1673,30 +1830,53 @@ export function CreateListingClient() {
             </label>
 
             <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
-              Добавлено изображений: {files.length}
+              {mode === "edit"
+                ? `Текущих изображений: ${existingMediaUrls.length}. Новых добавлено: ${files.length}`
+                : `Добавлено изображений: ${files.length}`}
             </div>
 
             <div className="listing-create-preview-strip">
-              {filePreviews.length > 0 ? (
-                filePreviews.map((preview) => (
-                  <div
-                    key={`${preview.file.name}:${preview.file.size}:${preview.file.lastModified}`}
-                    className="listing-create-preview-card"
-                  >
-                    <button
-                      type="button"
-                      className="listing-create-preview-remove"
-                      aria-label={`Удалить ${preview.file.name}`}
-                      onClick={() => removeFile(preview.file)}
+              {(mode === "edit" && existingMediaUrls.length > 0) || filePreviews.length > 0 ? (
+                <>
+                  {mode === "edit" && existingMediaUrls.map((url, index) => (
+                    <div
+                      key={`${url}:${index}`}
+                      className="listing-create-preview-card"
                     >
-                      ×
-                    </button>
-                    <img src={preview.url} alt={preview.file.name} className="listing-create-preview-image" />
-                    <div className="listing-create-preview-meta">
-                      <div title={preview.file.name}>{preview.file.name}</div>
+                      <button
+                        type="button"
+                        className="listing-create-preview-remove"
+                        aria-label={`Удалить изображение ${index + 1}`}
+                        onClick={() => setExistingMediaUrls((current) => current.filter((item) => item !== url))}
+                      >
+                        ×
+                      </button>
+                      <img src={url} alt={`Текущее изображение ${index + 1}`} className="listing-create-preview-image" />
+                      <div className="listing-create-preview-meta">
+                        <div title={url}>Текущее изображение</div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  {filePreviews.map((preview) => (
+                    <div
+                      key={`${preview.file.name}:${preview.file.size}:${preview.file.lastModified}`}
+                      className="listing-create-preview-card"
+                    >
+                      <button
+                        type="button"
+                        className="listing-create-preview-remove"
+                        aria-label={`Удалить ${preview.file.name}`}
+                        onClick={() => removeFile(preview.file)}
+                      >
+                        ×
+                      </button>
+                      <img src={preview.url} alt={preview.file.name} className="listing-create-preview-image" />
+                      <div className="listing-create-preview-meta">
+                        <div title={preview.file.name}>{preview.file.name}</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
               ) : (
                 <div className="listing-create-placeholder">
                   Здесь появятся добавленные изображения.
@@ -1742,7 +1922,7 @@ export function CreateListingClient() {
 
             <div style={{ display: "grid", gap: 10 }}>
               <button className="button-primary" type="submit" disabled={isSubmitting || lookupsQuery.isLoading}>
-                {isSubmitting ? "Отправка..." : "Создать объявление"}
+                {isSubmitting ? "Отправка..." : mode === "edit" ? "Сохранить изменения" : "Создать объявление"}
               </button>
             </div>
           </aside>

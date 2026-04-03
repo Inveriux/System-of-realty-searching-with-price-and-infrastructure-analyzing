@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: listing-service
-          image: diploma.listingservice:1.0
+          image: diploma.listingservice:1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

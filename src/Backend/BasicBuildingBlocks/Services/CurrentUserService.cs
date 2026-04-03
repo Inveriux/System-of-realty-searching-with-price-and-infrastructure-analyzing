@@ -14,7 +14,7 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
         var value = GetRequiredClaim(ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub);
 
         if (!Guid.TryParse(value, out var userId))
-            throw new UnauthorizedAccessException("User id claim is invalid.");
+            throw new UnauthorizedAccessException("Некорректный идентификатор пользователя в токене.");
 
         return userId;
     }
@@ -31,13 +31,13 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
     private string GetRequiredClaim(params string[] claimTypes)
     {
         if (httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated != true)
-            throw new UnauthorizedAccessException("User is not authenticated.");
+            throw new UnauthorizedAccessException("Пользователь не авторизован.");
 
         var value = httpContextAccessor.HttpContext?.User.Claims
             .FirstOrDefault(c => claimTypes.Contains(c.Type))?.Value;
 
         return value
             ?? throw new UnauthorizedAccessException(
-                $"Required claim was not found. Expected one of: {string.Join(", ", claimTypes)}");
+                $"Не найдено обязательное поле токена. Ожидалось одно из значений: {string.Join(", ", claimTypes)}");
     }
 }

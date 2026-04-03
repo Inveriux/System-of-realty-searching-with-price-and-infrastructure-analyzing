@@ -18,7 +18,7 @@ public sealed class GetSellerPublicProfileHandler(
     {
         var user = await userRepository.GetByIdAsync(request.Id, false);
         if (user is null)
-            return Result.NotFound<SellerPublicProfileDto>($"Seller '{request.Id}' was not found.");
+            return Result.NotFound<SellerPublicProfileDto>("Продавец не найден.");
 
         return Result.Ok(mapper.Map<SellerPublicProfileDto>(user));
     }

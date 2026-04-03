@@ -20,8 +20,8 @@ public class ChangePasswordCommandHandler(
         var dto = request.ChangePasswordDto;
         var user = await userRepository.GetByEmailAsync(dto.Email, true);
         if (user is null)
-            return Result.Fail<bool>("User not found.")
-                .WithError($"User with {dto.Email} email not found.", propertyName: nameof(User));
+            return Result.Fail<bool>("Пользователь не найден.")
+                .WithError("Пользователь с таким email не найден.", propertyName: nameof(User));
 
         IdentityResult result;
         if (string.IsNullOrWhiteSpace(user.PasswordHash))
@@ -32,8 +32,8 @@ public class ChangePasswordCommandHandler(
         {
             if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
             {
-                return Result.Fail<bool>("Current password is required.")
-                    .WithError("Current password is required.", propertyName: nameof(ChangePasswordDto.CurrentPassword));
+                return Result.Fail<bool>("Текущий пароль обязателен.")
+                    .WithError("Текущий пароль обязателен.", propertyName: nameof(ChangePasswordDto.CurrentPassword));
             }
 
             result = await userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
@@ -42,7 +42,7 @@ public class ChangePasswordCommandHandler(
         if (!result.Succeeded)
         {
             var errorMessage = string.Join("; ", result.Errors.Select(e => e.Description));
-            return Result.Fail<bool>("Failed to change password.")
+            return Result.Fail<bool>("Не удалось изменить пароль.")
                 .WithError(errorMessage, propertyName: nameof(ChangePasswordDto.NewPassword));
         }
 

@@ -14,7 +14,7 @@ public sealed class GetSearchFeaturesByLocationHandler(IInfrastructureRepository
     {
         var score = await infrastructureRepository.GetScoreAsync(request.LocationId, cancellationToken);
         if (score is null)
-            return Result.NotFound<Dictionary<string, decimal>>("Infrastructure score was not found.");
+            return Result.NotFound<Dictionary<string, decimal>>("Оценка инфраструктуры не найдена.");
 
         var features = string.IsNullOrWhiteSpace(score.SearchFeaturesJson)
             ? new Dictionary<string, decimal>()

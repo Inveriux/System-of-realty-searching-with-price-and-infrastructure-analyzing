@@ -11,7 +11,7 @@ public sealed class LookupByNameConverter<TLookupEntity>(ILookupCache cache)
     public TLookupEntity Convert(string source, TLookupEntity destination, ResolutionContext context)
     {
         if (string.IsNullOrWhiteSpace(source))
-            throw new AutoMapperMappingException("Lookup name is empty.");
+            throw new AutoMapperMappingException("Имя справочника пустое.");
 
         var lookupName = typeof(TLookupEntity).Name;
 
@@ -20,7 +20,7 @@ public sealed class LookupByNameConverter<TLookupEntity>(ILookupCache cache)
             return entity;
 
         throw new AutoMapperMappingException(
-            $"Lookup '{lookupName}' with name '{source}' not found in cache.");
+            $"Значение справочника '{lookupName}' с именем '{source}' не найдено в кэше.");
     }
 }
 
@@ -40,6 +40,6 @@ public sealed class LookupByNameOrNullConverter<TLookupEntity>(ILookupCache cach
             return entity;
 
         throw new AutoMapperMappingException(
-            $"Lookup '{lookupName}' with name '{source}' not found in cache.");
+            $"Значение справочника '{lookupName}' с именем '{source}' не найдено в кэше.");
     }
 }

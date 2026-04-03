@@ -2,6 +2,7 @@
 
 import {
   getPricingAnalyticsCategories,
+  getPricingAnalyticsCities,
   getPricingAnalyticsSummary,
   getPricingAnalyticsTimeSeries,
 } from "@diploma/api/pricing-analytics";
@@ -63,7 +64,7 @@ const segmentOptions = [
   { value: "Land", label: "Участки" },
 ];
 
-const cityOptions = [
+const fallbackCityOptions = [
   "Минск",
   "Брест",
   "Витебск",
@@ -99,9 +100,11 @@ const cityOptions = [
 function CitySelect({
   value,
   onChange,
+  options,
 }: {
   value: string;
   onChange: (value: string) => void;
+  options: string[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value);
@@ -129,11 +132,11 @@ function CitySelect({
   const filteredCities = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     if (!normalized) {
-      return cityOptions;
+      return options;
     }
 
-    return cityOptions.filter((city) => city.toLowerCase().includes(normalized));
-  }, [search]);
+    return options.filter((city) => city.toLowerCase().includes(normalized));
+  }, [options, search]);
 
   return (
     <div ref={containerRef} style={{ display: "grid", gap: 8, position: "relative" }}>
@@ -285,9 +288,15 @@ export function PricingAnalyticsClient() {
     queryFn: () => getPricingAnalyticsCategories(api, query),
   });
 
+  const citiesQuery = useQuery({
+    queryKey: ["pricing-analytics", "cities"],
+    queryFn: () => getPricingAnalyticsCities(api),
+  });
+
   const summary = summaryQuery.data;
   const timeSeries = timeseriesQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
+  const cityOptions = citiesQuery.data?.length ? citiesQuery.data : fallbackCityOptions;
 
   return (
     <AppShell>
@@ -352,7 +361,7 @@ export function PricingAnalyticsClient() {
 
           {geography === "city" ? (
             <div className="mt-4 max-w-[360px]">
-              <CitySelect value={city} onChange={setCity} />
+              <CitySelect value={city} onChange={setCity} options={cityOptions} />
             </div>
           ) : null}
         </section>

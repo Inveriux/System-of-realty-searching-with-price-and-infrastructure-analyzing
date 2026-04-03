@@ -11,8 +11,8 @@ public class CreateBuildingMaterialValidator : AbstractValidator<CreateBuildingM
     {
         RuleFor(x => x.Name)
             .MaximumLength(MaximumLength)
-            .WithMessage("Maximum length must be equals or less than 100 characters.")
+            .WithMessage("Максимальная длина должна быть не более 100 символов.")
             .NotEmpty()
-            .WithMessage("Name of building material shouldn't be empty.");
+            .WithMessage("Название материала здания не должно быть пустым.");
     }
 }

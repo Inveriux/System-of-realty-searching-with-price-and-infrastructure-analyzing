@@ -19,13 +19,13 @@ public sealed class HideListingHandler(
         if (listing is null)
         {
             return Result.NotFound(
-                "Listing not found.",
-                [new ResultError("Listing not found.", 0, nameof(request.Id))]);
+                "Объявление не найдено.",
+                [new ResultError("Объявление не найдено.", 0, nameof(request.Id))]);
         }
 
         if (string.Equals(listing.Status, ListingStatus.Hidden, StringComparison.OrdinalIgnoreCase))
         {
-            return Result.Ok("Listing is already hidden.");
+            return Result.Ok("Объявление уже скрыто.");
         }
 
         listing.Status = ListingStatus.Hidden;

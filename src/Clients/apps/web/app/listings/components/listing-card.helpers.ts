@@ -123,6 +123,13 @@ function prefixedLabel(prefix: string, value?: string | null) {
   return `${prefix}: ${value}`;
 }
 
+function formatMoneyValue(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+  }).format(value);
+}
+
 export function formatPrice(
   amount?: number,
   currency: PriceCurrency = "RUB",
@@ -132,9 +139,7 @@ export function formatPrice(
     return "Цена по запросу";
   }
 
-  const value = new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-  }).format(amount);
+  const value = formatMoneyValue(amount);
   const currencyLabel = currencyMap[currency] ?? currency;
   const periodLabel = period ? periodMap[period] ?? String(period).toLowerCase() : null;
 
@@ -146,9 +151,7 @@ export function formatNumericPrice(amount?: number, period?: PricePeriod) {
     return "Цена по запросу";
   }
 
-  const value = new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-  }).format(amount);
+  const value = formatMoneyValue(amount);
   const periodLabel = period ? periodMap[period] ?? String(period).toLowerCase() : null;
 
   return `${value}${periodLabel ? `/${periodLabel}` : ""}`.trim();
@@ -159,9 +162,7 @@ export function formatNumericAmount(amount?: number) {
     return null;
   }
 
-  return new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return formatMoneyValue(amount);
 }
 
 export function formatPricePeriodSuffix(period?: PricePeriod) {
@@ -177,9 +178,7 @@ export function formatCurrencyValue(amount?: number, currency: PriceCurrency = "
     return null;
   }
 
-  const value = new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-  }).format(amount);
+  const value = formatMoneyValue(amount);
   const currencyLabel = currencyMap[currency] ?? currency;
 
   return `${value} ${currencyLabel}`;
@@ -296,6 +295,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
       case "apartment":
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
           { label: "Комнаты", value: item.details.rooms === 0 ? "Студия" : item.details.rooms ? `${item.details.rooms}` : "—" },
           { label: "Спальни", value: item.details.bedrooms ? `${item.details.bedrooms}` : "—" },
           { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
@@ -307,6 +307,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
         return [
           { label: "Дом", value: formatArea(item.details.houseArea ?? item.areaTotal) },
           { label: "Участок", value: formatArea(item.details.plotArea) },
+          { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
           { label: "Комнаты", value: item.details.rooms ? `${item.details.rooms}` : "—" },
           { label: "Спальни", value: item.details.bedrooms ? `${item.details.bedrooms}` : "—" },
           { label: "Этажей", value: item.details.floors ? `${item.details.floors}` : "—" },
@@ -314,6 +315,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
       case "land":
         return [
           { label: "Участок", value: formatArea(item.details.plotArea ?? item.areaTotal) },
+          { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
           { label: "Категория", value: landCategoryMap[item.details.landCategory ?? ""] ?? item.details.landCategory ?? "—" },
           { label: "Назначение", value: item.details.allowedUse ?? "—" },
           { label: "Подъезд", value: roadAccessMap[item.details.roadAccessType ?? ""] ?? item.details.roadAccessType ?? "—" },
@@ -321,6 +323,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
       case "office":
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
+          { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
           { label: "Этаж", value: formatFloor(item.details.floor, item.details.floorsTotal) },
           { label: "Уровней", value: item.details.levels ? `${item.details.levels}` : "—" },
           { label: "Класс", value: item.details.officeClass ?? "—" },
@@ -330,6 +333,7 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
         return [
           { label: "Площадь", value: formatArea(item.areaTotal) },
           { label: "Участок", value: formatArea(item.details.plotArea) },
+          { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
           { label: "Потолки", value: item.details.ceilingHeight ? `${item.details.ceilingHeight} м` : "—" },
           { label: "Класс", value: item.details.classType ?? "—" },
           { label: "Ворота", value: item.details.gateCount ? `${item.details.gateCount}` : "—" },
@@ -342,9 +346,11 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
 }
 
 export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFeature[] {
+  let labels: Array<string | null> = [];
+
   switch (item.details.kind) {
     case "apartment":
-      return [
+      labels = [
         prefixedLabel(
           "Ремонт",
           apartmentRenovationMap[item.details.renovationType ?? ""] ?? item.details.renovationType,
@@ -356,12 +362,10 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         formatBooleanFeature(item.details.hasBalcony, "Балкон"),
         formatBooleanFeature(item.details.hasLoggia, "Лоджия"),
         formatBooleanFeature(item.details.hasElevator, "Лифт"),
-      ]
-        .filter(Boolean)
-        .slice(0, 6)
-        .map((label) => ({ label: String(label) }));
+      ];
+      break;
     case "house":
-      return [
+      labels = [
         formatBooleanFeature(item.details.hasGarage, "Гараж", "Без гаража"),
         formatBooleanFeature(item.details.hasBasement, "Подвал"),
         formatBooleanFeature(item.details.hasFence, "Огорожен"),
@@ -383,10 +387,8 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         ),
         formatBooleanFeature(item.details.hasElectricity, "Электричество"),
         prefixedLabel("Крыша", item.details.roofMaterial),
-      ]
-        .filter(Boolean)
-        .slice(0, 6)
-        .map((label) => ({ label: String(label) }));
+      ];
+      break;
     case "land":
       return [
         formatBooleanFeature(item.details.hasElectricity, "Электричество"),
@@ -399,7 +401,7 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         .slice(0, 6)
         .map((label, index) => ({ label: String(label), tone: index < 2 ? "accent" : "neutral" }));
     case "office":
-      return [
+      labels = [
         prefixedLabel(
           "Планировка",
           layoutMap[item.details.layoutType ?? ""] ?? item.details.layoutType,
@@ -411,12 +413,10 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         formatBooleanFeature(item.details.kitchenette, "Мини-кухня"),
         prefixedLabel("Парковка", item.details.parkingType),
         item.details.parkingSpaces ? `Мест: ${item.details.parkingSpaces}` : null,
-      ]
-        .filter(Boolean)
-        .slice(0, 6)
-        .map((label) => ({ label: String(label) }));
+      ];
+      break;
     case "warehouse":
-      return [
+      labels = [
         item.details.dockCount ? `Доков: ${item.details.dockCount}` : null,
         formatBooleanFeature(item.details.hasRamps, "Рампы"),
         formatBooleanFeature(item.details.hasDockLevelers, "Доклевеллеры"),
@@ -427,11 +427,14 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
           "Отопление",
           heatingMap[item.details.heatingType ?? ""] ?? item.details.heatingType,
         ),
-      ]
-        .filter(Boolean)
-        .slice(0, 6)
-        .map((label) => ({ label: String(label) }));
+      ];
+      break;
   }
+
+  return labels
+    .filter(Boolean)
+    .slice(0, 6)
+    .map((label) => ({ label: String(label) }));
 }
 
 export function getTypeLabel(item: ListingCardItem) {

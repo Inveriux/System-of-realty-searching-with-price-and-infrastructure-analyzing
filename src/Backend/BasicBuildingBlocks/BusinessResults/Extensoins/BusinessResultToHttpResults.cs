@@ -44,11 +44,11 @@ public static class BusinessResultToHttpResults
 
     private static string GetTitle(ResultStatusCode statusCode) => statusCode switch
     {
-        ResultStatusCode.Validation => "Validation failed",
-        ResultStatusCode.Conflict => "Conflict",
-        ResultStatusCode.NotFound => "Not found",
-        ResultStatusCode.Unauthorized => "Unauthorized",
-        ResultStatusCode.Forbidden => "Forbidden",
-        _ => "Request failed"
+        ResultStatusCode.Validation => "Ошибка валидации",
+        ResultStatusCode.Conflict => "Конфликт данных",
+        ResultStatusCode.NotFound => "Не найдено",
+        ResultStatusCode.Unauthorized => "Требуется авторизация",
+        ResultStatusCode.Forbidden => "Доступ запрещен",
+        _ => "Ошибка запроса"
     };
 }

@@ -25,16 +25,16 @@ public sealed class UploadManyImagesCommandHandler(
         if (request.Request.Expiration is not null &&
             (request.Request.Expiration < 60 || request.Request.Expiration > 15552000))
         {
-            return Result.Validation<IReadOnlyCollection<ImageUploadResponseDto>>("`expiration` must be between 60 and 15552000 seconds.");
+            return Result.Validation<IReadOnlyCollection<ImageUploadResponseDto>>("`expiration` должен быть в диапазоне от 60 до 15552000 секунд.");
         }
 
         if (images.Count == 0)
-            return Result.Validation<IReadOnlyCollection<ImageUploadResponseDto>>("At least one image is required.");
+            return Result.Validation<IReadOnlyCollection<ImageUploadResponseDto>>("Необходимо передать хотя бы одно изображение.");
 
         if (images.Count > _options.MaxFilesPerRequest)
         {
             return Result.Validation<IReadOnlyCollection<ImageUploadResponseDto>>(
-                $"You can upload up to {_options.MaxFilesPerRequest} images per request.");
+                $"За один запрос можно загрузить не более {_options.MaxFilesPerRequest} изображений.");
         }
 
         var uploadedImages = new List<ImageUploadResponseDto>(images.Count);

@@ -23,8 +23,8 @@ public class SignInByGoogleHandler(ICurrentUserProvider currentUserProvider,
         var email = currentUserProvider.GetEmail();
         var user = await userRepository.GetByEmailAsync(email, false);
         if (user is null)
-            return Result.Fail<SignInUserResponseDto>("Invalid email.")
-                .WithError($"User with {email} email not found.", propertyName: nameof(User)); 
+            return Result.Fail<SignInUserResponseDto>("Некорректный email.")
+                .WithError("Пользователь с таким email не найден.", propertyName: nameof(User)); 
 
         var userRole = await userRepository.GetUserRoleAsync(user)
             ?? throw new Exception("User role not found.");

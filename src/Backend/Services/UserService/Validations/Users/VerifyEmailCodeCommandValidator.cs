@@ -15,6 +15,6 @@ public sealed class VerifyEmailCodeCommandValidator : AbstractValidator<VerifyEm
             .NotEmpty()
             .Length(6)
             .Matches(@"^\d{6}$")
-            .WithMessage("Verification code must contain 6 digits.");
+            .WithMessage("Код подтверждения должен содержать 6 цифр.");
     }
 }

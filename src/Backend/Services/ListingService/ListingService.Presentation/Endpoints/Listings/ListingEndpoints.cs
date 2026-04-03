@@ -24,6 +24,7 @@ public class ListingsEndpoints : IEndpointRegistrar
     public RouteGroupBuilder MapEndpoints(WebApplication application)
     {
         ListingJsonOptions.Converters.Add(new CreateListingDtoJsonConverter());
+        ListingJsonOptions.Converters.Add(new UpdateListingRequestDtoJsonConverter());
 
         var group = application.MapGroup("api/listings")
             .WithTags("Listings");
@@ -73,6 +74,12 @@ public class ListingsEndpoints : IEndpointRegistrar
             .WithName("UpdateListingPrice")
             .WithSummary("Updates current price for a listing.")
             .WithDescription("Updates current listing price and appends a new price history entry.");
+        group.MapPatch("/{listingId:guid}", UpdateAsync)
+            .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
+            .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
+            .WithName("UpdateListing")
+            .WithSummary("Updates listing parameters.")
+            .WithDescription("Updates a full listing payload, including common fields, media urls and polymorphic listing details.");
         group.MapPost("/{id:guid}/price-history", AddPriceHistoryEntryAsync)
             .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
             .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
@@ -103,6 +110,12 @@ public class ListingsEndpoints : IEndpointRegistrar
             .WithName("HideListing")
             .WithSummary("Hides a listing.")
             .WithDescription("Marks a listing as hidden and removes it from public search.");
+        group.MapPatch("/{listingId:guid}/unhide", UnhideAsync)
+            .AddEndpointFilter<OwnerOrAdminAccessEndpointFilter>()
+            .RequireAuthorization(PolicyNames.OwnerOrAdminAccess)
+            .WithName("UnhideListing")
+            .WithSummary("Unhides a listing.")
+            .WithDescription("Returns a hidden listing back to active search.");
 
         return group;
     }
@@ -150,6 +163,16 @@ public class ListingsEndpoints : IEndpointRegistrar
         return result.ToHttpResult();
     }
 
+    public async Task<IResult> UpdateAsync(
+        ISender sender,
+        [FromRoute] Guid listingId,
+        [FromBody] UpdateListingRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new UpdateListingCommand(listingId, request), cancellationToken);
+        return result.ToHttpResult();
+    }
+
     public async Task<IResult> CreateListingWithImagesAsync(
         ISender sender,
         IImageServiceClient imageServiceClient,
@@ -162,7 +185,7 @@ public class ListingsEndpoints : IEndpointRegistrar
         var images = form.Files.GetFiles("images");
 
         if (string.IsNullOrWhiteSpace(listing))
-            return Results.BadRequest("`listing` json payload is required.");
+            return Results.BadRequest("Необходимо передать JSON-поле `listing`.");
 
         CreateListingDto? listingDto;
         try
@@ -175,7 +198,7 @@ public class ListingsEndpoints : IEndpointRegistrar
         }
 
         if (listingDto is null)
-            return Results.BadRequest("Failed to deserialize listing payload.");
+            return Results.BadRequest("Не удалось разобрать данные объявления.");
 
         var imagesCount = images.Count;
         logger.LogInformation(
@@ -248,7 +271,7 @@ public class ListingsEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         if (request.Image is null)
-            return Results.BadRequest("Image file is required.");
+            return Results.BadRequest("Файл изображения обязателен.");
 
         var uploadResult = await imageServiceClient.UploadSingleAsync(request.Image, cancellationToken);
         if (!uploadResult.IsSuccess || uploadResult.Data is null)
@@ -325,6 +348,15 @@ public class ListingsEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new HideListingCommand(listingId), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> UnhideAsync(
+        ISender sender,
+        [FromRoute] Guid listingId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new UnhideListingCommand(listingId), cancellationToken);
         return result.ToHttpResult();
     }
 }
