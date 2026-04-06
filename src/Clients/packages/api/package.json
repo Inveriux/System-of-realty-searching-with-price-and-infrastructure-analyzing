@@ -14,6 +14,7 @@
     "./search": "./src/search.ts",
     "./pricing-analytics": "./src/pricing-analytics.ts",
     "./listing-pages": "./src/listing-pages.ts",
-    "./http": "./src/http.ts"
+    "./http": "./src/http.ts",
+    "./locations": "./src/locations.ts"
   }
 }

@@ -6,7 +6,14 @@ import type {
   OfficeDetailsDto,
   WarehouseDetailsDto,
 } from "@diploma/contracts/listings";
-import type { ListingCardItem } from "./components/listing-card.types";
+import type {
+  ApartmentDetails,
+  HouseDetails,
+  LandDetails,
+  ListingCardItem,
+  OfficeDetails,
+  WarehouseDetails,
+} from "./components/listing-card.types";
 
 type MapListingOptions = {
   canDelete: boolean;
@@ -51,15 +58,65 @@ function normalizeOfficeDetails(details: OfficeDetailsDto | Record<string, unkno
   });
 }
 
+function mapHouseDetails(details: HouseDetailsDto | null | undefined): HouseDetails {
+  return {
+    kind: "house",
+    ...stripNulls({
+      plotArea: details?.plotArea ?? undefined,
+      floors: details?.floors ?? undefined,
+      rooms: details?.rooms ?? undefined,
+      bedrooms: details?.bedrooms ?? undefined,
+      houseArea: details?.houseArea ?? undefined,
+      hasElectricity: details?.hasElectricity ?? undefined,
+      hasGarage: details?.hasGarage ?? undefined,
+      hasBasement: details?.hasBasement ?? undefined,
+      hasFence: details?.hasFence ?? undefined,
+      wallMaterial: details?.wallMaterial ?? undefined,
+      heatingType: details?.heatingType ?? undefined,
+      sewerType: details?.sewerType ?? undefined,
+      gasType: details?.gasType ?? undefined,
+      roofMaterial: details?.roofMaterial ?? undefined,
+      waterSupplyType: details?.waterSupplyType ?? undefined,
+    }),
+  };
+}
+
+function mapApartmentDetails(details: ApartmentDetailsDto | null | undefined): ApartmentDetails {
+  return {
+    kind: "apartment",
+    ...stripNulls(details ?? {}),
+  };
+}
+
+function mapLandDetails(details: LandDetailsDto | null | undefined): LandDetails {
+  return {
+    kind: "land",
+    ...stripNulls(details ?? {}),
+  };
+}
+
+function mapOfficeCardDetails(details: OfficeDetailsDto | null | undefined): OfficeDetails {
+  return {
+    kind: "office",
+    ...normalizeOfficeDetails(details ?? {}),
+  };
+}
+
+function mapWarehouseDetails(details: WarehouseDetailsDto | null | undefined): WarehouseDetails {
+  return {
+    kind: "warehouse",
+    ...stripNulls(details ?? {}),
+  };
+}
+
 function mapCompactDetails(listing: ListingDto): ListingCardItem["details"] {
   switch (listing.listingDetailsType) {
     case "House": {
       const details = listing.listingDetails as HouseDetailsDto;
-      return stripNulls({
-        kind: "house" as const,
-        plotArea: details?.plotArea ?? undefined,
-        floors: details?.floors ?? undefined,
-      });
+      return mapHouseDetails({
+        plotArea: details?.plotArea,
+        floors: details?.floors,
+      } as HouseDetailsDto);
     }
     case "Land":
       return { kind: "land" };
@@ -79,10 +136,12 @@ export function mapApiListingToCard(
 ): ListingCardItem {
   const listingType = listing.listingType === "Rent" ? "Аренда" : "Продажа";
   const href = `/listings/${listing.id}`;
-  const compactDetails = options.compactLikeCatalog ? mapCompactDetails(listing) : null;
 
   switch (listing.listingDetailsType) {
-    case "House":
+    case "House": {
+      const details: HouseDetails = options.compactLikeCatalog
+        ? (mapCompactDetails(listing) as HouseDetails)
+        : mapHouseDetails(listing.listingDetails as HouseDetailsDto);
       return {
         id: listing.id,
         title: listing.title,
@@ -114,12 +173,13 @@ export function mapApiListingToCard(
         onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: compactDetails ?? {
-          kind: "house",
-          ...stripNulls(listing.listingDetails as HouseDetailsDto),
-        },
+        details,
       };
-    case "Land":
+    }
+    case "Land": {
+      const details: LandDetails = options.compactLikeCatalog
+        ? (mapCompactDetails(listing) as LandDetails)
+        : mapLandDetails(listing.listingDetails as LandDetailsDto);
       return {
         id: listing.id,
         title: listing.title,
@@ -151,12 +211,13 @@ export function mapApiListingToCard(
         onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: compactDetails ?? {
-          kind: "land",
-          ...stripNulls(listing.listingDetails as LandDetailsDto),
-        },
+        details,
       };
-    case "Office":
+    }
+    case "Office": {
+      const details: OfficeDetails = options.compactLikeCatalog
+        ? (mapCompactDetails(listing) as OfficeDetails)
+        : mapOfficeCardDetails(listing.listingDetails as OfficeDetailsDto);
       return {
         id: listing.id,
         title: listing.title,
@@ -188,12 +249,13 @@ export function mapApiListingToCard(
         onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: compactDetails ?? {
-          kind: "office",
-          ...normalizeOfficeDetails(listing.listingDetails as OfficeDetailsDto),
-        },
+        details,
       };
-    case "Warehouse":
+    }
+    case "Warehouse": {
+      const details: WarehouseDetails = options.compactLikeCatalog
+        ? (mapCompactDetails(listing) as WarehouseDetails)
+        : mapWarehouseDetails(listing.listingDetails as WarehouseDetailsDto);
       return {
         id: listing.id,
         title: listing.title,
@@ -225,13 +287,14 @@ export function mapApiListingToCard(
         onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: compactDetails ?? {
-          kind: "warehouse",
-          ...stripNulls(listing.listingDetails as WarehouseDetailsDto),
-        },
+        details,
       };
+    }
     case "Apartment":
-    default:
+    default: {
+      const details: ApartmentDetails = options.compactLikeCatalog
+        ? (mapCompactDetails(listing) as ApartmentDetails)
+        : mapApartmentDetails(listing.listingDetails as ApartmentDetailsDto);
       return {
         id: listing.id,
         title: listing.title,
@@ -263,11 +326,9 @@ export function mapApiListingToCard(
         onEditPrice: options.onEditPrice,
         onToggleFavorite: options.onToggleFavorite,
         href,
-        details: compactDetails ?? {
-          kind: "apartment",
-          ...stripNulls(listing.listingDetails as ApartmentDetailsDto),
-        },
+        details,
       };
+    }
   }
 }
 

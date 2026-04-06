@@ -215,16 +215,9 @@ app.UseAuthorization();
 
 app.UseExceptionHandler();
 
-if(builder.Environment.IsDevelopment())
-{
-    await app.InitializeTestDatabaseAsync(false);
-}
-
-if(app.Environment.IsProduction())
-{
-    var isDeletedata = app.Configuration.GetValue<bool>("DeleteDataAtStartup");
-    await app.InitializeTestDatabaseAsync(isDeletedata);
-}
+var shouldDeleteDataAtStartup = app.Environment.IsProduction()
+    && app.Configuration.GetValue<bool>("DeleteDataAtStartup");
+await app.InitializeTestDatabaseAsync(shouldDeleteDataAtStartup);
 
 using (var scope = app.Services.CreateScope())
 {

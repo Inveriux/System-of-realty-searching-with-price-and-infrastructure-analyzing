@@ -85,8 +85,6 @@ export const listingsClientStyles = {
   } satisfies CSSProperties,
   floatingMapButton: {
     position: "fixed",
-    right: 22,
-    bottom: 22,
     zIndex: 24,
     borderRadius: 24,
     padding: "18px 16px",
@@ -109,6 +107,9 @@ export const listingsClientStyles = {
   modalPanel: {
     width: "min(1180px, 100%)",
     maxHeight: "calc(100vh - 48px)",
+    display: "grid",
+    gridTemplateRows: "auto",
+    gap: 10,
     overflow: "auto",
   } satisfies CSSProperties,
   modalHeader: {

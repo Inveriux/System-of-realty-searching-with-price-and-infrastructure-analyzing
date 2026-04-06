@@ -15,6 +15,7 @@ import { ListingGrid } from "../../listings/components/ListingGrid";
 import { useFavoriteListings } from "../../listings/lib/listing-collections";
 import { mapApiListingToCard } from "../../listings/listing-card.mapper";
 import { listingsPageClasses } from "../../listings/styles/listings-page.styles";
+import { type LookupTranslationKind, translateLookup } from "../../lib/lookup-translations";
 
 type EditFormValue = string | boolean;
 type EditFormState = Record<string, EditFormValue>;
@@ -347,8 +348,8 @@ export function ProfileListingsClient() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {renderTextField("latitude", "Широта", editForm, setEditForm)}
                 {renderTextField("longitude", "Долгота", editForm, setEditForm)}
-                {renderSelectField("listingType", "Тип сделки", editForm, setEditForm, lookupsQuery.data?.listingTypes.map((item) => item.name) ?? [])}
-                {renderSelectField("buildingType", "Тип здания", editForm, setEditForm, lookupsQuery.data?.buildingTypes.map((item) => item.name) ?? [])}
+                {renderSelectField("listingType", "Тип сделки", editForm, setEditForm, lookupsQuery.data?.listingTypes.map((item) => item.name) ?? [], "listingType")}
+                {renderSelectField("buildingType", "Тип здания", editForm, setEditForm, lookupsQuery.data?.buildingTypes.map((item) => item.name) ?? [], "buildingType")}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -640,12 +641,12 @@ function renderTypeSpecificFields(
             {renderTextField("plotArea", "Площадь участка", form, setForm)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {renderSelectField("wallMaterial", "Материал стен", form, setForm, lookups?.wallMaterials.map((item) => item.name) ?? [])}
-            {renderSelectField("heatingType", "Отопление", form, setForm, lookups?.heatingTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("sewerType", "Канализация", form, setForm, lookups?.sewerTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("gasType", "Газ", form, setForm, lookups?.gasTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("roofMaterial", "Крыша", form, setForm, lookups?.wallMaterials.map((item) => item.name) ?? [])}
-            {renderSelectField("waterSupplyType", "Водоснабжение", form, setForm, lookups?.waterSupplyTypes.map((item) => item.name) ?? [])}
+            {renderSelectField("wallMaterial", "Материал стен", form, setForm, lookups?.wallMaterials.map((item) => item.name) ?? [], "wallMaterial")}
+            {renderSelectField("heatingType", "Отопление", form, setForm, lookups?.heatingTypes.map((item) => item.name) ?? [], "heatingType")}
+            {renderSelectField("sewerType", "Канализация", form, setForm, lookups?.sewerTypes.map((item) => item.name) ?? [], "sewerType")}
+            {renderSelectField("gasType", "Газ", form, setForm, lookups?.gasTypes.map((item) => item.name) ?? [], "gasType")}
+            {renderSelectField("roofMaterial", "Крыша", form, setForm, lookups?.wallMaterials.map((item) => item.name) ?? [], "wallMaterial")}
+            {renderSelectField("waterSupplyType", "Водоснабжение", form, setForm, lookups?.waterSupplyTypes.map((item) => item.name) ?? [], "waterSupplyType")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {renderCheckboxField("hasElectricity", "Электричество", form, setForm)}
@@ -661,8 +662,8 @@ function renderTypeSpecificFields(
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {renderTextField("plotArea", "Площадь участка", form, setForm)}
             {renderTextField("allowedUse", "Назначение", form, setForm)}
-            {renderSelectField("landCategory", "Категория земли", form, setForm, lookups?.landCategories.map((item) => item.name) ?? [])}
-            {renderSelectField("roadAccessType", "Подъезд", form, setForm, lookups?.roadAccessTypes.map((item) => item.name) ?? [])}
+            {renderSelectField("landCategory", "Категория земли", form, setForm, lookups?.landCategories.map((item) => item.name) ?? [], "landCategory")}
+            {renderSelectField("roadAccessType", "Подъезд", form, setForm, lookups?.roadAccessTypes.map((item) => item.name) ?? [], "roadAccessType")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {renderCheckboxField("hasElectricity", "Электричество", form, setForm)}
@@ -684,10 +685,10 @@ function renderTypeSpecificFields(
             {renderTextField("parkingSpaces", "Парковочных мест", form, setForm)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {renderSelectField("officeClass", "Класс офиса", form, setForm, lookups?.officeClasses.map((item) => item.name) ?? [])}
-            {renderSelectField("layoutType", "Планировка", form, setForm, lookups?.layoutTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("officeRenovationType", "Ремонт", form, setForm, lookups?.renovationTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("parkingType", "Паркинг", form, setForm, lookups?.layoutTypes.map((item) => item.name) ?? [])}
+            {renderSelectField("officeClass", "Класс офиса", form, setForm, lookups?.officeClasses.map((item) => item.name) ?? [], "officeClass")}
+            {renderSelectField("layoutType", "Планировка", form, setForm, lookups?.layoutTypes.map((item) => item.name) ?? [], "layoutType")}
+            {renderSelectField("officeRenovationType", "Ремонт", form, setForm, lookups?.renovationTypes.map((item) => item.name) ?? [], "renovationType")}
+            {renderSelectField("parkingType", "Паркинг", form, setForm, lookups?.layoutTypes.map((item) => item.name) ?? [], "layoutType")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {renderCheckboxField("kitchenette", "Есть кухня", form, setForm)}
@@ -707,8 +708,8 @@ function renderTypeSpecificFields(
             {renderTextField("officeArea", "Площадь офиса", form, setForm)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {renderSelectField("classType", "Класс склада", form, setForm, lookups?.classTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("warehouseHeatingType", "Отопление", form, setForm, lookups?.heatingTypes.map((item) => item.name) ?? [])}
+            {renderSelectField("classType", "Класс склада", form, setForm, lookups?.classTypes.map((item) => item.name) ?? [], "classType")}
+            {renderSelectField("warehouseHeatingType", "Отопление", form, setForm, lookups?.heatingTypes.map((item) => item.name) ?? [], "heatingType")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {renderCheckboxField("hasDockLevelers", "Доклевеллеры", form, setForm)}
@@ -732,9 +733,9 @@ function renderTypeSpecificFields(
             {renderTextField("ceilingHeight", "Высота потолков", form, setForm)}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {renderSelectField("bathroomType", "Санузел", form, setForm, lookups?.bathroomTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("renovationType", "Ремонт", form, setForm, lookups?.renovationTypes.map((item) => item.name) ?? [])}
-            {renderSelectField("buildingMaterial", "Материал", form, setForm, lookups?.buildingMaterials.map((item) => item.name) ?? [])}
+            {renderSelectField("bathroomType", "Санузел", form, setForm, lookups?.bathroomTypes.map((item) => item.name) ?? [], "bathroomType")}
+            {renderSelectField("renovationType", "Ремонт", form, setForm, lookups?.renovationTypes.map((item) => item.name) ?? [], "renovationType")}
+            {renderSelectField("buildingMaterial", "Материал", form, setForm, lookups?.buildingMaterials.map((item) => item.name) ?? [], "buildingMaterial")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {renderCheckboxField("hasBalcony", "Балкон", form, setForm)}
@@ -763,6 +764,7 @@ function renderSelectField(
   form: EditFormState,
   setForm: Dispatch<SetStateAction<EditFormState>>,
   options: string[],
+  kind?: LookupTranslationKind,
 ) {
   return (
     <select
@@ -774,7 +776,7 @@ function renderSelectField(
       <option value="">{placeholder}</option>
       {options.map((option) => (
         <option key={option} value={option}>
-          {option}
+          {kind ? translateLookup(kind, option) : option}
         </option>
       ))}
     </select>

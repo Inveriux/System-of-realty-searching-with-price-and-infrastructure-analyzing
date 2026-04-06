@@ -22,6 +22,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "../components/AppShell";
+import { lookupTranslations, translateLookup } from "../lib/lookup-translations";
 import { useAuth } from "../providers";
 
 type CreateListingState = {
@@ -177,111 +178,6 @@ const initialState: CreateListingState = {
   warehouseHeatingType: "",
 };
 
-const lookupTranslations: Record<string, Record<string, string>> = {
-  listingType: {
-    Rent: "Аренда",
-    Sale: "Продажа",
-  },
-  buildingType: {
-    "Apartment Building (Multi-family)": "Многоквартирный дом",
-    "Detached House": "Отдельный дом",
-    Townhouse: "Таунхаус",
-    "Business Center": "Бизнес-центр",
-    "Warehouse Complex": "Складской комплекс",
-    "Industrial Building": "Промышленное здание",
-    "Shopping Mall": "Торговый центр",
-    "Mixed-use Building": "Многофункциональное здание",
-    Other: "Другое",
-  },
-  bathroomType: {
-    "Combined (shared)": "Совмещенный",
-    Separate: "Раздельный",
-    "Two bathrooms": "Два санузла",
-    "Three or more bathrooms": "Три и более санузла",
-  },
-  renovationType: {
-    Designer: "Дизайнерский",
-    Modern: "Современный",
-    Cosmetic: "Косметический",
-    None: "Без ремонта",
-    Euro: "Евроремонт",
-  },
-  buildingMaterial: {
-    Brick: "Кирпич",
-    Panel: "Панель",
-    Monolith: "Монолит",
-    Block: "Блок",
-    Wood: "Дерево",
-  },
-  wallMaterial: {
-    Brick: "Кирпич",
-    Panel: "Панель",
-    Monolith: "Монолит",
-    Block: "Блок",
-    Wood: "Дерево",
-  },
-  heatingType: {
-    Central: "Центральное",
-    "Gas boiler": "Газовый котел",
-    "Individual gas boiler": "Индивидуальный газовый котел",
-    Electric: "Электрическое",
-    "Solid fuel": "Твердотопливное",
-    None: "Нет",
-  },
-  waterSupplyType: {
-    Central: "Центральное",
-    Well: "Колодец",
-    Borehole: "Скважина",
-    "Delivered / tank": "Привозная / емкость",
-    None: "Нет",
-  },
-  sewerType: {
-    Central: "Центральная",
-    "Septic tank": "Септик",
-    Cesspool: "Выгребная яма",
-    None: "Нет",
-  },
-  gasType: {
-    "Central gas": "Центральный газ",
-    "Gas holder / tank": "Газгольдер / резервуар",
-    "Bottled gas": "Баллонный газ",
-    None: "Нет",
-  },
-  landCategory: {
-    "Residential (IЖС)": "Жилая застройка (ИЖС)",
-    "Personal subsidiary plot (ЛПХ)": "Личное подсобное хозяйство (ЛПХ)",
-    "Garden / dacha (СНТ)": "Садовый / дачный участок (СНТ)",
-    Agricultural: "Сельскохозяйственная",
-    "Industrial / commercial": "Промышленная / коммерческая",
-    "Forestry / protected": "Лесной фонд / охраняемая",
-    Other: "Другое",
-  },
-  roadAccessType: {
-    Asphalt: "Асфальт",
-    Gravel: "Гравий",
-    "Dirt road": "Грунтовая дорога",
-    "No direct access / off-road": "Нет прямого подъезда / бездорожье",
-  },
-  classType: {
-    A: "Класс A",
-    B: "Класс B",
-    C: "Класс C",
-    D: "Класс D",
-  },
-  layoutType: {
-    "Open space": "Открытая планировка",
-    "Cabinet / rooms": "Кабинетная",
-    Mixed: "Смешанная",
-    Coworking: "Коворкинг",
-  },
-  officeClass: {
-    A: "Класс A",
-    "B+": "Класс B+",
-    B: "Класс B",
-    C: "Класс C",
-  },
-};
-
 declare global {
   interface Window {
     ymaps?: YandexMapsApi;
@@ -343,10 +239,6 @@ function toNumber(value: string) {
 
 function toInteger(value: string) {
   return value ? Number.parseInt(value, 10) : null;
-}
-
-function translateLookup(kind: keyof typeof lookupTranslations, value: string) {
-  return lookupTranslations[kind][value] ?? value;
 }
 
 function getListingDetailsTypeLabel(value: ListingDetailsType) {
@@ -825,7 +717,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
             );
 
             map.events.add("click", async (event) => {
-              const coords = event.get("coords");
+              const coords = (event as { get: (key: string) => [number, number] }).get("coords");
               await updateDraftLocation(ymaps, coords);
             });
 
@@ -1205,7 +1097,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
           className="listing-create-form"
           onSubmit={handleSubmit}
         >
-          <div style={{ display: "grid", gap: 20 }}>
+          <div className="listing-create-main" style={{ display: "grid", gap: 20 }}>
             <section className="surface" style={{ borderRadius: 28, padding: 24, display: "grid", gap: 22 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
               <div>
@@ -1812,7 +1704,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
             </section>
           </div>
 
-          <aside className="surface" style={{ borderRadius: 28, padding: 24, display: "grid", gap: 20, position: "sticky", top: 24 }}>
+          <aside className="surface listing-create-sidebar" style={{ borderRadius: 28, padding: 24, display: "grid", gap: 20, position: "sticky", top: 24 }}>
             <div>
               <div className="eyebrow">Фотографии</div>
               <h2 className="section-title" style={{ marginTop: 8 }}>Изображения</h2>
@@ -1920,25 +1812,31 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
 
             {error ? <div className="listing-create-alert listing-create-alert-error">{error}</div> : null}
 
-            <div style={{ display: "grid", gap: 10 }}>
+            <div className="listing-create-submit-desktop" style={{ display: "grid", gap: 10 }}>
               <button className="button-primary" type="submit" disabled={isSubmitting || lookupsQuery.isLoading}>
                 {isSubmitting ? "Отправка..." : mode === "edit" ? "Сохранить изменения" : "Создать объявление"}
               </button>
             </div>
           </aside>
+
+          <div className="listing-create-submit-mobile" style={{ display: "grid", gap: 10 }}>
+            <button className="button-primary" type="submit" disabled={isSubmitting || lookupsQuery.isLoading}>
+              {isSubmitting ? "Отправка..." : mode === "edit" ? "Сохранить изменения" : "Создать объявление"}
+            </button>
+          </div>
         </form>
       </main>
 
       {isMapOpen ? (
         <div className="listing-create-modal-backdrop">
           <div className="listing-create-modal surface">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
+            <div className="listing-create-modal-header" style={{ display: "flex", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
               <div>
                 <div className="eyebrow">Карта</div>
                 <h2 className="section-title" style={{ marginTop: 8 }}>Выбор адреса на карте</h2>
               </div>
-              <button className="button-secondary" type="button" onClick={closeMapPicker}>
-                Закрыть
+              <button className="listing-create-modal-close" type="button" onClick={closeMapPicker} aria-label="Закрыть">
+                ×
               </button>
             </div>
 
@@ -1960,11 +1858,17 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                 placeholder="Например, Минск, проспект Независимости 44"
               />
               <button
-                className="button-secondary"
+                className="button-secondary listing-create-map-search-button"
                 type="submit"
+                aria-label="Найти адрес"
                 disabled={isSearchingAddress || isResolvingAddress}
               >
-                {isSearchingAddress ? "Ищем..." : "Найти"}
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  src="/icons/search.svg"
+                  className="listing-create-map-search-icon"
+                />
               </button>
             </form>
 
@@ -1999,25 +1903,26 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button className="button-primary" type="button" onClick={confirmMapSelection}>
-                    Подтвердить адрес
-                  </button>
-                  <button
-                    className="button-secondary"
-                    type="button"
-                    onClick={() => {
-                      if (placemarkRef.current && mapRef.current) {
-                        mapRef.current.geoObjects.remove(placemarkRef.current);
-                      }
-                      placemarkRef.current = null;
-                      setDraftLocation(null);
-                    }}
-                  >
-                    Сбросить точку
-                  </button>
-                </div>
               </div>
+            </div>
+
+            <div className="listing-create-map-actions">
+              <button className="button-primary" type="button" onClick={confirmMapSelection}>
+                Подтвердить адрес
+              </button>
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => {
+                  if (placemarkRef.current && mapRef.current) {
+                    mapRef.current.geoObjects.remove(placemarkRef.current);
+                  }
+                  placemarkRef.current = null;
+                  setDraftLocation(null);
+                }}
+              >
+                Сбросить точку
+              </button>
             </div>
           </div>
         </div>

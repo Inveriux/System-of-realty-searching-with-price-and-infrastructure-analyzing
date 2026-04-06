@@ -74,32 +74,39 @@ export function ListingPriceHistoryChart({ history }: Props) {
     .join(" ");
 
   return (
-    <div className="grid gap-4 rounded-[24px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-5">
+    <div className="listing-price-history-chart grid gap-4 rounded-[24px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-5" style={{ minWidth: 0, maxWidth: "100%" }}>
       <div className="grid gap-2 sm:grid-cols-4">
         <div>
           <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Текущая цена</div>
-          <div className="mt-1 text-[1rem] font-black">{formatPrice(history.currentPriceAmountByn)}</div>
+          <div className="mt-1 text-[1rem] font-black" style={{ overflowWrap: "anywhere" }}>{formatPrice(history.currentPriceAmountByn)}</div>
         </div>
         <div>
           <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Первая цена</div>
-          <div className="mt-1 text-[1rem] font-black">{formatPrice(history.firstRecordedPriceAmountByn)}</div>
+          <div className="mt-1 text-[1rem] font-black" style={{ overflowWrap: "anywhere" }}>{formatPrice(history.firstRecordedPriceAmountByn)}</div>
         </div>
         <div>
           <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Изменение</div>
-          <div className="mt-1 text-[1rem] font-black">
+          <div className="mt-1 text-[1rem] font-black" style={{ overflowWrap: "anywhere" }}>
             {history.percentChangeFromFirst == null ? "Нет информации" : `${history.percentChangeFromFirst > 0 ? "+" : ""}${history.percentChangeFromFirst}%`}
           </div>
         </div>
         <div>
           <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Последнее обновление</div>
-          <div className="mt-1 text-[1rem] font-black">
+          <div className="mt-1 text-[1rem] font-black" style={{ overflowWrap: "anywhere" }}>
             {formatDate(history.lastRecordedAt, { day: "2-digit", month: "2-digit", year: "numeric" })}
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", minWidth: 720, height: "auto", display: "block" }}>
+      <div className="rounded-[18px] bg-[var(--background-muted)] px-4 py-3 text-sm text-[var(--foreground-muted)] sm:hidden">
+        График истории цены скрыт на мобильном экране. Ниже доступен список всех изменений цены.
+      </div>
+
+      <div className="hidden overflow-hidden sm:block" style={{ minWidth: 0 }}>
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{ width: "100%", minWidth: 0, maxWidth: "100%", height: "auto", display: "block" }}
+        >
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
             const y = paddingTop + chartHeight * ratio;
             const value = maxValue - (maxValue - minValue) * ratio;
@@ -180,7 +187,7 @@ export function ListingPriceHistoryChart({ history }: Props) {
                 year: "numeric",
               })}
             </div>
-            <div className="text-[var(--foreground-muted)]">
+            <div className="text-[var(--foreground-muted)]" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
               {formatPrice(point.priceAmountByn)}
               {point.pricePerSqmByn != null ? ` • ${Math.round(point.pricePerSqmByn)} BYN/м²` : ""}
             </div>

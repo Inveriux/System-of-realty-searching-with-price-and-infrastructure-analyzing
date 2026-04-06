@@ -181,25 +181,50 @@ export async function getCreateListingLookups(api: ApiClient) {
   };
 }
 
+export type UploadableImage =
+  | File
+  | {
+      uri: string;
+      name: string;
+      type: string;
+    };
+
+function appendUploadableImage(formData: FormData, fieldName: string, image: UploadableImage) {
+  if ("uri" in image) {
+    formData.append(fieldName, image as never);
+    return;
+  }
+
+  formData.append(fieldName, image);
+}
+
 export async function createListingWithImages(
   api: ApiClient,
   listing: Record<string, unknown>,
-  images: File[],
+  images: UploadableImage[],
 ) {
   const formData = new FormData();
   formData.append("listing", JSON.stringify(listing));
 
   for (const image of images) {
-    formData.append("images", image);
+    appendUploadableImage(formData, "images", image);
   }
 
   const result = await api.post("/api/listings/with-images", formData, CreateListingResultSchema);
   return result.data;
 }
 
-export async function uploadListingImage(api: ApiClient, listingId: string, image: File) {
+export async function createListing(
+  api: ApiClient,
+  listing: Record<string, unknown>,
+) {
+  const result = await api.post("/api/listings/", listing, CreateListingResultSchema);
+  return result.data;
+}
+
+export async function uploadListingImage(api: ApiClient, listingId: string, image: UploadableImage) {
   const formData = new FormData();
-  formData.append("image", image);
+  appendUploadableImage(formData, "image", image);
   await api.postFormVoid(`/api/listings/${listingId}/images`, formData);
 }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ListingPagePoiDto } from "@diploma/contracts/listingPage";
 import {
@@ -421,7 +420,7 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
     }
 
     const nextZoom = Math.max(map.getZoom?.() ?? MIN_DETAIL_VIEW_ZOOM, 15);
-    map.setCenter(
+    map.setCenter?.(
       [latitude, longitude],
       nextZoom,
       { checkZoomRange: true, duration: 220 },
@@ -498,9 +497,9 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
             );
           }
 
-          const bounds = map.geoObjects.getBounds();
+          const bounds = map.geoObjects.getBounds?.();
           if (bounds) {
-            map.setBounds(bounds, {
+            map.setBounds?.(bounds, {
               checkZoomRange: true,
               zoomMargin: [56, 56, 56, 56],
               useMapMargin: true,
@@ -565,12 +564,11 @@ export function ListingLocationMap({ title, addressText, latitude, longitude, ne
                       : "border-[color:color-mix(in_srgb,var(--border-color)_90%,white)] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,white)] text-[color:var(--foreground-muted)] opacity-70"
                   }`}
                 >
-                  <Image
+                  <img
                     src={meta.iconHref}
                     alt=""
                     width={14}
                     height={14}
-                    unoptimized
                     aria-hidden="true"
                     className={isActive ? "" : "grayscale"}
                   />

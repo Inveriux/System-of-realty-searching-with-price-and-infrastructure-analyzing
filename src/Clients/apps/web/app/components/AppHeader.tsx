@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { useAuth, useTheme } from "../providers";
+import { type FormEvent, type MouseEvent as ReactMouseEvent, type TouchEvent, useEffect, useRef, useState } from "react";
+import { useAuth } from "../providers";
 import { AuthDialog } from "./AuthDialog";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -12,14 +12,14 @@ export function AppHeader() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { status, user, signOut } = useAuth();
-  const { theme } = useTheme();
   const [dialogMode, setDialogMode] = useState<"signin" | "signup" | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const isFavoritesPage = pathname.startsWith("/favorites");
   const isCreateListingPage = pathname.startsWith("/create-listing");
-  const iconFilter = theme === "dark" ? "brightness(0) invert(1)" : "none";
+  const isPricingAnalyticsPage = pathname.startsWith("/analytics/pricing");
+  const isListingDetailsPage = /^\/listings\/[^/]+$/.test(pathname);
 
   function renderAccountAvatar() {
     if (user?.accountImageUrl) {
@@ -55,7 +55,7 @@ export function AppHeader() {
       );
     }
 
-    return <img alt="" src="/icons/account.svg" style={{ width: 20, height: 20, filter: iconFilter }} />;
+    return <img alt="" src="/icons/account.svg" className="app-header-icon-image" style={{ width: 20, height: 20 }} />;
   }
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export function AppHeader() {
       return;
     }
 
-    function handlePointerDown(event: MouseEvent) {
+    function handlePointerDown(event: globalThis.MouseEvent) {
       if (!accountMenuRef.current?.contains(event.target as Node)) {
         setIsAccountMenuOpen(false);
       }
@@ -100,10 +100,60 @@ export function AppHeader() {
     router.push("/listings");
   }
 
+  function toggleAccountMenu() {
+    setIsAccountMenuOpen((current) => !current);
+  }
+
+  function handleAccountButtonTouch(event: TouchEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleAccountMenu();
+  }
+
+  function handleAccountButtonClick(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleAccountMenu();
+  }
+
+  function navigateFromHeader(href: string) {
+    router.push(href);
+    if (document.documentElement.hasAttribute("data-mobile-client-shell")) {
+      const nextUrl = new URL(href, window.location.origin);
+      const currentTheme = document.documentElement.dataset.theme;
+      nextUrl.searchParams.set("__mobile_theme", currentTheme === "dark" ? "dark" : "light");
+      window.location.assign(nextUrl.toString());
+    }
+  }
+
+  function handlePricingAnalyticsClick(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/analytics/pricing");
+  }
+
+  function handleFavoritesClick(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/favorites");
+  }
+
+  function handlePricingAnalyticsTouch(event: TouchEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/analytics/pricing");
+  }
+
+  function handleFavoritesTouch(event: TouchEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/favorites");
+  }
+
   return (
     <>
       <header
-        className="shell"
+        className="shell app-header"
         style={{
           position: "sticky",
           top: 12,
@@ -111,7 +161,7 @@ export function AppHeader() {
         }}
       >
         <div
-          className="surface"
+          className="surface app-header-surface"
           style={{
             borderRadius: 28,
             padding: "12px 14px",
@@ -124,6 +174,7 @@ export function AppHeader() {
           }}
         >
           <div
+            className="app-header-top"
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -134,6 +185,7 @@ export function AppHeader() {
           >
             <Link
               href="/listings"
+              className="app-header-brand"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -149,6 +201,7 @@ export function AppHeader() {
               }}
             >
               <div
+                className="app-header-logo-wrap"
                 style={{
                   width: 78,
                   height: 44,
@@ -170,8 +223,9 @@ export function AppHeader() {
                   }}
                 />
               </div>
-              <div style={{ minWidth: 0 }}>
+              <div className="app-header-brand-text" style={{ minWidth: 0 }}>
                 <div
+                  className="app-header-brand-title"
                   style={{
                     fontFamily: "var(--font-display)",
                     fontSize: "1.22rem",
@@ -183,7 +237,7 @@ export function AppHeader() {
                   Realt
                 </div>
                 <div
-                  className="eyebrow"
+                  className="eyebrow app-header-brand-subtitle"
                   style={{
                     marginTop: 4,
                     fontSize: "0.66rem",
@@ -198,6 +252,7 @@ export function AppHeader() {
 
             {!isCreateListingPage ? (
               <form
+                className={`app-header-search${isPricingAnalyticsPage || isListingDetailsPage ? " app-header-search-hidden-mobile" : ""}`}
                 onSubmit={handleSearchSubmit}
                 style={{
                   position: "relative",
@@ -210,6 +265,7 @@ export function AppHeader() {
                   alt=""
                   aria-hidden="true"
                   src="/icons/search.svg"
+                  className="app-header-search-icon"
                   style={{
                     position: "absolute",
                     left: 16,
@@ -217,7 +273,6 @@ export function AppHeader() {
                     width: 18,
                     height: 18,
                     transform: "translateY(-50%)",
-                    filter: iconFilter,
                     opacity: 0.62,
                     pointerEvents: "none",
                   }}
@@ -246,11 +301,12 @@ export function AppHeader() {
               <div style={{ flex: "1 1 auto" }} />
             )}
 
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <div className="app-header-actions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               {status === "authenticated" ? (
                 <Link
                   aria-label="Добавить объявление"
                   href="/create-listing"
+                  className="app-header-create-button"
                   style={{
                     minHeight: 46,
                     padding: "0 16px",
@@ -289,6 +345,7 @@ export function AppHeader() {
               ) : null}
 
               <div
+                className="app-header-icon-cluster"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -299,44 +356,50 @@ export function AppHeader() {
                   border: "1px solid color-mix(in srgb, var(--border-color) 64%, transparent)",
                 }}
               >
-                <Link
+                <button
                   aria-label="Ценовая аналитика"
-                  href="/analytics/pricing"
+                  onClick={handlePricingAnalyticsClick}
+                  onTouchEnd={handlePricingAnalyticsTouch}
+                  type="button"
                   style={{
                     width: 40,
                     height: 40,
                     display: "grid",
                     placeItems: "center",
-                    textDecoration: "none",
                     borderRadius: 14,
                     background: "color-mix(in srgb, var(--background-elevated) 88%, white)",
                     color: "inherit",
                     boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                    border: "none",
+                    padding: 0,
                   }}
                   title="Ценовая аналитика"
                 >
-                  <img alt="" src="/icons/chart.svg" style={{ width: 18, height: 18, filter: iconFilter }} />
-                </Link>
-                <Link
+                  <img alt="" src="/icons/chart.svg" className="app-header-icon-image" style={{ width: 18, height: 18 }} />
+                </button>
+                <button
                   aria-label="Избранное"
-                  href="/favorites"
+                  onClick={handleFavoritesClick}
+                  onTouchEnd={handleFavoritesTouch}
+                  type="button"
                   style={{
                     width: 40,
                     height: 40,
                     display: "grid",
                     placeItems: "center",
-                    textDecoration: "none",
                     borderRadius: 14,
                     background: isFavoritesPage
                       ? "color-mix(in srgb, var(--color-primary-soft) 92%, white)"
                       : "color-mix(in srgb, var(--background-elevated) 88%, white)",
                     color: isFavoritesPage ? "var(--color-primary-strong)" : "inherit",
                     boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                    border: "none",
+                    padding: 0,
                   }}
                   title="Избранное"
                 >
-                  <img alt="" src="/icons/favorites.svg" style={{ width: 18, height: 18, filter: iconFilter }} />
-                </Link>
+                  <img alt="" src="/icons/favorites.svg" className="app-header-icon-image" style={{ width: 18, height: 18 }} />
+                </button>
                 <div
                   style={{
                     width: 40,
@@ -355,6 +418,7 @@ export function AppHeader() {
               {status === "authenticated" && user ? (
                 <div
                   ref={accountMenuRef}
+                  className="app-header-account"
                   style={{
                     position: "relative",
                   }}
@@ -363,8 +427,9 @@ export function AppHeader() {
                     aria-label="Аккаунт"
                     aria-expanded={isAccountMenuOpen}
                     aria-haspopup="menu"
-                    className="icon-button"
-                    onClick={() => setIsAccountMenuOpen((current) => !current)}
+                    className="icon-button app-header-account-button"
+                    onTouchEnd={handleAccountButtonTouch}
+                    onClick={handleAccountButtonClick}
                     type="button"
                     style={{
                       width: 46,
@@ -386,7 +451,7 @@ export function AppHeader() {
                     <div
                       role="menu"
                       aria-label="Меню аккаунта"
-                      className="surface"
+                      className="surface app-header-account-menu"
                       style={{
                         position: "absolute",
                         top: "calc(100% + 10px)",
@@ -429,6 +494,7 @@ export function AppHeader() {
                       </div>
 
                       <div
+                        className="app-header-account-grid"
                         style={{
                           display: "grid",
                           gridTemplateColumns: "1fr 1fr",
@@ -531,7 +597,7 @@ export function AppHeader() {
               ) : (
                 <button
                   aria-label="Аккаунт"
-                  className="icon-button"
+                  className="icon-button app-header-account-button"
                   onClick={(event) => {
                     event.stopPropagation();
                     setDialogMode("signin");
@@ -548,7 +614,7 @@ export function AppHeader() {
                     boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
                   }}
                 >
-                  <img alt="" src="/icons/account.svg" style={{ width: 20, height: 20, filter: iconFilter }} />
+                  <img alt="" src="/icons/account.svg" className="app-header-icon-image" style={{ width: 20, height: 20 }} />
                 </button>
               )}
             </div>

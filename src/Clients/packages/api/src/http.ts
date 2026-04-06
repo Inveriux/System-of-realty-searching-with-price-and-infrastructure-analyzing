@@ -106,6 +106,10 @@ function humanizeApiMessage(message: string) {
     return "Пользователь не найден.";
   }
 
+  if (normalized.startsWith("Listing '") && normalized.endsWith("' was not found.")) {
+    return "Объявление не найдено или уже удалено.";
+  }
+
   if (normalized.startsWith("Failed to fetch API:")) {
     return "Не удалось выполнить запрос. Попробуйте ещё раз.";
   }

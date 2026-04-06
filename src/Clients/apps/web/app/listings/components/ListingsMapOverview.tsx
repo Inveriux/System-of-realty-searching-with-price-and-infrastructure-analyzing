@@ -213,7 +213,7 @@ export function ListingsMapOverview({
           }
 
           map.events?.add("click", (event) => {
-            const [latitude, longitude] = event.get("coords");
+            const [latitude, longitude] = (event as { get: (key: string) => [number, number] }).get("coords");
             onSelectCenter?.({ latitude, longitude });
           });
 
@@ -268,14 +268,14 @@ export function ListingsMapOverview({
       style={listingsMapOverviewStyles.backdrop}
     >
       <div
-        className="surface"
+        className="surface listings-map-overview-panel"
         onClick={(event) => event.stopPropagation()}
         style={listingsMapOverviewStyles.panel}
       >
-        <div style={listingsMapOverviewStyles.header}>
+        <div className="listings-map-overview-header" style={listingsMapOverviewStyles.header}>
           <h2 className="section-title" style={listingsMapOverviewStyles.title}>Объекты на карте</h2>
-          <div style={listingsMapOverviewStyles.headerActions}>
-            <div style={listingsMapOverviewStyles.helpText}>
+          <div className="listings-map-overview-actions" style={listingsMapOverviewStyles.headerActions}>
+            <div className="listings-map-overview-help" style={listingsMapOverviewStyles.helpText}>
               Кликни по карте, чтобы поставить метку. Поиск объявлений будет идти рядом с этой точкой в заданном радиусе.
             </div>
             {onClearCenter ? (

@@ -40,6 +40,7 @@ PORT_FORWARD_LOG = Path("/tmp/diploma_gateway_port_forward.log")
 PHOTO_SERVER_PROCESS = None
 PHOTO_SERVER_LOG = Path("/tmp/diploma_photo_server.log")
 PHOTO_URLS: dict[Path, str] = {}
+USED_PHOTOS: set[Path] = set()
 
 
 def log_output(entry: dict) -> None:
@@ -210,13 +211,13 @@ def sign_in() -> str:
     return token
 
 
-def get_all_detailed_listings() -> list[dict]:
+def get_all_listings(path: str) -> list[dict]:
     listings: list[dict] = []
     page = 0
     while True:
-        status, payload = safe_api_request("GET", f"/api/listings/details?page={page}&pageSize=100")
+        status, payload = safe_api_request("GET", f"{path}?page={page}&pageSize=100")
         if status != 200:
-            raise RuntimeError(f"Failed to fetch listings details: {payload}")
+            raise RuntimeError(f"Failed to fetch listings from {path}: {payload}")
         parsed = json.loads(payload)
         items = parsed.get("data", {}).get("items", [])
         if not items:
@@ -224,6 +225,16 @@ def get_all_detailed_listings() -> list[dict]:
         listings.extend(items)
         page += 1
     return listings
+
+
+def get_all_detailed_listings() -> list[dict]:
+    try:
+        return get_all_listings("/api/listings/details")
+    except RuntimeError as error:
+        message = str(error)
+        if "connection refused" not in message.lower():
+            raise
+        return get_all_listings("/api/listings")
 
 
 def cleanup_old_listings(token: str) -> None:
@@ -256,6 +267,17 @@ def category_dir(category: str) -> Path:
     return mapping[category]
 
 
+def category_photo_dirs(category: str) -> list[Path]:
+    primary = category_dir(category)
+    shared_commercial = PHOTO_DATASET_ROOT / "commercial"
+    uncategorized = PHOTO_DATASET_ROOT / "not_category"
+
+    if category in {"office", "warehouse", "land"}:
+        return [primary, shared_commercial, uncategorized]
+
+    return [primary]
+
+
 def photo_url(path: Path) -> str:
     return PHOTO_URLS[path]
 
@@ -270,10 +292,12 @@ def prepare_web_photos() -> None:
 
     prefixes = {
         "apartments": "a",
+        "commercial": "c",
         "houses": "h",
         "offices": "o",
         "warehouses": "w",
         "land": "l",
+        "not_category": "n",
     }
 
     for category_name, prefix in prefixes.items():
@@ -305,8 +329,15 @@ def rotate_take(items: list[Path], start: int, count: int) -> list[Path]:
     return selected
 
 
+def ordered_unique(items: list[Path], start: int) -> list[Path]:
+    return rotate_take(items, start, len(items))
+
+
 def pick_images(category: str, city: str, listing_index: int, count: int = 4) -> list[str]:
-    files = sorted(path for path in category_dir(category).iterdir() if path.is_file())
+    files: list[Path] = []
+    for directory in category_photo_dirs(category):
+        files.extend(sorted(path for path in directory.iterdir() if path.is_file()))
+
     lowered_city = city.lower()
     minsk_files = [path for path in files if "minsk" in path.name.lower()]
     region_files = [path for path in files if "regions" in path.name.lower()]
@@ -319,12 +350,25 @@ def pick_images(category: str, city: str, listing_index: int, count: int = 4) ->
         primary = region_files or generic_files or files
         secondary = generic_files or minsk_files or files
 
-    selected = rotate_take(primary, listing_index * 2, min(2, count))
-    for candidate in rotate_take(secondary, listing_index * 3, count):
-        if candidate not in selected:
-            selected.append(candidate)
-        if len(selected) == count:
-            break
+    selection_order: list[Path] = []
+    for pool in (
+        ordered_unique(primary, listing_index * 2),
+        ordered_unique(secondary, listing_index * 3),
+        ordered_unique(files, listing_index * 5),
+    ):
+        for candidate in pool:
+            if candidate not in selection_order:
+                selection_order.append(candidate)
+
+    available = [candidate for candidate in selection_order if candidate not in USED_PHOTOS]
+    if len(available) < count:
+        raise RuntimeError(
+            f"Not enough unique photos for category '{category}'. "
+            f"Need {count}, but only {len(available)} unused files remain."
+        )
+
+    selected = available[:count]
+    USED_PHOTOS.update(selected)
 
     return [photo_url(path) for path in selected[:count]]
 
@@ -416,7 +460,7 @@ def house_payload(
                 "heatingType": "Individual gas boiler",
                 "sewerType": "Septic tank",
                 "gasType": "Central gas",
-                "waterSupplyType": "Well",
+                "waterSupplyType": "Borehole",
             },
         }
     }
@@ -545,7 +589,7 @@ def land_payload(
                 "roadAccessType": "Asphalt",
             },
         }
-}
+    }
 
 
 SHOWCASE_DEFINITIONS = [

@@ -144,9 +144,10 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <main className="grid gap-6 pb-10">
-        <section className="surface grid gap-6 rounded-[30px] p-7">
-          <div className="grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
+        <section className="surface profile-hero grid gap-6 rounded-[30px] p-7">
+          <div className="profile-top-grid grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
             <div
+              className="profile-avatar"
               style={{
                 width: 108,
                 height: 108,
@@ -172,104 +173,102 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <div className="grid gap-4">
-              <div>
-                <div className="eyebrow">Профиль</div>
-                <h1 className="section-title" style={{ marginTop: 8 }}>
-                  {user.name}
-                </h1>
-                <p style={{ margin: "0.5rem 0 0", color: "var(--foreground-muted)" }}>
-                  {user.email}
+            <div className="profile-header-info">
+              <div className="eyebrow">Профиль</div>
+              <h1 className="section-title profile-title" style={{ marginTop: 8 }}>
+                {user.name}
+              </h1>
+              <p className="profile-meta" style={{ margin: "0.5rem 0 0", color: "var(--foreground-muted)" }}>
+                {user.email}
+              </p>
+              {user.phoneNumber ? (
+                <p className="profile-meta" style={{ margin: "0.35rem 0 0", color: "var(--foreground-muted)" }}>
+                  {user.phoneNumber}
                 </p>
-                {user.phoneNumber ? (
-                  <p style={{ margin: "0.35rem 0 0", color: "var(--foreground-muted)" }}>
-                    {user.phoneNumber}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <Link
-                  href="/profile/listings"
-                  className="surface"
-                  style={{
-                    borderRadius: 22,
-                    padding: 18,
-                    textDecoration: "none",
-                    color: "inherit",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <div className="eyebrow">Раздел</div>
-                  <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Мои объявления</div>
-                  <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                    {listingsLoading ? "Загрузка..." : `${ownListingsCount} объектов`}
-                  </div>
-                </Link>
-                <Link
-                  href="/favorites"
-                  className="surface"
-                  style={{
-                    borderRadius: 22,
-                    padding: 18,
-                    textDecoration: "none",
-                    color: "inherit",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <div className="eyebrow">Раздел</div>
-                  <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Избранное</div>
-                  <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                    Сохраненные объекты
-                  </div>
-                </Link>
-                <Link
-                  href="/history"
-                  className="surface"
-                  style={{
-                    borderRadius: 22,
-                    padding: 18,
-                    textDecoration: "none",
-                    color: "inherit",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <div className="eyebrow">Раздел</div>
-                  <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>История просмотра</div>
-                  <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                    Недавно открытые объекты
-                  </div>
-                </Link>
-                <Link
-                  href="/create-listing"
-                  className="surface"
-                  style={{
-                    borderRadius: 22,
-                    padding: 18,
-                    textDecoration: "none",
-                    color: "inherit",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <div className="eyebrow">Действие</div>
-                  <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Добавить объявление</div>
-                  <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                    Создание нового объекта
-                  </div>
-                </Link>
-              </div>
+              ) : null}
             </div>
+          </div>
+
+          <div className="profile-sections-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Link
+              href="/profile/listings"
+              className="surface profile-section-card"
+              style={{
+                borderRadius: 22,
+                padding: 18,
+                textDecoration: "none",
+                color: "inherit",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div className="eyebrow">Раздел</div>
+              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Мои объявления</div>
+              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                {listingsLoading ? "Загрузка..." : `${ownListingsCount} объектов`}
+              </div>
+            </Link>
+            <Link
+              href="/favorites"
+              className="surface profile-section-card"
+              style={{
+                borderRadius: 22,
+                padding: 18,
+                textDecoration: "none",
+                color: "inherit",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div className="eyebrow">Раздел</div>
+              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Избранное</div>
+              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                Сохраненные объекты
+              </div>
+            </Link>
+            <Link
+              href="/history"
+              className="surface profile-section-card"
+              style={{
+                borderRadius: 22,
+                padding: 18,
+                textDecoration: "none",
+                color: "inherit",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div className="eyebrow">Раздел</div>
+              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>История просмотра</div>
+              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                Недавно открытые объекты
+              </div>
+            </Link>
+            <Link
+              href="/create-listing"
+              className="surface profile-section-card"
+              style={{
+                borderRadius: 22,
+                padding: 18,
+                textDecoration: "none",
+                color: "inherit",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div className="eyebrow">Действие</div>
+              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Добавить объявление</div>
+              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                Создание нового объекта
+              </div>
+            </Link>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="surface grid gap-4 rounded-[30px] p-7">
+        <section className="profile-main-grid grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="surface profile-actions-card grid gap-4 rounded-[30px] p-7">
             <div>
               <div className="eyebrow">Быстрые действия</div>
               <h2 className="section-title" style={{ marginTop: 8 }}>Управление объявлениями</h2>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="profile-actions-grid grid gap-3 sm:grid-cols-2">
               <Link className="button-primary" href="/profile/listings">
                 Открыть мои объявления
               </Link>
@@ -279,13 +278,13 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <aside className="surface grid gap-4 rounded-[30px] p-7 self-start">
+          <aside className="surface profile-settings-card grid gap-4 rounded-[30px] p-7 self-start">
             <div>
               <div className="eyebrow">Настройки</div>
               <h2 className="section-title" style={{ marginTop: 8 }}>Редактирование профиля</h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid gap-4">
+            <form onSubmit={handleSubmit} className="profile-settings-form grid gap-4">
               <input
                 className="field"
                 value={name}
@@ -330,6 +329,7 @@ export default function ProfilePage() {
               />
               <label
                 htmlFor="profile-avatar-upload"
+                className="profile-upload-label"
                 style={{
                   display: "grid",
                   gap: 6,

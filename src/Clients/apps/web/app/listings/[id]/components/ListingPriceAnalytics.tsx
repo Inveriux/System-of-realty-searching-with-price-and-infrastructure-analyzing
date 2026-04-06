@@ -3,7 +3,7 @@
 import { getListingPriceComparison, getListingPriceHistory } from "@diploma/api/pricing-analytics";
 import { useQuery } from "@tanstack/react-query";
 import { LineChart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../providers";
 import { ListingPriceHistoryChart } from "./ListingPriceHistoryChart";
 
@@ -37,6 +37,16 @@ function getRelativeTone(relativePosition?: string) {
 export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTotal }: Props) {
   const { api } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobileViewport(window.innerWidth < 1024);
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   const comparisonQuery = useQuery({
     queryKey: ["pricing-analytics", "listing-comparison", listingId],
@@ -54,17 +64,21 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
   const comparison = comparisonQuery.data;
   const tone = getRelativeTone(comparison?.relativePosition);
 
+  if (isMobileViewport) {
+    return null;
+  }
+
   return (
-    <section className="surface rounded-[28px] p-6">
-      <div className="grid gap-4">
-        <div className="flex items-start justify-between gap-3">
+    <section className="listing-price-analytics surface rounded-[28px] p-6" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+      <div className="listing-price-analytics-grid grid gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3" style={{ minWidth: 0 }}>
           <div className="min-w-0">
             <div className="eyebrow">Аналитика</div>
             <h2 className="mt-2 text-[1.2rem] font-black tracking-[-0.03em]">Цена и рынок</h2>
           </div>
           <div
             className="inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em]"
-            style={{ background: tone.background, color: tone.color }}
+            style={{ maxWidth: "100%", overflowWrap: "anywhere", whiteSpace: "normal", background: tone.background, color: tone.color }}
           >
             {tone.label}
           </div>
@@ -80,12 +94,35 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
           </div>
         ) : comparison ? (
           <>
-            <div className="grid gap-3">
+            <div className="grid gap-3 sm:hidden" style={{ minWidth: 0 }}>
               <div className="rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
                   Цена этого объекта
                 </div>
-                <div className="mt-2 text-[1.05rem] font-black tracking-[-0.03em]">
+                <div className="mt-2 text-[1rem] font-black tracking-[-0.03em]" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                  {formatPricePerSqm(currentPricePerSqm)}
+                </div>
+              </div>
+
+              <div className="rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
+                  Средняя цена
+                </div>
+                <div className="mt-2 text-[1rem] font-black tracking-[-0.03em]" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+                  {formatPricePerSqm(comparison.countryAveragePricePerSqm)}
+                </div>
+                <div className="mt-2 text-sm text-[var(--foreground-muted)]" style={{ overflowWrap: "anywhere" }}>
+                  {comparison.message}
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden gap-3 sm:grid" style={{ minWidth: 0 }}>
+              <div className="rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
+                  Цена этого объекта
+                </div>
+                <div className="mt-2 text-[1.05rem] font-black tracking-[-0.03em]" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
                   {formatPricePerSqm(currentPricePerSqm)}
                 </div>
               </div>
@@ -94,10 +131,10 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
                 <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
                   Средняя цена для этого типа
                 </div>
-                <div className="mt-2 text-[1.05rem] font-black tracking-[-0.03em]">
+                <div className="mt-2 text-[1.05rem] font-black tracking-[-0.03em]" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
                   {formatPricePerSqm(comparison.countryAveragePricePerSqm)}
                 </div>
-                <div className="mt-2 text-sm text-[var(--foreground-muted)]">
+                <div className="mt-2 text-sm text-[var(--foreground-muted)]" style={{ overflowWrap: "anywhere" }}>
                   {comparison.message}
                 </div>
               </div>
@@ -106,7 +143,7 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-[16px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--background-muted)]"
+              className="hidden items-center justify-center gap-2 rounded-[16px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--background-muted)] sm:inline-flex"
             >
               <LineChart className="h-4 w-4 text-[var(--color-primary)]" />
               <span>Показать график и детали</span>
@@ -132,6 +169,8 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
             className="surface"
             style={{
               width: "min(980px, 100%)",
+              minWidth: 0,
+              maxWidth: "100%",
               maxHeight: "min(88vh, 920px)",
               overflowY: "auto",
               borderRadius: 28,
@@ -139,8 +178,8 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
             }}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-wrap items-start justify-between gap-4" style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0 }}>
                 <div className="eyebrow">Аналитика</div>
                 <h3 className="mt-2 text-[1.5rem] font-black tracking-[-0.04em]">График и детали цены</h3>
               </div>
@@ -162,13 +201,13 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
                 ].map((item) => (
                   <div key={item.label} className="rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">{item.label}</div>
-                    <div className="mt-2 text-[1rem] font-black tracking-[-0.03em]">{item.value}</div>
+                    <div className="mt-2 text-[1rem] font-black tracking-[-0.03em]" style={{ overflowWrap: "anywhere" }}>{item.value}</div>
                   </div>
                 ))}
               </div>
 
               <div className="rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4">
-                <div className="grid gap-2 text-sm">
+                <div className="grid gap-2 text-sm" style={{ minWidth: 0, overflowWrap: "anywhere" }}>
                   <div>{comparison.message}</div>
                   <div>Объектов рядом: <strong>{comparison.localRadiusListingsCount}</strong></div>
                   <div>Объектов по городу: <strong>{comparison.cityListingsCount}</strong></div>

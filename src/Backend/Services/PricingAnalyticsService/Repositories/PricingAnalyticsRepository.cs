@@ -201,14 +201,6 @@ public sealed class PricingAnalyticsRepository(ApplicationDbContext context) : I
         CancellationToken cancellationToken)
     {
         var normalizedListingType = NormalizeListingType(query.ListingType);
-        var months = query.Months.GetValueOrDefault(DefaultMonths);
-        if (months <= 0)
-        {
-            months = DefaultMonths;
-        }
-
-        var minDate = DateTimeOffset.UtcNow.AddMonths(-months);
-
         var baseQuery = context.ComparableListings
             .AsNoTracking()
             .Where(x =>
@@ -216,8 +208,19 @@ public sealed class PricingAnalyticsRepository(ApplicationDbContext context) : I
                 (
                     (x.PriceAmountByn.HasValue && x.PriceAmountByn > 0m) ||
                     (x.PriceAmount.HasValue && x.PriceAmount > 0m && x.PriceCurrency == "BYN")
-                ) &&
-                (x.PublishedDate ?? x.UpdatedAtUtc) >= minDate);
+                ));
+
+        var months = query.Months.GetValueOrDefault(DefaultMonths);
+        if (months < 0)
+        {
+            months = DefaultMonths;
+        }
+
+        if (months > 0)
+        {
+            var minDate = DateTimeOffset.UtcNow.AddMonths(-months);
+            baseQuery = baseQuery.Where(x => (x.PublishedDate ?? x.UpdatedAtUtc) >= minDate);
+        }
 
         if (!string.IsNullOrWhiteSpace(normalizedListingType))
         {

@@ -13,6 +13,7 @@ import type {
 } from "@diploma/contracts/search";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "../components/AppShell";
@@ -26,6 +27,49 @@ import { listingsPageClasses } from "./styles/listings-page.styles";
 
 const LISTINGS_PAGE_SIZE = 12;
 const PAGINATION_WINDOW = 9;
+
+const nearbySectionStyle: CSSProperties = {
+  display: "grid",
+  gap: 4,
+  margin: 0,
+  padding: 0,
+};
+
+const nearbySectionLabelStyle: CSSProperties = {
+  display: "block",
+  margin: 0,
+  fontSize: 24,
+  fontWeight: 700,
+  lineHeight: 1.1,
+  color: "var(--foreground-muted)",
+};
+
+const nearbyGridStyle: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 12,
+  margin: 0,
+  paddingTop: 6,
+  alignItems: "flex-start",
+};
+
+const nearbyCheckStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  margin: 0,
+  minHeight: 0,
+  width: "auto",
+  flex: "0 0 auto",
+  padding: "14px 20px",
+  border: "1px solid color-mix(in srgb, var(--color-primary) 52%, var(--border-color))",
+  background: "color-mix(in srgb, var(--color-primary-soft) 72%, var(--background-elevated))",
+  borderRadius: 18,
+  lineHeight: 1.1,
+  boxShadow: "inset 0 0 0 1px color-mix(in srgb, white 18%, transparent)",
+  fontSize: 20,
+  whiteSpace: "nowrap",
+};
 
 type SearchFormState = {
   query: string;
@@ -261,7 +305,7 @@ type ListingsClientProps = {
 
 export function ListingsClient({
   title = "Каталог и поиск объявлений",
-  subtitle = "Основные параметры поиска и карта доступны в отдельной панели.",
+  subtitle = "",
   eyebrow = "Каталог",
   forcedListingIds = null,
   emptyTitle = "Ничего не найдено",
@@ -314,7 +358,7 @@ export function ListingsClient({
     nearLeisure: appliedFilters.nearLeisure ? true : null,
     nearMetro: appliedFilters.nearMetro ? true : null,
     familyFriendly: appliedFilters.familyFriendly ? true : null,
-    walkableArea: appliedFilters.walkableArea ? true : null,
+    walkableArea: null,
     minInfrastructureScore: parseOptionalNumber(appliedFilters.minInfrastructureScore),
     minEducationScore: parseOptionalNumber(appliedFilters.minEducationScore),
     minHealthcareScore: parseOptionalNumber(appliedFilters.minHealthcareScore),
@@ -450,7 +494,6 @@ export function ListingsClient({
     appliedFilters.nearLeisure ? "near-leisure" : "",
     appliedFilters.nearMetro ? "near-metro" : "",
     appliedFilters.familyFriendly ? "family-friendly" : "",
-    appliedFilters.walkableArea ? "walkable-area" : "",
     appliedFilters.minInfrastructureScore,
     appliedFilters.minEducationScore,
     appliedFilters.minHealthcareScore,
@@ -508,21 +551,21 @@ export function ListingsClient({
   }
 
   const paginationBlock = totalPages > 1 ? (
-    <div style={listingsClientStyles.footerRow}>
+    <div className="listings-pagination" style={listingsClientStyles.footerRow}>
       <div style={listingsClientStyles.footerMeta}>
         Страница {Math.min((data?.page ?? 0) + 1, totalPages)} из {totalPages}
       </div>
 
-      <div style={listingsClientStyles.footerActions}>
+      <div className="listings-pagination-actions" style={listingsClientStyles.footerActions}>
         <button
-          className="button-secondary"
+          className="button-secondary listings-pagination-nav"
           type="button"
           disabled={appliedFilters.page <= 0}
           onClick={() => updateAppliedFilter("page", Math.max(0, appliedFilters.page - 1))}
         >
           Назад
         </button>
-        <div className="flex flex-wrap gap-2">
+        <div className="listings-pagination-pages flex flex-wrap gap-2">
           {visiblePages.map((pageNumber) => {
             const isActive = pageNumber === appliedFilters.page;
 
@@ -531,7 +574,7 @@ export function ListingsClient({
                 key={pageNumber}
                 type="button"
                 onClick={() => updateAppliedFilter("page", pageNumber)}
-                className={isActive ? "button-primary" : "button-secondary"}
+                className={isActive ? "button-primary listings-pagination-page" : "button-secondary listings-pagination-page"}
                 aria-current={isActive ? "page" : undefined}
               >
                 {pageNumber + 1}
@@ -540,7 +583,7 @@ export function ListingsClient({
           })}
         </div>
         <button
-          className="button-secondary"
+          className="button-secondary listings-pagination-nav"
           type="button"
           disabled={appliedFilters.page + 1 >= totalPages}
           onClick={() => updateAppliedFilter("page", appliedFilters.page + 1)}
@@ -561,7 +604,7 @@ export function ListingsClient({
               </h1>
             </div>
 
-          <div style={listingsClientStyles.heroGrid}>
+          <div className="listings-hero-grid" style={listingsClientStyles.heroGrid}>
             <div style={listingsClientStyles.heroPanel}>
               <div style={listingsClientStyles.heroCopy}>
                 <div style={listingsClientStyles.heroTitle}>
@@ -574,7 +617,7 @@ export function ListingsClient({
 
               <div style={listingsClientStyles.heroActions}>
                 <button
-                  className="button-primary"
+                  className="button-primary listings-filter-button listings-filter-button-primary"
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
@@ -587,7 +630,7 @@ export function ListingsClient({
                   {activeFiltersCount > 0 ? ` · ${activeFiltersCount}` : ""}
                 </button>
                 <button
-                  className="button-secondary"
+                  className="button-secondary listings-filter-button"
                   type="button"
                   onClick={() => {
                     setFilters(initialState);
@@ -597,7 +640,7 @@ export function ListingsClient({
                   Сбросить
                 </button>
                 <button
-                  className="button-secondary"
+                  className="button-secondary listings-filter-button"
                   type="button"
                   onClick={() => setIsMapOverviewOpen(true)}
                 >
@@ -656,11 +699,6 @@ export function ListingsClient({
                     {filters.familyFriendly ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Для семьи
-                      </span>
-                    ) : null}
-                    {filters.walkableArea ? (
-                      <span className="surface" style={listingsClientStyles.filterTag}>
-                        Всё рядом пешком
                       </span>
                     ) : null}
                     {filters.nearMetro ? (
@@ -734,10 +772,10 @@ export function ListingsClient({
             </section>
           ) : null}
 
-          <div style={listingsClientStyles.footerRow}>
+          <div className="listings-footer-row" style={listingsClientStyles.footerRow}>
             <div style={listingsClientStyles.footerActions}>
               <select
-                className="field"
+                className="field listings-sort-select"
                 value={filters.sortBy}
                 onChange={(event) => updateAppliedFilter("sortBy", event.target.value as SearchSortBy)}
                 style={{ minWidth: 220 }}
@@ -768,7 +806,7 @@ export function ListingsClient({
       <button
         type="button"
         onClick={() => setIsMapOverviewOpen(true)}
-        className="surface"
+        className="surface listings-map-button"
         style={listingsClientStyles.floatingMapButton}
         title="Обзор объектов на карте"
       >
@@ -825,26 +863,43 @@ export function ListingsClient({
               onClick={() => setIsFiltersModalOpen(false)}
             >
               <div
-                className="listing-create-modal surface"
+                className="listing-create-modal surface listings-modal-panel"
                 onClick={(event) => event.stopPropagation()}
                 style={listingsClientStyles.modalPanel}
               >
-                <div style={listingsClientStyles.modalHeader}>
-                  <div className="grid gap-2">
-                    <h2 className="section-title" style={listingsClientStyles.modalHeading}>
-                      Параметры поиска
-                    </h2>
-                  </div>
-                  <button
-                    className="button-secondary"
-                    type="button"
-                    onClick={() => setIsFiltersModalOpen(false)}
+                <div className="listings-modal-header" style={listingsClientStyles.modalHeader}>
+                  <h2
+                    style={{
+                      ...listingsClientStyles.modalHeading,
+                      margin: 0,
+                      fontSize: "1.05rem",
+                      fontWeight: 600,
+                      letterSpacing: "-0.02em",
+                    }}
                   >
-                    Закрыть
+                    Фильтры
+                  </h2>
+                  <button
+                    className="listings-filter-close"
+                    type="button"
+                    aria-label="Закрыть фильтры"
+                    onClick={() => setIsFiltersModalOpen(false)}
+                    style={{
+                      width: 34,
+                      height: 34,
+                      minWidth: 34,
+                      minHeight: 34,
+                      borderRadius: 10,
+                      fontSize: 21,
+                      lineHeight: 1,
+                      padding: 0,
+                    }}
+                  >
+                    ×
                   </button>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="listings-filters-grid grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   <input
                     className="field"
                     value={filters.query}
@@ -931,319 +986,317 @@ export function ListingsClient({
                     <option value="outside_city">За городом</option>
                   </select>
                 </div>
-
-                <div className="grid gap-2">
-                  <h3 className="section-title" style={{ fontSize: 18 }}>
-                    Рядом с
-                  </h3>
+                <div className="listings-filter-section listings-filter-section-before-nearby grid gap-3" style={{ marginTop: 14, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}>
+                  <div className="listings-quick-filter-row">
+                    <button
+                      type="button"
+                      className={filters.familyFriendly ? "button-primary listings-filter-button listings-quick-filter-button" : "button-secondary listings-filter-button listings-quick-filter-button"}
+                      onClick={() => updateFilter("familyFriendly", !filters.familyFriendly)}
+                    >
+                      Для семьи
+                    </button>
+                    <button
+                      type="button"
+                      className={filters.nearMetro ? "button-primary listings-filter-button listings-quick-filter-button" : "button-secondary listings-filter-button listings-quick-filter-button"}
+                      onClick={() => updateFilter("nearMetro", !filters.nearMetro)}
+                    >
+                      Рядом с метро
+                    </button>
+                    <button
+                      type="button"
+                      className={filters.nearStore ? "button-primary listings-filter-button listings-quick-filter-button" : "button-secondary listings-filter-button listings-quick-filter-button"}
+                      onClick={() => updateFilter("nearStore", !filters.nearStore)}
+                    >
+                      Магазины рядом
+                    </button>
+                    <button
+                      type="button"
+                      className={filters.nearStop ? "button-primary listings-filter-button listings-quick-filter-button" : "button-secondary listings-filter-button listings-quick-filter-button"}
+                      onClick={() => updateFilter("nearStop", !filters.nearStop)}
+                    >
+                      Остановки рядом
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearKindergarten} onChange={(event) => updateFilter("nearKindergarten", event.target.checked)} />
+                <div style={{ ...nearbySectionStyle, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}>
+                  <span style={nearbySectionLabelStyle}>Рядом с</span>
+                  <div className="listings-filters-check-grid grid gap-3 md:grid-cols-2 xl:grid-cols-4" style={nearbyGridStyle}>
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearKindergarten} onChange={(event) => updateFilter("nearKindergarten", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Детским садом
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearSchool} onChange={(event) => updateFilter("nearSchool", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearSchool} onChange={(event) => updateFilter("nearSchool", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Школой
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearStore} onChange={(event) => updateFilter("nearStore", event.target.checked)} />
-                    Магазинами
-                  </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearPharmacy} onChange={(event) => updateFilter("nearPharmacy", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearPharmacy} onChange={(event) => updateFilter("nearPharmacy", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Аптекой
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearStop} onChange={(event) => updateFilter("nearStop", event.target.checked)} />
-                    Остановками
-                  </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearPark} onChange={(event) => updateFilter("nearPark", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearPark} onChange={(event) => updateFilter("nearPark", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Парком
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearClinic} onChange={(event) => updateFilter("nearClinic", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearClinic} onChange={(event) => updateFilter("nearClinic", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Поликлиникой
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearParking} onChange={(event) => updateFilter("nearParking", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearParking} onChange={(event) => updateFilter("nearParking", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Парковкой
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearFitness} onChange={(event) => updateFilter("nearFitness", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearFitness} onChange={(event) => updateFilter("nearFitness", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Фитнесом
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input type="checkbox" checked={filters.nearLeisure} onChange={(event) => updateFilter("nearLeisure", event.target.checked)} />
+                  <label className="listings-filter-check" style={nearbyCheckStyle}>
+                    <input type="checkbox" checked={filters.nearLeisure} onChange={(event) => updateFilter("nearLeisure", event.target.checked)} style={{ width: 13, height: 13, margin: 0 }} />
                     Досугом
                   </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={filters.nearMetro}
-                      onChange={(event) => updateFilter("nearMetro", event.target.checked)}
-                    />
-                    Метро
-                  </label>
+                </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <h3 className="section-title" style={{ fontSize: 18 }}>
-                    Формат района
-                  </h3>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={filters.familyFriendly}
-                      onChange={(event) => updateFilter("familyFriendly", event.target.checked)}
-                    />
-                    Для семьи
-                  </label>
-                  <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <input
-                      type="checkbox"
-                      checked={filters.walkableArea}
-                      onChange={(event) => updateFilter("walkableArea", event.target.checked)}
-                    />
-                    Всё рядом пешком
-                  </label>
-                </div>
-
-                <details className="surface rounded-[24px] border border-[var(--border-color)] p-4">
-                  <summary style={{ cursor: "pointer", fontWeight: 700, color: "var(--text-color)" }}>
-                    Расширенные фильтры
+                <details className="surface listings-advanced-details rounded-[24px] border border-[var(--border-color)] p-4" style={{ marginTop: 18, paddingTop: 12 }}>
+                  <summary
+                    style={{
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      color: "var(--text-color)",
+                      fontSize: 20,
+                      lineHeight: 1.2,
+                      paddingTop: 8,
+                      paddingBottom: 8,
+                    }}
+                  >
+                    Дополнительно
                   </summary>
                   <p style={{ ...listingsClientStyles.mutedParagraph, marginTop: 12, marginBottom: 12 }}>
                     Здесь остаются точные ограничения по метрам, минутам и количеству.
                   </p>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minInfrastructureScore}
                       onChange={(event) => updateFilter("minInfrastructureScore", event.target.value)}
                       placeholder="Инфраструктура от"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minEducationScore}
                       onChange={(event) => updateFilter("minEducationScore", event.target.value)}
                       placeholder="Образование: минимальный score"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minHealthcareScore}
                       onChange={(event) => updateFilter("minHealthcareScore", event.target.value)}
                       placeholder="Здоровье: минимальный score"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minTransportScore}
                       onChange={(event) => updateFilter("minTransportScore", event.target.value)}
                       placeholder="Транспорт: минимальный score"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minCommerceScore}
                       onChange={(event) => updateFilter("minCommerceScore", event.target.value)}
                       placeholder="Коммерция: минимальный score"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minLeisureScore}
                       onChange={(event) => updateFilter("minLeisureScore", event.target.value)}
                       placeholder="Досуг: минимальный score"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minEducationCount}
                       onChange={(event) => updateFilter("minEducationCount", event.target.value)}
                       placeholder="Объекты образования, от"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minTransportCount}
                       onChange={(event) => updateFilter("minTransportCount", event.target.value)}
                       placeholder="Транспорт рядом, от"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minHealthcareCount}
                       onChange={(event) => updateFilter("minHealthcareCount", event.target.value)}
                       placeholder="Медицина рядом, от"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minCommerceCount}
                       onChange={(event) => updateFilter("minCommerceCount", event.target.value)}
                       placeholder="Коммерция рядом, от"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.minLeisureCount}
                       onChange={(event) => updateFilter("minLeisureCount", event.target.value)}
                       placeholder="Досуг рядом, от"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxTransportNearestMeters}
                       onChange={(event) => updateFilter("maxTransportNearestMeters", event.target.value)}
                       placeholder="Транспорт не дальше, м"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxEducationNearestMeters}
                       onChange={(event) => updateFilter("maxEducationNearestMeters", event.target.value)}
                       placeholder="Образование не дальше, м"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxHealthcareNearestMeters}
                       onChange={(event) => updateFilter("maxHealthcareNearestMeters", event.target.value)}
                       placeholder="Медицина не дальше, м"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxCommerceNearestMeters}
                       onChange={(event) => updateFilter("maxCommerceNearestMeters", event.target.value)}
                       placeholder="Коммерция не дальше, м"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxLeisureNearestMeters}
                       onChange={(event) => updateFilter("maxLeisureNearestMeters", event.target.value)}
                       placeholder="Досуг не дальше, м"
                       inputMode="numeric"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxStoreWalkMinutes}
                       onChange={(event) => updateFilter("maxStoreWalkMinutes", event.target.value)}
                       placeholder="Магазин: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxPharmacyWalkMinutes}
                       onChange={(event) => updateFilter("maxPharmacyWalkMinutes", event.target.value)}
                       placeholder="Аптека: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxStopWalkMinutes}
                       onChange={(event) => updateFilter("maxStopWalkMinutes", event.target.value)}
                       placeholder="Остановка: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxParkingWalkMinutes}
                       onChange={(event) => updateFilter("maxParkingWalkMinutes", event.target.value)}
                       placeholder="Парковка: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxSchoolWalkMinutes}
                       onChange={(event) => updateFilter("maxSchoolWalkMinutes", event.target.value)}
                       placeholder="Школа: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxKindergartenWalkMinutes}
                       onChange={(event) => updateFilter("maxKindergartenWalkMinutes", event.target.value)}
                       placeholder="Детский сад: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxClinicDriveMinutes}
                       onChange={(event) => updateFilter("maxClinicDriveMinutes", event.target.value)}
                       placeholder="Поликлиника: максимум минут на машине"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxHospitalDriveMinutes}
                       onChange={(event) => updateFilter("maxHospitalDriveMinutes", event.target.value)}
                       placeholder="Больница: максимум минут на машине"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxParkWalkMinutes}
                       onChange={(event) => updateFilter("maxParkWalkMinutes", event.target.value)}
                       placeholder="Парк: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxFitnessWalkMinutes}
                       onChange={(event) => updateFilter("maxFitnessWalkMinutes", event.target.value)}
                       placeholder="Фитнес: максимум минут пешком"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxMuseumDriveMinutes}
                       onChange={(event) => updateFilter("maxMuseumDriveMinutes", event.target.value)}
                       placeholder="Музей: максимум минут на машине"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxTheaterDriveMinutes}
                       onChange={(event) => updateFilter("maxTheaterDriveMinutes", event.target.value)}
                       placeholder="Театр: максимум минут на машине"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxCinemaDriveMinutes}
                       onChange={(event) => updateFilter("maxCinemaDriveMinutes", event.target.value)}
                       placeholder="Кино: максимум минут на машине"
                       inputMode="decimal"
                     />
                     <input
-                      className="field"
+                      className="field listings-filter-input-compact"
                       value={filters.maxMetroWalkMinutes}
                       onChange={(event) => updateFilter("maxMetroWalkMinutes", event.target.value)}
                       placeholder="До метро: максимум метров пешком"
                       inputMode="numeric"
                     />
-                    <label className="field" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <label className="listings-filter-check" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <input
                         type="checkbox"
                         checked={filters.requireMetroInPrimaryRadius}
                         onChange={(event) => updateFilter("requireMetroInPrimaryRadius", event.target.checked)}
                       />
-                      Требовать метро в primary radius
+                      Требовать метро в основном радиусе
                     </label>
                   </div>
                 </details>
 
-                <div style={listingsClientStyles.mapControls}>
+                <div className="listings-filter-map-controls" style={listingsClientStyles.mapControls}>
                   <input
                     className="field"
                     value={filters.radiusMeters}
@@ -1253,30 +1306,30 @@ export function ListingsClient({
                     style={listingsClientStyles.radiusInput}
                   />
                   <button
-                    className="button-secondary"
+                    className="button-secondary listings-filter-button"
                     type="button"
                     onClick={() => setIsMapOverviewOpen(true)}
                   >
                     Выбрать точку на карте
                   </button>
                   {filters.centerLatitude != null && filters.centerLongitude != null ? (
-                    <div style={listingsClientStyles.footerMeta}>
+                    <div className="listings-filter-map-status" style={listingsClientStyles.footerMeta}>
                       Точка: {filters.centerLatitude.toFixed(5)}, {filters.centerLongitude.toFixed(5)}
                     </div>
                   ) : (
-                    <div style={listingsClientStyles.footerMeta}>
+                    <div className="listings-filter-map-status" style={listingsClientStyles.footerMeta}>
                       Точка не выбрана.
                     </div>
                   )}
                 </div>
 
-                <div style={listingsClientStyles.modalFooter}>
+                <div className="listings-filter-footer" style={listingsClientStyles.modalFooter}>
                   <div style={listingsClientStyles.footerMeta}>
                     Активных параметров: {activeFiltersCount}
                   </div>
-                  <div style={listingsClientStyles.modalFooterActions}>
+                  <div className="listings-filter-footer-actions" style={listingsClientStyles.modalFooterActions}>
                     <button
-                      className="button-secondary"
+                      className="button-secondary listings-filter-button"
                       type="button"
                       onClick={() => {
                         setFilters(initialState);
@@ -1286,7 +1339,7 @@ export function ListingsClient({
                       Сбросить
                     </button>
                     <button
-                      className="button-primary"
+                      className="button-primary listings-filter-button listings-filter-button-primary"
                       type="button"
                       onClick={() => {
                         setAppliedFilters({

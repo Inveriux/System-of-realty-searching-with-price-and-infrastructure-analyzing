@@ -39,3 +39,5 @@ src/.local/
 
 # Seed/debug outputs
 *.jsonl
+*session_dump*.txt
+*memory_dump*.txt

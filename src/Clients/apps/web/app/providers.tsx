@@ -16,6 +16,7 @@ import React, {
   useContext,
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -52,6 +53,17 @@ type AuthContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+export { THEME_STORAGE_KEY };
+export type { ThemeMode };
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage(message: string): void;
+    };
+  }
+}
+
 function readCookie(name: string) {
   if (typeof document === "undefined") {
     return null;
@@ -81,31 +93,76 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
 }
 
-function ThemeProvider({ children }: { children: React.ReactNode }) {
+function ThemeProvider({ children, initialTheme }: { children: React.ReactNode; initialTheme: ThemeMode }) {
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") {
-      return "light";
+    if (typeof document !== "undefined") {
+      const rootTheme = document.documentElement.dataset.theme;
+      if (rootTheme === "light" || rootTheme === "dark") {
+        return rootTheme;
+      }
+    }
+
+    return initialTheme;
+  });
+  const [isThemeReady, setIsThemeReady] = useState(false);
+
+  function applyTheme(nextTheme: ThemeMode) {
+    document.documentElement.dataset.theme = nextTheme;
+    document.documentElement.style.colorScheme = nextTheme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    document.cookie = `${THEME_STORAGE_KEY}=${nextTheme}; path=/; max-age=31536000; SameSite=Lax`;
+  }
+
+  useLayoutEffect(() => {
+    const rootTheme = document.documentElement.dataset.theme;
+    if (rootTheme === "light" || rootTheme === "dark") {
+      applyTheme(rootTheme);
+      setTheme(rootTheme);
+      setIsThemeReady(true);
+      return;
     }
 
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (storedTheme === "light" || storedTheme === "dark") {
-      return storedTheme;
+      applyTheme(storedTheme);
+      setTheme(storedTheme);
+      setIsThemeReady(true);
+      return;
     }
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+    const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    applyTheme(fallbackTheme);
+    setTheme(fallbackTheme);
+    setIsThemeReady(true);
+  }, []);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
+    if (!isThemeReady) {
+      return;
+    }
+
+    applyTheme(theme);
+
+    if (typeof window !== "undefined" && window.ReactNativeWebView?.postMessage) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: "theme-init", payload: theme }));
+    }
+  }, [isThemeReady, theme]);
 
   return (
     <ThemeContext.Provider
       value={{
         theme,
         toggleTheme() {
-          setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"));
+          setTheme((currentTheme) => {
+            const nextTheme = currentTheme === "light" ? "dark" : "light";
+            applyTheme(nextTheme);
+
+            if (typeof window !== "undefined" && window.ReactNativeWebView?.postMessage) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: "theme-toggle", payload: nextTheme }));
+            }
+
+            return nextTheme;
+          });
         },
       }}
     >
@@ -275,7 +332,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme: ThemeMode;
+}) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -290,7 +353,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider initialTheme={initialTheme}>
         <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

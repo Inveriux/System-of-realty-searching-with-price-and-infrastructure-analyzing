@@ -67,7 +67,7 @@ export function loadYandexMaps() {
   const globalWindow = window as GlobalWindowWithYandexMaps;
 
   if (globalWindow.ymaps) {
-    return Promise.resolve(globalWindow.ymaps as YandexMapsApi);
+    return Promise.resolve(globalWindow.ymaps as unknown as YandexMapsApi);
   }
 
   if (globalWindow.__diplomaYandexMapsPromise__) {
@@ -81,7 +81,7 @@ export function loadYandexMaps() {
   globalWindow.__diplomaYandexMapsPromise__ = new Promise<YandexMapsApi>((resolve, reject) => {
     const resolveYandexMapsApi = () => {
       if (globalWindow.ymaps) {
-        resolve(globalWindow.ymaps as YandexMapsApi);
+        resolve(globalWindow.ymaps as unknown as YandexMapsApi);
         return;
       }
 

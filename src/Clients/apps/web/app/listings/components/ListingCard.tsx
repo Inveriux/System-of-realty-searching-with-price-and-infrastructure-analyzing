@@ -442,12 +442,11 @@ export function ListingCard({ item }: ListingCardProps) {
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.nearestMetroName ? (
                   <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#dc2626_20%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee2e2_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#b91c1c]">
-                    <Image
+                    <img
                       src="/map-markers/minsk-metro.svg"
                       alt=""
                       width={14}
                       height={14}
-                      unoptimized
                       aria-hidden="true"
                     />
                     <span>{item.nearestMetroName}{metroLabel ? ` • ${metroLabel}` : ""}</span>
@@ -455,12 +454,11 @@ export function ListingCard({ item }: ListingCardProps) {
                 ) : null}
                 {parkingLabel ? (
                   <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#1d4ed8_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#1d4ed8]">
-                    <Image
+                    <img
                       src="/map-markers/parking.svg"
                       alt=""
                       width={14}
                       height={14}
-                      unoptimized
                       aria-hidden="true"
                     />
                     <span>Парковка • {parkingLabel}</span>

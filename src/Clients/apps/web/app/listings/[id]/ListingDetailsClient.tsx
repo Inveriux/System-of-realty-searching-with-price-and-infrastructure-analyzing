@@ -18,7 +18,6 @@ import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
 import { ListingGallery } from "./ListingGallery";
 import { ListingLocationMap } from "./ListingLocationMap";
-import { ListingPriceAnalytics } from "./components/ListingPriceAnalytics";
 import { useViewedListings } from "../lib/listing-collections";
 
 const fallbackImage =
@@ -43,6 +42,8 @@ function formatNumericPricePerSquareMeter(amount?: number | null, area?: number 
 function formatDealType(value?: string | null) {
   if (!value) return "Сделка не указана";
   if (value === "Продажа" || value === "Аренда") return value;
+  if (value === "Sale") return "Продажа";
+  if (value === "Rent") return "Аренда";
   return value;
 }
 
@@ -149,12 +150,12 @@ const detailValueMap: Record<string, string> = {
   "Central gas": "Центральный газ",
   "Gas holder / tank": "Газгольдер / резервуар",
   "Bottled gas": "Баллонный газ",
-  "Residential (IЖС)": "Жилая застройка (ИЖС)",
-  "Personal subsidiary plot (ЛПХ)": "Личное подсобное хозяйство (ЛПХ)",
-  "Garden / dacha (СНТ)": "Садовый / дачный участок (СНТ)",
+  "Residential development": "Жилая застройка",
+  "Personal subsidiary farming": "Личное подсобное хозяйство",
+  "Garden / dacha plot": "Садовый / дачный участок",
   Agricultural: "Сельскохозяйственная",
   "Industrial / commercial": "Промышленная / коммерческая",
-  "Forestry / protected": "Лесной фонд / охраняемая территория",
+  "Forestry / protected area": "Лесной фонд / охраняемая территория",
   Asphalt: "Асфальт",
   Gravel: "Гравий",
   "Dirt road": "Грунтовая дорога",
@@ -398,8 +399,8 @@ function ScoreDial({
   const offset = circumference - (normalized / 100) * circumference;
 
   return (
-    <div className="grid justify-items-center gap-3 rounded-[26px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-5 py-5">
-      <div className="relative grid h-[92px] w-[92px] place-items-center">
+    <div className="listing-details-score-card grid justify-items-center gap-3 rounded-[26px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-5 py-5">
+      <div className="listing-details-score-dial relative grid h-[92px] w-[92px] place-items-center">
         <svg viewBox="0 0 88 88" className="h-[92px] w-[92px] -rotate-90">
           <circle cx="44" cy="44" r="32" fill="none" stroke="color-mix(in srgb, var(--border-color) 72%, white)" strokeWidth="8" />
           <circle
@@ -415,19 +416,16 @@ function ScoreDial({
           />
         </svg>
         <div className="absolute inset-0 grid place-items-center">
-          <div
-            className="grid h-[56px] w-[56px] place-items-center rounded-full text-white shadow-sm"
-            style={{ background: color }}
-          >
+          <div className="listing-details-score-icon grid h-[56px] w-[56px] place-items-center rounded-full text-white shadow-sm" style={{ background: color }}>
             {icon}
           </div>
         </div>
       </div>
-      <div className="text-center">
-        <div className="text-[1.55rem] font-black tracking-[-0.05em]" style={{ color }}>
+      <div className="listing-details-score-copy text-center">
+        <div className="listing-details-score-value text-[1.55rem] font-black tracking-[-0.05em]" style={{ color }}>
           {formatScoreLabel(value)}
         </div>
-        <div className="mt-1 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
+        <div className="listing-details-score-label mt-1 text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
           {label}
         </div>
       </div>
@@ -824,14 +822,20 @@ export function ListingDetailsClient({ listingId }: Props) {
 
   return (
     <AppShell>
-      <main className="grid gap-6 pb-10">
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <article className="surface overflow-hidden rounded-[32px]">
+      <main className="listing-details-page grid gap-6 pb-10" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}>
+        <section
+          className="listing-details-top grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+          style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}
+        >
+          <article className="surface overflow-hidden rounded-[32px]" style={{ minWidth: 0, width: "100%", maxWidth: "100%" }}>
             <ListingGallery title={listing.title} media={media} />
           </article>
 
-          <aside className="grid gap-5 self-start">
-            <section className="surface rounded-[28px] p-6">
+          <aside
+            className="listing-details-sidebar grid gap-5 self-start"
+            style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}
+          >
+            <section className="surface rounded-[28px] p-6" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}>
               <div className="eyebrow">Продавец</div>
               <div className="mt-4 flex items-start gap-4">
                 <div
@@ -881,20 +885,18 @@ export function ListingDetailsClient({ listingId }: Props) {
               </div>
             </section>
 
-            <ListingPriceAnalytics
-              listingId={listing.id}
-              currentPriceAmountByn={listing.priceAmountByn ?? listing.priceAmount}
-              areaTotal={listing.areaTotal}
-            />
           </aside>
         </section>
 
-        <section className="surface rounded-[32px] p-8">
+        <section
+          className="surface listing-details-summary rounded-[32px] p-8"
+          style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}
+        >
           <div className="grid gap-6">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] xl:items-start">
+            <div className="listing-details-summary-grid grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] xl:items-start">
               <div className="grid gap-3">
                 <span className="eyebrow">{listing.addressText ?? "Адрес уточняется"}</span>
-                <h1 className="page-title" style={{ fontSize: "clamp(2.4rem, 4vw, 4.2rem)" }}>
+                <h1 className="page-title listing-details-title" style={{ fontSize: "clamp(2.4rem, 4vw, 4.2rem)" }}>
                   {listing.title}
                 </h1>
                 <div className="flex flex-wrap gap-2 text-sm font-semibold text-[var(--foreground-muted)]">
@@ -914,10 +916,13 @@ export function ListingDetailsClient({ listingId }: Props) {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-start gap-3 xl:justify-end">
-                <div className="inline-flex max-w-full items-center gap-3 rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_64%,var(--background-elevated))] px-5 py-4 text-[1.72rem] font-black tracking-[-0.05em] text-[var(--color-primary-strong)]">
-                  <span className="inline-flex items-center gap-2">
-                    <span>{formatPrice(listing.priceAmountByn ?? listing.priceAmount)}</span>
+              <div className="listing-details-price-group flex flex-wrap items-start gap-3 xl:justify-end" style={{ minWidth: 0 }}>
+                <div
+                  className="inline-flex max-w-full items-center rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_64%,var(--background-elevated))] px-5 py-4 font-black tracking-[-0.05em] text-[var(--color-primary-strong)]"
+                  style={{ minWidth: 0, width: "100%", flexWrap: "wrap", overflowWrap: "anywhere", gap: 8, fontSize: "0.72rem" }}
+                >
+                  <span className="inline-flex items-center" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap", gap: 2 }}>
+                    <span style={{ fontSize: "0.62rem", lineHeight: 1 }}>{formatPrice(listing.priceAmountByn ?? listing.priceAmount)}</span>
                     <span
                       className="inline-block h-[0.92em] w-[0.74em] shrink-0 bg-current align-[-0.08em]"
                       style={bynIconStyle}
@@ -926,9 +931,9 @@ export function ListingDetailsClient({ listingId }: Props) {
                   </span>
                   {listing.priceAmountUsd != null ? (
                     <>
-                      <span className="text-[1.38rem] font-extrabold text-[var(--foreground-muted)]">/</span>
-                      <span className="inline-flex items-center gap-2">
-                        <span>{formatPrice(listing.priceAmountUsd)}</span>
+                      <span className="font-extrabold text-[var(--foreground-muted)]" style={{ fontSize: "0.72rem", marginInline: 2 }}>/</span>
+                      <span className="inline-flex items-center" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap", gap: 2 }}>
+                        <span style={{ fontSize: "0.62rem", lineHeight: 1 }}>{formatPrice(listing.priceAmountUsd)}</span>
                         <span
                           className="inline-block h-[0.92em] w-[0.82em] shrink-0 bg-current align-[-0.08em]"
                           style={dollarIconStyle}
@@ -940,27 +945,30 @@ export function ListingDetailsClient({ listingId }: Props) {
                 </div>
 
                 {(bynPricePerSquareMeter || usdPricePerSquareMeter) ? (
-                  <div className="grid min-w-[132px] gap-1.5 rounded-[22px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 text-[0.98rem] font-bold tracking-[-0.03em] text-[var(--foreground)]">
+                  <div
+                    className="grid gap-1.5 rounded-[22px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 font-bold tracking-[-0.03em] text-[var(--foreground)]"
+                    style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowWrap: "anywhere", fontSize: "0.72rem" }}
+                  >
                     {bynPricePerSquareMeter ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>{bynPricePerSquareMeter}</span>
+                      <span className="inline-flex items-center gap-1" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "0.68rem", lineHeight: 1 }}>{bynPricePerSquareMeter}</span>
                         <span
                           className="inline-block h-[0.88em] w-[0.7em] shrink-0 bg-current align-[-0.08em]"
                           style={bynIconStyle}
                           aria-hidden="true"
                         />
-                        <span className="text-[var(--foreground-muted)]">/м²</span>
+                        <span className="text-[var(--foreground-muted)]" style={{ fontSize: "0.66rem", lineHeight: 1 }}>/м²</span>
                       </span>
                     ) : null}
                     {usdPricePerSquareMeter ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>{usdPricePerSquareMeter}</span>
+                      <span className="inline-flex items-center gap-1" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "0.68rem", lineHeight: 1 }}>{usdPricePerSquareMeter}</span>
                         <span
                           className="inline-block h-[0.9em] w-[0.76em] shrink-0 bg-current align-[-0.08em]"
                           style={dollarIconStyle}
                           aria-hidden="true"
                         />
-                        <span className="text-[var(--foreground-muted)]">/м²</span>
+                        <span className="text-[var(--foreground-muted)]" style={{ fontSize: "0.66rem", lineHeight: 1 }}>/м²</span>
                       </span>
                     ) : null}
                   </div>
@@ -1064,7 +1072,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                 }`}
               >
                 <div className="grid gap-5 pt-1">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                  <div className="listing-details-score-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     {infrastructureScoreCards.map((card) => (
                       <ScoreDial
                         key={card.key}
@@ -1077,7 +1085,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                   </div>
 
                   {groupedInfrastructureCategories.length > 0 ? (
-                    <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+                    <div className="listing-details-category-grid grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
                       <div className="grid gap-2">
                         {groupedInfrastructureCategories.map((group) => {
                           const isActive = selectedInfrastructureCategory?.category === group.category;
@@ -1199,7 +1207,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                     </div>
                   ) : null}
 
-                  <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+                  <div className="listing-details-infra-grid grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                     <div className="grid gap-3">
                       <div className="grid gap-2 sm:grid-cols-2">
                         {infrastructureFacts.map((item) => (

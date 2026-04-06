@@ -8,7 +8,7 @@ import {
 } from "@diploma/api/pricing-analytics";
 import type { PricingAnalyticsGeography, PricingAnalyticsListingType, PricingAnalyticsQuery } from "@diploma/contracts/pricing-analytics";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
@@ -42,6 +42,15 @@ function formatDate(value?: string | null) {
     year: "numeric",
     timeZone: "Europe/Minsk",
   }).format(parsed);
+}
+
+function formatPeriodLabel(value: string) {
+  const [year, month] = value.split("-");
+  if (!year || !month) {
+    return value;
+  }
+
+  return `${month}.${year.slice(-2)}`;
 }
 
 const listingTypeOptions: Array<{ value: PricingAnalyticsListingType; label: string }> = [
@@ -108,7 +117,9 @@ function CitySelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(value);
+  const [dropdownPosition, setDropdownPosition] = useState<{ left: number; top: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     setSearch(value);
@@ -119,14 +130,41 @@ function CitySelect({
       return;
     }
 
+    function updateDropdownPosition() {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+
+      const width = Math.min(Math.max(rect.width, 280), window.innerWidth - 24);
+      const left = Math.min(
+        Math.max(rect.left, 12),
+        window.innerWidth - width - 12,
+      );
+
+      setDropdownPosition({
+        left,
+        top: rect.bottom + 8,
+        width,
+      });
+    }
+
     function handlePointerDown(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
 
+    updateDropdownPosition();
     document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
   }, [isOpen]);
 
   const filteredCities = useMemo(() => {
@@ -142,6 +180,7 @@ function CitySelect({
     <div ref={containerRef} style={{ display: "grid", gap: 8, position: "relative" }}>
       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Город</span>
       <button
+        ref={buttonRef}
         type="button"
         className="field"
         onClick={() => setIsOpen((current) => !current)}
@@ -152,6 +191,8 @@ function CitySelect({
           gap: 12,
           textAlign: "left",
           minHeight: 48,
+          width: "100%",
+          minWidth: 0,
         }}
       >
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -172,11 +213,12 @@ function CitySelect({
         <div
           className="surface"
           style={{
-            position: "absolute",
-            top: "calc(100% + 8px)",
-            left: 0,
-            right: 0,
-            zIndex: 20,
+            position: "fixed",
+            top: dropdownPosition?.top ?? 0,
+            left: dropdownPosition?.left ?? 12,
+            width: dropdownPosition?.width ?? "calc(100vw - 24px)",
+            maxWidth: "calc(100vw - 24px)",
+            zIndex: 40,
             borderRadius: 18,
             padding: 12,
             display: "grid",
@@ -257,6 +299,115 @@ function CitySelect({
   );
 }
 
+function InfoHint({ text }: { text: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; bottom: number } | null>(null);
+  const containerRef = useRef<HTMLSpanElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function updateTooltipPosition() {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+
+      const tooltipWidth = Math.min(260, window.innerWidth - 24);
+      const halfWidth = tooltipWidth / 2;
+      const left = Math.min(
+        Math.max(rect.left + rect.width / 2, 12 + halfWidth),
+        window.innerWidth - 12 - halfWidth,
+      );
+
+      setTooltipPosition({
+        left,
+        bottom: window.innerHeight - rect.top + 8,
+      });
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    updateTooltipPosition();
+    document.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("resize", updateTooltipPosition);
+    window.addEventListener("scroll", updateTooltipPosition, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("resize", updateTooltipPosition);
+      window.removeEventListener("scroll", updateTooltipPosition, true);
+    };
+  }, [isOpen]);
+
+  return (
+    <span
+      ref={containerRef}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        flexShrink: 0,
+      }}
+    >
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label={text}
+        onClick={() => setIsOpen((current) => !current)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 18,
+          height: 18,
+          borderRadius: 999,
+          border: "1px solid var(--border-color)",
+          color: "var(--foreground-muted)",
+          background: "var(--background-elevated)",
+          cursor: "help",
+          padding: 0,
+        }}
+      >
+        <Info style={{ width: 12, height: 12 }} />
+      </button>
+      {isOpen ? (
+        <span
+          role="tooltip"
+          style={{
+            position: "fixed",
+            left: tooltipPosition?.left ?? "50%",
+            bottom: tooltipPosition?.bottom ?? 24,
+            transform: "translateX(-50%)",
+            zIndex: 30,
+            width: "min(260px, calc(100vw - 24px))",
+            maxWidth: "calc(100vw - 24px)",
+            borderRadius: 14,
+            border: "1px solid var(--border-color)",
+            background: "color-mix(in srgb, var(--background-elevated) 97%, white)",
+            color: "var(--foreground)",
+            boxShadow: "0 18px 40px var(--shadow-color)",
+            padding: "10px 12px",
+            fontSize: 14,
+            lineHeight: 1.45,
+            fontWeight: 500,
+            textTransform: "none",
+            letterSpacing: "normal",
+          }}
+        >
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 export function PricingAnalyticsClient() {
   const { api } = useAuth();
   const [listingType, setListingType] = useState<PricingAnalyticsListingType>("sale");
@@ -306,9 +457,16 @@ export function PricingAnalyticsClient() {
           <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h1 className="page-title">Ценовая аналитика</h1>
-              <p style={{ margin: "0.6rem 0 0", maxWidth: 760, color: "var(--foreground-muted)", lineHeight: 1.7 }}>
+              <p
+                style={{
+                  margin: "0.6rem 0 0",
+                  maxWidth: 760,
+                  color: "var(--foreground-muted)",
+                  lineHeight: 1.7,
+                  fontSize: "clamp(1rem, 0.98rem + 0.2vw, 1.14rem)",
+                }}
+              >
                 Аналитика строится по активным объявлениям и показывает цену за квадратный метр.
-                При малом количестве объявлений точность ниже, поэтому сервис честно помечает слабую выборку.
               </p>
             </div>
           </div>
@@ -355,6 +513,7 @@ export function PricingAnalyticsClient() {
                 <option value={6}>6 месяцев</option>
                 <option value={12}>12 месяцев</option>
                 <option value={24}>24 месяца</option>
+                <option value={0}>За всё время</option>
               </select>
             </label>
           </div>
@@ -378,7 +537,10 @@ export function PricingAnalyticsClient() {
                 <div className="mt-2 text-[1.2rem] font-black tracking-[-0.03em]">{formatPricePerSqm(summary.averagePricePerSqm)}</div>
               </div>
               <div className="surface rounded-[24px] p-5">
-                <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Медиана</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Медиана</div>
+                  <InfoHint text="Это цена из середины выборки: половина объявлений дешевле, половина дороже." />
+                </div>
                 <div className="mt-2 text-[1.2rem] font-black tracking-[-0.03em]">{formatPricePerSqm(summary.medianPricePerSqm)}</div>
               </div>
               <div className="surface rounded-[24px] p-5">
@@ -403,7 +565,10 @@ export function PricingAnalyticsClient() {
                 )}
               </div>
               <div className="surface rounded-[24px] p-5">
-                <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Надёжность</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">Надёжность</div>
+                  <InfoHint text="Показывает, насколько можно доверять оценке: чем больше объявлений, тем надёжнее результат." />
+                </div>
                 <div className="mt-2 text-[1.2rem] font-black tracking-[-0.03em]">
                   {summary.confidenceLevel === "high" ? "Высокая" : summary.confidenceLevel === "medium" ? "Средняя" : "Низкая"}
                 </div>
@@ -416,7 +581,7 @@ export function PricingAnalyticsClient() {
                 ? `Обновлено: ${formatDate(summary.updatedAt)}`
                 : "Данных пока мало, поэтому часть значений может не отображаться."}
               points={timeSeries.map((point) => ({
-                label: point.period.slice(5),
+                label: formatPeriodLabel(point.period),
                 average: point.averagePricePerSqm,
                 median: point.medianPricePerSqm,
               }))}

@@ -6,6 +6,7 @@ import type {
   PriceCurrency,
   PricePeriod,
 } from "./listing-card.types";
+import { translateLookup } from "../../lib/lookup-translations";
 
 const currencyMap: Record<string, string> = {
   RUB: "₽",
@@ -25,94 +26,6 @@ const periodMap: Record<string, string> = {
   Сутки: "сут",
   Неделя: "нед",
   Год: "год",
-};
-
-const buildingTypeMap: Record<string, string> = {
-  "Apartment Building (Multi-family)": "Многоквартирный дом",
-  "Detached House": "Отдельный дом",
-  Townhouse: "Таунхаус",
-  "Business Center": "Бизнес-центр",
-  "Warehouse Complex": "Складской комплекс",
-  "Industrial Building": "Промышленное здание",
-  "Shopping Mall": "Торговый центр",
-  "Mixed-use Building": "Многофункциональное здание",
-  Other: "Другое",
-};
-
-const apartmentRenovationMap: Record<string, string> = {
-  Designer: "Дизайнерский",
-  Modern: "Современный",
-  Cosmetic: "Косметический",
-  None: "Без ремонта",
-  Euro: "Евроремонт",
-};
-
-const bathroomMap: Record<string, string> = {
-  "Combined (shared)": "Совмещенный",
-  Separate: "Раздельный",
-  "Two bathrooms": "2 санузла",
-  "Three or more bathrooms": "3+ санузла",
-};
-
-const materialMap: Record<string, string> = {
-  Brick: "Кирпич",
-  Panel: "Панель",
-  Monolith: "Монолит",
-  Block: "Блок",
-  Wood: "Дерево",
-};
-
-const heatingMap: Record<string, string> = {
-  Central: "Центральное",
-  Electric: "Электрическое",
-  "Gas boiler": "Газовый котел",
-  "Individual gas boiler": "Индивидуальное",
-  "Solid fuel": "Твердотопливное",
-  None: "Нет",
-};
-
-const waterMap: Record<string, string> = {
-  Central: "Центральное",
-  Well: "Колодец",
-  Borehole: "Скважина",
-  None: "Нет",
-};
-
-const gasMap: Record<string, string> = {
-  "Central gas": "Центральный",
-  "Gas holder / tank": "Газгольдер",
-  "Bottled gas": "Баллонный",
-  None: "Нет",
-};
-
-const sewerMap: Record<string, string> = {
-  Central: "Центральная",
-  Septic: "Септик",
-  Local: "Локальная",
-  None: "Нет",
-};
-
-const landCategoryMap: Record<string, string> = {
-  "Residential (IЖС)": "ИЖС",
-  "Personal subsidiary plot (ЛПХ)": "ЛПХ",
-  "Garden / dacha (СНТ)": "СНТ",
-  Agricultural: "Сельхоз",
-  "Industrial / commercial": "Коммерческая",
-  Other: "Другое",
-};
-
-const roadAccessMap: Record<string, string> = {
-  Asphalt: "Асфальт",
-  Gravel: "Гравий",
-  "Dirt road": "Грунт",
-  "No direct access / off-road": "Без подъезда",
-};
-
-const layoutMap: Record<string, string> = {
-  "Open space": "Открытая планировка",
-  "Cabinet / rooms": "Кабинетная",
-  Mixed: "Смешанная",
-  Coworking: "Коворкинг",
 };
 
 function prefixedLabel(prefix: string, value?: string | null) {
@@ -316,9 +229,9 @@ export function getPrimarySpecs(item: ListingCardItem): ListingPrimarySpec[] {
         return [
           { label: "Участок", value: formatArea(item.details.plotArea ?? item.areaTotal) },
           { label: "Тип", value: getBuildingTypeLabel(item.buildingType) ?? "—" },
-          { label: "Категория", value: landCategoryMap[item.details.landCategory ?? ""] ?? item.details.landCategory ?? "—" },
+          { label: "Категория", value: item.details.landCategory ? translateLookup("landCategory", item.details.landCategory) : "—" },
           { label: "Назначение", value: item.details.allowedUse ?? "—" },
-          { label: "Подъезд", value: roadAccessMap[item.details.roadAccessType ?? ""] ?? item.details.roadAccessType ?? "—" },
+          { label: "Подъезд", value: item.details.roadAccessType ? translateLookup("roadAccessType", item.details.roadAccessType) : "—" },
         ];
       case "office":
         return [
@@ -353,11 +266,11 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
       labels = [
         prefixedLabel(
           "Ремонт",
-          apartmentRenovationMap[item.details.renovationType ?? ""] ?? item.details.renovationType,
+          item.details.renovationType ? translateLookup("renovationType", item.details.renovationType) : item.details.renovationType,
         ),
         prefixedLabel(
           "Санузел",
-          bathroomMap[item.details.bathroomType ?? ""] ?? item.details.bathroomType,
+          item.details.bathroomType ? translateLookup("bathroomType", item.details.bathroomType) : item.details.bathroomType,
         ),
         formatBooleanFeature(item.details.hasBalcony, "Балкон"),
         formatBooleanFeature(item.details.hasLoggia, "Лоджия"),
@@ -371,19 +284,19 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         formatBooleanFeature(item.details.hasFence, "Огорожен"),
         prefixedLabel(
           "Отопление",
-          heatingMap[item.details.heatingType ?? ""] ?? item.details.heatingType,
+          item.details.heatingType ? translateLookup("heatingType", item.details.heatingType) : item.details.heatingType,
         ),
         prefixedLabel(
           "Вода",
-          waterMap[item.details.waterSupplyType ?? ""] ?? item.details.waterSupplyType,
+          item.details.waterSupplyType ? translateLookup("waterSupplyType", item.details.waterSupplyType) : item.details.waterSupplyType,
         ),
         prefixedLabel(
           "Газ",
-          gasMap[item.details.gasType ?? ""] ?? item.details.gasType,
+          item.details.gasType ? translateLookup("gasType", item.details.gasType) : item.details.gasType,
         ),
         prefixedLabel(
           "Канализация",
-          sewerMap[item.details.sewerType ?? ""] ?? item.details.sewerType,
+          item.details.sewerType ? translateLookup("sewerType", item.details.sewerType) : item.details.sewerType,
         ),
         formatBooleanFeature(item.details.hasElectricity, "Электричество"),
         prefixedLabel("Крыша", item.details.roofMaterial),
@@ -404,14 +317,14 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
       labels = [
         prefixedLabel(
           "Планировка",
-          layoutMap[item.details.layoutType ?? ""] ?? item.details.layoutType,
+          item.details.layoutType ? translateLookup("layoutType", item.details.layoutType) : item.details.layoutType,
         ),
         prefixedLabel(
           "Ремонт",
-          apartmentRenovationMap[item.details.renovationType ?? ""] ?? item.details.renovationType,
+          item.details.renovationType ? translateLookup("renovationType", item.details.renovationType) : item.details.renovationType,
         ),
         formatBooleanFeature(item.details.kitchenette, "Мини-кухня"),
-        prefixedLabel("Парковка", item.details.parkingType),
+        prefixedLabel("Парковка", item.details.parkingType ? translateLookup("layoutType", item.details.parkingType) : item.details.parkingType),
         item.details.parkingSpaces ? `Мест: ${item.details.parkingSpaces}` : null,
       ];
       break;
@@ -425,7 +338,7 @@ export function getSecondaryFeatures(item: ListingCardItem): ListingSecondaryFea
         item.details.officeArea ? `Офис: ${formatArea(item.details.officeArea)}` : null,
         prefixedLabel(
           "Отопление",
-          heatingMap[item.details.heatingType ?? ""] ?? item.details.heatingType,
+          item.details.heatingType ? translateLookup("heatingType", item.details.heatingType) : item.details.heatingType,
         ),
       ];
       break;
@@ -457,7 +370,12 @@ export function getMaterialLabel(value?: string) {
     return null;
   }
 
-  return materialMap[value] ?? value;
+  const buildingMaterial = translateLookup("buildingMaterial", value);
+  if (buildingMaterial !== value) {
+    return buildingMaterial;
+  }
+
+  return translateLookup("wallMaterial", value);
 }
 
 export function getBuildingTypeLabel(value?: string | null) {
@@ -465,5 +383,5 @@ export function getBuildingTypeLabel(value?: string | null) {
     return "Недвижимость";
   }
 
-  return buildingTypeMap[value] ?? value;
+  return translateLookup("buildingType", value);
 }
