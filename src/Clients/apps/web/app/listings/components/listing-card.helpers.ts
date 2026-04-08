@@ -196,7 +196,7 @@ export function getPropertyBadgeTone(item: ListingCardItem) {
     case "land":
       return "border border-[color:color-mix(in_srgb,#15803d_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dcfce7_82%,var(--background-elevated))] text-[#166534]";
     case "office":
-      return "border border-[color:color-mix(in_srgb,#7c3aed_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ede9fe_82%,var(--background-elevated))] text-[#6d28d9]";
+      return "border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_24%,var(--background-elevated))] text-[color:var(--color-primary-strong)]";
     case "warehouse":
       return "border border-[color:color-mix(in_srgb,#475569_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#e2e8f0_82%,var(--background-elevated))] text-[#334155]";
   }

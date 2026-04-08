@@ -33,7 +33,7 @@ public sealed partial class InfrastructureScoringInputBuilder : IInfrastructureS
                     $"{stopType}_group",
                     group.CenterLatitude,
                     group.CenterLongitude,
-                    group.NearestDistanceMeters,
+                    group.RouteDistanceMeters ?? group.NearestDistanceMeters,
                     group.DisplayName,
                     Math.Max(group.PlatformCount, group.PointCount),
                     stopType));

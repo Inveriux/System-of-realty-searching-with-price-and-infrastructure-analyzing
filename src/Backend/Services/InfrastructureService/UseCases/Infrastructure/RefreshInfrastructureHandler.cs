@@ -8,6 +8,7 @@ using InfrastructureService.Services.Classification.Abstractions;
 using InfrastructureService.Services.Configuration;
 using InfrastructureService.Services.Places;
 using InfrastructureService.Services.Places.Abstractions;
+using InfrastructureService.Services.Routing;
 using InfrastructureService.Services.Routing.Abstractions;
 using InfrastructureService.Services.Scoring.Abstractions;
 using InfrastructureService.Services.Sanitization.Abstractions;
@@ -37,6 +38,11 @@ public sealed class RefreshInfrastructureHandler(
     IOptions<InfrastructureScoringOptions> scoringOptions,
     IMapper mapper) : IRequestHandler<RefreshInfrastructureCommand, Result<InfrastructureSummaryDto>>
 {
+    private const int DefaultRoutingTopN = 5;
+    private const int TransportRoutingRadiusMeters = 1200;
+    private const int GroceriesRoutingRadiusMeters = 2000;
+    private const int EducationRoutingRadiusMeters = 2500;
+    private const int HealthcareRoutingRadiusMeters = 3000;
     private static readonly HashSet<string> KnownMetroStationNames =
     [
         "малиновка",
@@ -173,6 +179,7 @@ public sealed class RefreshInfrastructureHandler(
             FallbackRadiusConfig = detailsBase.FallbackRadiusConfig,
             MissingPrimaryCategories = detailsBase.MissingPrimaryCategories,
             ClassificationVersions = detailsBase.ClassificationVersions,
+            Warnings = detailsBase.Warnings,
             Highlights = highlights
         };
 
@@ -193,6 +200,7 @@ public sealed class RefreshInfrastructureHandler(
             Score = scoreDto,
             Summary = summary,
             Highlights = highlights,
+            Warnings = details.Warnings,
             Pois = pois,
             NearbyCategories = details.NearbyCategories,
             TransportDetails = details.TransportDetails,
@@ -230,6 +238,7 @@ public sealed class RefreshInfrastructureHandler(
         CancellationToken cancellationToken)
     {
         var stopGroups = transportStopGroupingService.Group(items);
+        var warnings = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var subcategoryDtos = new List<InfrastructureNearbyCategoryDto>();
         foreach (var definition in InfrastructureMetadata.SupportedSubcategories)
         {
@@ -241,6 +250,7 @@ public sealed class RefreshInfrastructureHandler(
                 [definition.SubcategoryCode],
                 definition.PrimaryRadiusMeters,
                 definition.FallbackRadiusMeters,
+                warnings,
                 cancellationToken));
         }
 
@@ -256,6 +266,7 @@ public sealed class RefreshInfrastructureHandler(
                     definition.SubcategoryCode,
                     definition.PrimaryRadiusMeters,
                     definition.FallbackRadiusMeters,
+                    warnings,
                     cancellationToken);
                 continue;
             }
@@ -268,10 +279,38 @@ public sealed class RefreshInfrastructureHandler(
                 definition.SourceSubcategories,
                 definition.PrimaryRadiusMeters,
                 definition.FallbackRadiusMeters,
+                warnings,
                 cancellationToken);
         }
 
         var searchFeatures = BuildSearchFeatures(featureDtos, stopGroups, items);
+        var stopGroupRoutingById = stopGroups
+            .GroupBy(static group => group.GroupId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                static group => group.Key,
+                static _ => (RouteMetricsDto?)null,
+                StringComparer.OrdinalIgnoreCase);
+
+        if (featureDtos.TryGetValue("stop", out var stopCategory) && stopCategory.RouteDistanceMeters is not null)
+        {
+            var nearestStopGroup = stopGroups
+                .OrderBy(static group => group.NearestDistanceMeters)
+                .FirstOrDefault();
+
+            if (nearestStopGroup is not null)
+            {
+                stopGroupRoutingById[nearestStopGroup.GroupId] = new RouteMetricsDto
+                {
+                    DistanceMeters = stopCategory.NearestDistanceM ?? nearestStopGroup.NearestDistanceMeters,
+                    RouteDistanceMeters = stopCategory.RouteDistanceMeters,
+                    TravelDurationSeconds = stopCategory.TravelDurationSeconds,
+                    WalkMinutes = stopCategory.WalkingMinutes,
+                    UsedRouting = stopCategory.UsedRouting,
+                    FallbackMode = stopCategory.FallbackMode
+                };
+            }
+        }
+
         var transportDetails = new InfrastructureTransportDetailsDto
         {
             NearestStopDistanceM = searchFeatures.NearestStopDistanceM,
@@ -290,7 +329,7 @@ public sealed class RefreshInfrastructureHandler(
             NearestStopGroupAnyDriveMinutes = searchFeatures.NearestStopGroupAnyDriveMinutes,
             NearestStopGroupAnyDriveMinutesEstimated = searchFeatures.NearestStopGroupAnyDriveMinutesEstimated,
             NearestStopGroupFoundRadiusM = searchFeatures.NearestStopGroupFoundRadiusM,
-            StopGroups = stopGroups.Select(static group => new InfrastructureTransportStopGroupDto
+            StopGroups = stopGroups.Select(group => new InfrastructureTransportStopGroupDto
             {
                 GroupId = group.GroupId,
                 NormalizedName = group.NormalizedName,
@@ -302,7 +341,11 @@ public sealed class RefreshInfrastructureHandler(
                 PlatformCount = group.PlatformCount,
                 StopTypes = group.StopTypes,
                 SourcePoiIds = group.SourcePoiIds,
-                NearestDistanceMeters = group.NearestDistanceMeters
+                NearestDistanceMeters = group.NearestDistanceMeters,
+                RouteDistanceMeters = stopGroupRoutingById[group.GroupId]?.RouteDistanceMeters,
+                WalkMinutes = stopGroupRoutingById[group.GroupId]?.WalkMinutes,
+                UsedRouting = stopGroupRoutingById[group.GroupId]?.UsedRouting ?? false,
+                FallbackMode = stopGroupRoutingById[group.GroupId]?.FallbackMode ?? "none"
             }).ToArray(),
             NearestMetroDistanceM = searchFeatures.NearestMetroDistanceM,
             NearestMetroWalkMinutes = searchFeatures.NearestMetroWalkMinutes,
@@ -335,7 +378,8 @@ public sealed class RefreshInfrastructureHandler(
                 .Select(static x => x.SubcategoryCode)
                 .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
-            ClassificationVersions = poiClassificationService.GetDictionaryVersions()
+            ClassificationVersions = poiClassificationService.GetDictionaryVersions(),
+            Warnings = warnings.OrderBy(static x => x, StringComparer.OrdinalIgnoreCase).ToArray()
         };
     }
 
@@ -346,6 +390,7 @@ public sealed class RefreshInfrastructureHandler(
         string subcategoryCode,
         int primaryRadiusMeters,
         int? fallbackRadiusMeters,
+        ISet<string> warnings,
         CancellationToken cancellationToken)
     {
         var primaryGroups = stopGroups
@@ -363,7 +408,40 @@ public sealed class RefreshInfrastructureHandler(
                 .FirstOrDefault();
         }
 
-        var nearestPrimaryMetrics = nearestPrimary is null
+        var routingCandidates = stopGroups
+            .Where(group => group.NearestDistanceMeters <= TransportRoutingRadiusMeters)
+            .OrderBy(static group => group.NearestDistanceMeters)
+            .Take(DefaultRoutingTopN)
+            .ToArray();
+        var walkingMetrics = await routeMetricsService.GetWalkingMetricsAsync(
+            location.Latitude,
+            location.Longitude,
+            routingCandidates.Select(static group => new RouteCoordinate(group.RepresentativeLatitude, group.RepresentativeLongitude)).ToArray(),
+            cancellationToken);
+        if (walkingMetrics.Any(static x => x.FallbackMode == "straight_line"))
+        {
+            warnings.Add("Routing fallback was used for transport analysis because OSRM was unavailable.");
+        }
+
+        var routedGroups = routingCandidates
+            .Select((group, index) => new { Group = group, Metrics = walkingMetrics.ElementAtOrDefault(index) })
+            .Where(static x => x.Metrics is not null)
+            .OrderBy(x => x.Metrics!.DistanceMeters)
+            .ToArray();
+
+        var nearestPrimaryMetricsPair = routedGroups
+            .Where(x => x.Group.NearestDistanceMeters <= primaryRadiusMeters)
+            .FirstOrDefault();
+        var nearestPrimaryMetrics = nearestPrimaryMetricsPair?.Metrics;
+        nearestPrimary ??= nearestPrimaryMetricsPair?.Group;
+
+        var nearestAnyMetricsPair = routedGroups.FirstOrDefault(x => fallbackRadiusMeters.HasValue
+            ? x.Group.NearestDistanceMeters <= fallbackRadiusMeters.Value
+            : true);
+        var nearestAnyMetrics = nearestAnyMetricsPair?.Metrics;
+        nearestAny ??= nearestAnyMetricsPair?.Group;
+
+        var drivingMetrics = nearestPrimary is null
             ? null
             : await routeMetricsService.GetMetricsAsync(
                 location.Latitude,
@@ -372,30 +450,27 @@ public sealed class RefreshInfrastructureHandler(
                 nearestPrimary.RepresentativeLongitude,
                 cancellationToken);
 
-        var nearestAnyMetrics = nearestAny is null
-            ? null
-            : nearestPrimary is not null && nearestAny.GroupId == nearestPrimary.GroupId
-                ? nearestPrimaryMetrics
-                : await routeMetricsService.GetMetricsAsync(
-                    location.Latitude,
-                    location.Longitude,
-                    nearestAny.RepresentativeLatitude,
-                    nearestAny.RepresentativeLongitude,
-                    cancellationToken);
-
         return new InfrastructureNearbyCategoryDto
         {
             CategoryCode = categoryCode,
             SubcategoryCode = subcategoryCode,
             CountInPrimaryRadius = primaryGroups.Length,
+            CandidateCount = routingCandidates.Length,
+            ReachableWithin10MinCount = walkingMetrics.Count(static x => x.WalkMinutes is <= 10m),
+            ReachableWithin15MinCount = walkingMetrics.Count(static x => x.WalkMinutes is <= 15m),
             NearestDistanceM = nearestPrimaryMetrics?.DistanceMeters,
+            RouteDistanceMeters = nearestPrimaryMetrics?.RouteDistanceMeters,
+            TravelDurationSeconds = nearestPrimaryMetrics?.TravelDurationSeconds,
+            WalkingMinutes = nearestPrimaryMetrics?.WalkingMinutes,
             NearestWalkMinutes = nearestPrimaryMetrics?.WalkMinutes,
-            NearestDriveMinutes = nearestPrimaryMetrics?.DriveMinutes,
-            NearestDriveMinutesEstimated = nearestPrimaryMetrics?.IsDriveMinutesEstimated ?? false,
+            NearestDriveMinutes = drivingMetrics?.DriveMinutes,
+            NearestDriveMinutesEstimated = drivingMetrics?.IsDriveMinutesEstimated ?? false,
             NearestAnyDistanceM = nearestAnyMetrics?.DistanceMeters,
             NearestAnyWalkMinutes = nearestAnyMetrics?.WalkMinutes,
             NearestAnyDriveMinutes = nearestAnyMetrics?.DriveMinutes,
             NearestAnyDriveMinutesEstimated = nearestAnyMetrics?.IsDriveMinutesEstimated ?? false,
+            UsedRouting = nearestPrimaryMetrics?.UsedRouting ?? false,
+            FallbackMode = nearestPrimaryMetrics?.FallbackMode ?? "none",
             FoundInRadiusM = nearestPrimary is not null
                 ? primaryRadiusMeters
                 : nearestAny is not null && fallbackRadiusMeters.HasValue
@@ -413,6 +488,7 @@ public sealed class RefreshInfrastructureHandler(
         IReadOnlyCollection<string> sourceSubcategories,
         int primaryRadiusMeters,
         int? fallbackRadiusMeters,
+        ISet<string> warnings,
         CancellationToken cancellationToken)
     {
         var matchedItems = items
@@ -434,7 +510,43 @@ public sealed class RefreshInfrastructureHandler(
                 .FirstOrDefault(x => x.DistanceMeters <= fallbackRadiusMeters.Value);
         }
 
-        var nearestPrimaryMetrics = nearestPrimary is null
+        var routingRadius = GetRoutingRadius(categoryCode, subcategoryCode, sourceSubcategories, fallbackRadiusMeters ?? primaryRadiusMeters);
+        var routingCandidates = matchedItems
+            .Where(x => x.DistanceMeters <= routingRadius)
+            .OrderBy(static x => x.DistanceMeters)
+            .Take(DefaultRoutingTopN)
+            .ToArray();
+
+        var walkingMetrics = await routeMetricsService.GetWalkingMetricsAsync(
+            location.Latitude,
+            location.Longitude,
+            routingCandidates.Select(static x => new RouteCoordinate(x.Poi!.Latitude, x.Poi!.Longitude)).ToArray(),
+            cancellationToken);
+
+        if (walkingMetrics.Any(static x => x.FallbackMode == "straight_line"))
+        {
+            warnings.Add($"Routing fallback was used for {subcategoryCode} analysis because OSRM was unavailable.");
+        }
+
+        var routedItems = routingCandidates
+            .Select((item, index) => new { Item = item, Metrics = walkingMetrics.ElementAtOrDefault(index) })
+            .Where(static x => x.Metrics is not null)
+            .OrderBy(x => x.Metrics!.DistanceMeters)
+            .ToArray();
+
+        var nearestPrimaryPair = routedItems
+            .Where(x => x.Item.DistanceMeters <= primaryRadiusMeters)
+            .FirstOrDefault();
+        var nearestPrimaryMetrics = nearestPrimaryPair?.Metrics;
+        nearestPrimary ??= nearestPrimaryPair?.Item;
+
+        var nearestAnyPair = routedItems.FirstOrDefault(x => fallbackRadiusMeters.HasValue
+            ? x.Item.DistanceMeters <= fallbackRadiusMeters.Value
+            : true);
+        var nearestAnyMetrics = nearestAnyPair?.Metrics;
+        nearestAny ??= nearestAnyPair?.Item;
+
+        var drivingMetrics = nearestPrimary is null
             ? null
             : await routeMetricsService.GetMetricsAsync(
                 location.Latitude,
@@ -443,30 +555,27 @@ public sealed class RefreshInfrastructureHandler(
                 nearestPrimary.Poi.Longitude,
                 cancellationToken);
 
-        var nearestAnyMetrics = nearestAny is null
-            ? null
-            : nearestPrimary is not null && nearestAny.Id == nearestPrimary.Id
-                ? nearestPrimaryMetrics
-                : await routeMetricsService.GetMetricsAsync(
-                    location.Latitude,
-                    location.Longitude,
-                    nearestAny.Poi!.Latitude,
-                    nearestAny.Poi.Longitude,
-                    cancellationToken);
-
         return new InfrastructureNearbyCategoryDto
         {
             CategoryCode = categoryCode,
             SubcategoryCode = subcategoryCode,
             CountInPrimaryRadius = primaryItems.Length,
+            CandidateCount = routingCandidates.Length,
+            ReachableWithin10MinCount = walkingMetrics.Count(static x => x.WalkMinutes is <= 10m),
+            ReachableWithin15MinCount = walkingMetrics.Count(static x => x.WalkMinutes is <= 15m),
             NearestDistanceM = nearestPrimaryMetrics?.DistanceMeters,
+            RouteDistanceMeters = nearestPrimaryMetrics?.RouteDistanceMeters,
+            TravelDurationSeconds = nearestPrimaryMetrics?.TravelDurationSeconds,
+            WalkingMinutes = nearestPrimaryMetrics?.WalkingMinutes,
             NearestWalkMinutes = nearestPrimaryMetrics?.WalkMinutes,
-            NearestDriveMinutes = nearestPrimaryMetrics?.DriveMinutes,
-            NearestDriveMinutesEstimated = nearestPrimaryMetrics?.IsDriveMinutesEstimated ?? false,
+            NearestDriveMinutes = drivingMetrics?.DriveMinutes,
+            NearestDriveMinutesEstimated = drivingMetrics?.IsDriveMinutesEstimated ?? false,
             NearestAnyDistanceM = nearestAnyMetrics?.DistanceMeters,
             NearestAnyWalkMinutes = nearestAnyMetrics?.WalkMinutes,
             NearestAnyDriveMinutes = nearestAnyMetrics?.DriveMinutes,
             NearestAnyDriveMinutesEstimated = nearestAnyMetrics?.IsDriveMinutesEstimated ?? false,
+            UsedRouting = nearestPrimaryMetrics?.UsedRouting ?? false,
+            FallbackMode = nearestPrimaryMetrics?.FallbackMode ?? "none",
             FoundInRadiusM = nearestPrimary is not null
                 ? primaryRadiusMeters
                 : nearestAny is not null && fallbackRadiusMeters.HasValue
@@ -474,6 +583,38 @@ public sealed class RefreshInfrastructureHandler(
                     : null,
             FoundInPrimaryRadius = nearestPrimary is not null
         };
+    }
+
+    private static int GetRoutingRadius(
+        string categoryCode,
+        string subcategoryCode,
+        IReadOnlyCollection<string> sourceSubcategories,
+        int fallbackRadiusMeters)
+    {
+        if (categoryCode.Equals(InfrastructureCategoryCodes.Transport, StringComparison.OrdinalIgnoreCase))
+        {
+            return TransportRoutingRadiusMeters;
+        }
+
+        if (categoryCode.Equals(InfrastructureCategoryCodes.Commerce, StringComparison.OrdinalIgnoreCase)
+            && sourceSubcategories.Any(static value => value is "supermarket" or "hypermarket" or "discount_store" or "convenience_store"))
+        {
+            return GroceriesRoutingRadiusMeters;
+        }
+
+        if (categoryCode.Equals(InfrastructureCategoryCodes.Education, StringComparison.OrdinalIgnoreCase)
+            && sourceSubcategories.Any(static value => value is "school" or "kindergarten"))
+        {
+            return EducationRoutingRadiusMeters;
+        }
+
+        if (categoryCode.Equals(InfrastructureCategoryCodes.Healthcare, StringComparison.OrdinalIgnoreCase)
+            && sourceSubcategories.Any(static value => value is "pharmacy" or "clinic" or "hospital"))
+        {
+            return HealthcareRoutingRadiusMeters;
+        }
+
+        return fallbackRadiusMeters;
     }
 
     private static bool MatchesFeatureSubcategory(

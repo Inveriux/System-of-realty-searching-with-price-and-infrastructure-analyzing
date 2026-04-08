@@ -9,6 +9,7 @@
     "./search": "./src/search.ts",
     "./pricing-analytics": "./src/pricing-analytics.ts",
     "./listingPage": "./src/listingPage.ts",
-    "./pagedResponse": "./src/pagedResponse.ts"
+    "./pagedResponse": "./src/pagedResponse.ts",
+    "./chat": "./src/chat.ts"
   }
 }

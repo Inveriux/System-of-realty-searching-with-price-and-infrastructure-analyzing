@@ -15,6 +15,7 @@
     "./pricing-analytics": "./src/pricing-analytics.ts",
     "./listing-pages": "./src/listing-pages.ts",
     "./http": "./src/http.ts",
-    "./locations": "./src/locations.ts"
+    "./locations": "./src/locations.ts",
+    "./chat": "./src/chat.ts"
   }
 }

@@ -10,4 +10,10 @@ public interface IRouteMetricsService
         decimal destinationLatitude,
         decimal destinationLongitude,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<RouteMetricsDto>> GetWalkingMetricsAsync(
+        decimal originLatitude,
+        decimal originLongitude,
+        IReadOnlyCollection<RouteCoordinate> destinations,
+        CancellationToken cancellationToken);
 }

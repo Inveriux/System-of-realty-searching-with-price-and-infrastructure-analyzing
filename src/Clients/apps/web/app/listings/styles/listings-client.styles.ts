@@ -14,8 +14,8 @@ export const listingsClientStyles = {
     borderRadius: 26,
     padding: 22,
     background:
-      "linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 68%, white), color-mix(in srgb, var(--background-elevated) 92%, white))",
-    border: "1px solid color-mix(in srgb, var(--color-primary) 20%, var(--border-color))",
+      "linear-gradient(135deg, color-mix(in srgb, var(--background-elevated) 97%, white), color-mix(in srgb, var(--background-muted) 90%, white))",
+    border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
     display: "grid",
     gap: 14,
   } satisfies CSSProperties,
@@ -93,7 +93,7 @@ export const listingsClientStyles = {
     justifyItems: "center",
     minWidth: 96,
     border: "1px solid var(--border-color)",
-    background: "color-mix(in srgb, var(--background-elevated) 94%, white)",
+    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
   } satisfies CSSProperties,
   floatingMapIcon: {
     fontSize: "1.9rem",

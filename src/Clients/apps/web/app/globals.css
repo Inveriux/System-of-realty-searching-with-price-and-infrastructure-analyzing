@@ -12,6 +12,10 @@
   --color-primary-soft: #efe8ff;
   --color-accent: #9f7bff;
   --shadow-color: rgba(85, 46, 189, 0.1);
+  --color-success: #127a50;
+  --color-danger: #d04b73;
+  --chart-primary: var(--color-primary);
+  --chart-secondary: #059669;
   --font-body: "Manrope", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --radius-sm: 12px;
@@ -77,24 +81,28 @@
 }
 
 html[data-theme="dark"] {
-  --background: #120d1f;
-  --background-elevated: #1b1430;
-  --background-muted: #241a40;
-  --foreground: #f5f1ff;
-  --foreground-muted: #b6abd8;
-  --border-color: #3a2f61;
-  --color-primary: #9f7bff;
-  --color-primary-strong: #ba9eff;
-  --color-primary-soft: #2a1f46;
-  --color-accent: #d6c7ff;
-  --shadow-color: rgba(12, 7, 24, 0.45);
+  --background: #0f1115;
+  --background-elevated: #151922;
+  --background-muted: #1b2130;
+  --foreground: #f3f4f8;
+  --foreground-muted: #98a2b3;
+  --border-color: #2a3142;
+  --color-primary: #8b5cf6;
+  --color-primary-strong: #a78bfa;
+  --color-primary-soft: #201a2e;
+  --color-accent: #c4b5fd;
+  --shadow-color: rgba(0, 0, 0, 0.34);
+  --color-success: #4cd39a;
+  --color-danger: #ff8aac;
+  --chart-primary: var(--color-primary);
+  --chart-secondary: #34b37e;
 }
 
 .theme-toggle-button {
-  color: #5b21b6;
-  background: linear-gradient(180deg, rgba(245, 232, 255, 0.98), rgba(233, 213, 255, 0.98));
-  border: 1px solid rgba(139, 92, 246, 0.28);
-  box-shadow: 0 10px 24px rgba(139, 92, 246, 0.16);
+  color: var(--color-primary-strong);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent);
 }
 
 .app-header-search-icon,
@@ -108,10 +116,10 @@ html[data-theme="dark"] .app-header-icon-image {
 }
 
 html[data-theme="dark"] .theme-toggle-button {
-  color: #f5e9ff;
-  background: linear-gradient(180deg, rgba(109, 40, 217, 0.92), rgba(76, 29, 149, 0.96));
-  border-color: rgba(196, 181, 253, 0.34);
-  box-shadow: 0 10px 24px rgba(76, 29, 149, 0.28);
+  color: var(--color-primary-strong);
+  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 66%, transparent);
 }
 
 html[data-mobile-client-shell="true"] .app-header-account,
@@ -127,8 +135,8 @@ html[data-mobile-client-shell="true"] .app-header-icon-cluster > button {
 html {
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 14%, transparent) 0, transparent 34%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-accent) 10%, transparent) 0, transparent 28%),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-accent) 7%, transparent) 0, transparent 46%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-accent) 5%, transparent) 0, transparent 40%),
     var(--background);
 }
 
@@ -172,7 +180,7 @@ img {
 .surface {
   background: var(--background-elevated);
   border: 1px solid var(--border-color);
-  box-shadow: 0 24px 60px var(--shadow-color);
+  box-shadow: 0 18px 42px var(--shadow-color);
 }
 
 .eyebrow {
@@ -224,9 +232,9 @@ img {
 
 .button-secondary,
 .icon-button {
-  background: color-mix(in srgb, var(--color-primary-soft) 72%, var(--background-elevated));
+  background: color-mix(in srgb, var(--background-elevated) 92%, var(--background-muted));
   color: var(--foreground);
-  border-color: color-mix(in srgb, var(--color-primary) 28%, var(--border-color));
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
 }
 
 .button-secondary {
@@ -243,16 +251,16 @@ img {
 .field {
   width: 100%;
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--border-color));
-  background: color-mix(in srgb, var(--color-primary-soft) 38%, var(--background-elevated));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
   color: var(--foreground);
   padding: 0.92rem 1rem;
 }
 
 .field:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--color-primary) 60%, white);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-soft) 70%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 46%, var(--border-color));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-soft) 32%, transparent);
 }
 
 .field::placeholder {
@@ -277,8 +285,8 @@ select.field {
     linear-gradient(135deg, color-mix(in srgb, var(--color-primary-strong) 72%, var(--foreground)) 50%, transparent 50%),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-primary-soft) 44%, var(--background-elevated)),
-      color-mix(in srgb, var(--background-elevated) 96%, white)
+      color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted)),
+      color-mix(in srgb, var(--background-elevated) 98%, white)
     );
   background-position:
     calc(100% - 20px) calc(50% - 3px),
@@ -299,7 +307,7 @@ select.field::-ms-expand {
 select.field:focus {
   border-color: color-mix(in srgb, var(--color-primary-strong) 52%, var(--border-color));
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--color-primary-soft) 64%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-primary-soft) 26%, transparent),
     0 10px 24px color-mix(in srgb, var(--shadow-color) 32%, transparent);
 }
 
@@ -339,8 +347,8 @@ select.field:focus {
   gap: 10px;
   padding: 0.82rem 1rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, var(--border-color));
-  background: color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
 }
 
 .listing-create-preview-strip {
@@ -367,8 +375,8 @@ select.field:focus {
   gap: 10px;
   padding: 10px;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--color-primary-soft) 38%, var(--background-elevated));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--border-color));
+  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
   min-width: 220px;
   width: 220px;
   position: relative;
@@ -423,8 +431,8 @@ select.field:focus {
   min-height: 180px;
   min-width: 220px;
   border-radius: 18px;
-  border: 1px dashed color-mix(in srgb, var(--color-primary) 26%, var(--border-color));
-  background: color-mix(in srgb, var(--color-primary-soft) 30%, var(--background-elevated));
+  border: 1px dashed color-mix(in srgb, var(--border-color) 90%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 92%, var(--background-muted));
   display: grid;
   place-items: center;
   color: var(--foreground-muted);
@@ -437,8 +445,8 @@ select.field:focus {
   gap: 10px;
   padding: 16px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--color-primary-soft) 55%, var(--background-elevated));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--border-color));
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
 }
 
 .listing-create-summary-line {
@@ -461,8 +469,8 @@ select.field:focus {
 .listing-create-alert {
   border-radius: 18px;
   padding: 12px 14px;
-  background: color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--border-color));
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
 }
 
 .listing-create-alert-error {
@@ -553,9 +561,8 @@ select.field:focus {
   height: 100%;
   border-radius: 24px;
   overflow: hidden;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 70%, white), var(--background-muted));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--border-color));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--background-elevated) 96%, white), var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
 }
 
 .listing-create-map-sidebar {
@@ -854,6 +861,32 @@ select.field:focus {
     width: 38px !important;
     height: 38px !important;
     border-radius: 12px !important;
+  }
+
+  .app-header-theme-compact {
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+  }
+
+  .app-header-theme-compact .theme-toggle-button {
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    border-radius: 10px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    font-size: 1rem !important;
+    box-shadow: none !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
   }
 
   .app-header-account {
@@ -1238,8 +1271,8 @@ select.field:focus {
   .listings-filter-check {
     display: flex;
     width: 100%;
-    border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--border-color));
-    background: color-mix(in srgb, var(--color-primary-soft) 46%, var(--background-elevated));
+    border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+    background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
     border-radius: 12px;
     padding: 0.55rem 0.75rem;
     min-height: 52px;
@@ -1287,8 +1320,8 @@ select.field:focus {
       min-height: 0;
       padding: 0.3rem 0.7rem !important;
       border-radius: 10px !important;
-      border: 1px solid color-mix(in srgb, var(--color-primary) 52%, var(--border-color)) !important;
-      background: color-mix(in srgb, var(--color-primary-soft) 72%, var(--background-elevated)) !important;
+      border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent) !important;
+      background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted)) !important;
       font-size: 0.82rem !important;
       line-height: 1.05;
       box-shadow:
@@ -1531,10 +1564,10 @@ select.field:focus {
   }
 
 .theme-toggle-button {
-  color: #5b21b6;
-  background: linear-gradient(180deg, rgba(245, 232, 255, 0.98), rgba(233, 213, 255, 0.98));
-  border: 1px solid rgba(139, 92, 246, 0.28);
-  box-shadow: 0 10px 24px rgba(139, 92, 246, 0.16);
+  color: var(--color-primary-strong);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
+  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent);
   font-size: 1.28rem !important;
 }
 
@@ -1549,10 +1582,10 @@ html[data-theme="dark"] .app-header-icon-image {
 }
 
 html[data-theme="dark"] .theme-toggle-button {
-  color: #f5e9ff;
-  background: linear-gradient(180deg, rgba(109, 40, 217, 0.92), rgba(76, 29, 149, 0.96));
-  border-color: rgba(196, 181, 253, 0.34);
-  box-shadow: 0 10px 24px rgba(76, 29, 149, 0.28);
+  color: var(--color-primary-strong);
+  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 66%, transparent);
 }
 
   .app-header-brand {

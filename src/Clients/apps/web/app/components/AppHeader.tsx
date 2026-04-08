@@ -1,5 +1,7 @@
 "use client";
 
+import { useUnreadCount } from "@diploma/features";
+import { MessageCircleMore } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, type MouseEvent as ReactMouseEvent, type TouchEvent, useEffect, useRef, useState } from "react";
@@ -11,15 +13,25 @@ export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { status, user, signOut } = useAuth();
+  const { api, status, user, signOut } = useAuth();
+  const unreadCountQuery = useUnreadCount(api, status === "authenticated");
   const [dialogMode, setDialogMode] = useState<"signin" | "signup" | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasHydrated, setHasHydrated] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const isFavoritesPage = pathname.startsWith("/favorites");
+  const isMessagesPage = pathname.startsWith("/messages");
   const isCreateListingPage = pathname.startsWith("/create-listing");
   const isPricingAnalyticsPage = pathname.startsWith("/analytics/pricing");
   const isListingDetailsPage = /^\/listings\/[^/]+$/.test(pathname);
+  const unreadCount = hasHydrated && status === "authenticated" ? (unreadCountQuery.data?.count ?? 0) : 0;
+  const canRenderAuthState = hasHydrated && status !== "loading";
+  const isAuthenticated = canRenderAuthState && status === "authenticated";
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
 
   function renderAccountAvatar() {
     if (user?.accountImageUrl) {
@@ -150,6 +162,18 @@ export function AppHeader() {
     navigateFromHeader("/favorites");
   }
 
+  function handleMessagesClick(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/messages");
+  }
+
+  function handleMessagesTouch(event: TouchEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    navigateFromHeader("/messages");
+  }
+
   return (
     <>
       <header
@@ -168,9 +192,9 @@ export function AppHeader() {
             display: "grid",
             gap: 10,
             backdropFilter: "blur(18px)",
-            background: "color-mix(in srgb, var(--background-elevated) 90%, transparent)",
-            border: "1px solid color-mix(in srgb, var(--border-color) 70%, transparent)",
-            boxShadow: "0 18px 42px rgba(15, 23, 42, 0.08)",
+            background: "color-mix(in srgb, var(--background-elevated) 88%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--border-color) 82%, transparent)",
+            boxShadow: "0 16px 34px color-mix(in srgb, var(--shadow-color) 72%, transparent)",
           }}
         >
           <div
@@ -248,7 +272,7 @@ export function AppHeader() {
 
             {!isCreateListingPage ? (
               <form
-                className={`app-header-search${isPricingAnalyticsPage || isListingDetailsPage ? " app-header-search-hidden-mobile" : ""}`}
+                className={`app-header-search${isPricingAnalyticsPage || isListingDetailsPage || isMessagesPage ? " app-header-search-hidden-mobile" : ""}`}
                 onSubmit={handleSearchSubmit}
                 style={{
                   position: "relative",
@@ -287,9 +311,9 @@ export function AppHeader() {
                     paddingRight: "1.15rem",
                     fontSize: "0.98rem",
                     fontWeight: 500,
-                    background: "color-mix(in srgb, var(--background) 84%, var(--background-elevated))",
-                    border: "1px solid color-mix(in srgb, var(--border-color) 72%, transparent)",
-                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.38)",
+                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                    border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+                    boxShadow: "0 8px 18px color-mix(in srgb, var(--shadow-color) 56%, transparent)",
                   }}
                 />
               </form>
@@ -298,7 +322,7 @@ export function AppHeader() {
             )}
 
             <div className="app-header-actions" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              {status === "authenticated" ? (
+              {isAuthenticated ? (
                 <Link
                   aria-label="Добавить объявление"
                   href="/create-listing"
@@ -315,10 +339,10 @@ export function AppHeader() {
                     fontWeight: 700,
                     letterSpacing: "-0.02em",
                     background: isCreateListingPage
-                      ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-strong) 86%, black), color-mix(in srgb, var(--color-primary) 86%, black))"
-                      : "linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 84%, white), color-mix(in srgb, var(--color-primary-strong) 88%, black))",
+                      ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-strong) 72%, black), color-mix(in srgb, var(--color-primary) 78%, black))"
+                      : "linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 78%, white), color-mix(in srgb, var(--color-primary-strong) 76%, black))",
                     color: "white",
-                    boxShadow: "0 14px 26px color-mix(in srgb, var(--color-primary) 28%, transparent)",
+                    boxShadow: "0 12px 22px color-mix(in srgb, var(--shadow-color) 72%, transparent)",
                   }}
                   title="Добавить объявление"
                 >
@@ -329,7 +353,7 @@ export function AppHeader() {
                       display: "grid",
                       placeItems: "center",
                       borderRadius: 999,
-                      background: "rgba(255,255,255,0.18)",
+                      background: "rgba(255,255,255,0.12)",
                       fontSize: "1rem",
                       lineHeight: 1,
                     }}
@@ -348,10 +372,55 @@ export function AppHeader() {
                   gap: 6,
                   padding: 6,
                   borderRadius: 18,
-                  background: "color-mix(in srgb, var(--background) 82%, transparent)",
-                  border: "1px solid color-mix(in srgb, var(--border-color) 64%, transparent)",
+                  background: "color-mix(in srgb, var(--background-elevated) 92%, var(--background-muted))",
+                  border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
                 }}
               >
+                <button
+                  aria-label="Сообщения"
+                  onClick={handleMessagesClick}
+                  onTouchEnd={handleMessagesTouch}
+                  type="button"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    display: "grid",
+                    placeItems: "center",
+                    borderRadius: 14,
+                    background: isMessagesPage
+                      ? "color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated))"
+                      : "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                    color: isMessagesPage ? "var(--color-primary-strong)" : "inherit",
+                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
+                    border: "none",
+                    padding: 0,
+                    position: "relative",
+                  }}
+                  title="Сообщения"
+                >
+                  <MessageCircleMore size={18} />
+                  {unreadCount > 0 ? (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -4,
+                        right: -4,
+                        minWidth: 18,
+                        height: 18,
+                        borderRadius: 999,
+                        background: "var(--color-primary)",
+                        color: "#fff",
+                        display: "grid",
+                        placeItems: "center",
+                        padding: "0 5px",
+                        fontSize: 11,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  ) : null}
+                </button>
                 <button
                   aria-label="Ценовая аналитика"
                   onClick={handlePricingAnalyticsClick}
@@ -363,9 +432,9 @@ export function AppHeader() {
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: "color-mix(in srgb, var(--background-elevated) 88%, white)",
+                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                     color: "inherit",
-                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
                     border: "none",
                     padding: 0,
                   }}
@@ -385,10 +454,10 @@ export function AppHeader() {
                     placeItems: "center",
                     borderRadius: 14,
                     background: isFavoritesPage
-                      ? "color-mix(in srgb, var(--color-primary-soft) 92%, white)"
-                      : "color-mix(in srgb, var(--background-elevated) 88%, white)",
+                      ? "color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated))"
+                      : "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                     color: isFavoritesPage ? "var(--color-primary-strong)" : "inherit",
-                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
                     border: "none",
                     padding: 0,
                   }}
@@ -397,21 +466,23 @@ export function AppHeader() {
                   <img alt="" src="/icons/favorites.svg" className="app-header-icon-image" style={{ width: 18, height: 18 }} />
                 </button>
                 <div
+                  className={isMessagesPage ? "app-header-theme-compact" : undefined}
                   style={{
-                    width: 40,
+                    width: isMessagesPage ? 34 : 40,
                     height: 40,
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: "color-mix(in srgb, var(--background-elevated) 88%, white)",
-                    boxShadow: "0 6px 18px rgba(15, 23, 42, 0.05)",
+                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
+                    overflow: "hidden",
                   }}
                 >
                   <ThemeToggle />
                 </div>
               </div>
 
-              {status === "authenticated" && user ? (
+              {isAuthenticated && user ? (
                 <div
                   ref={accountMenuRef}
                   className="app-header-account"
@@ -434,9 +505,9 @@ export function AppHeader() {
                       placeItems: "center",
                       overflow: "hidden",
                       borderRadius: 16,
-                      background: "color-mix(in srgb, var(--background) 84%, transparent)",
-                      border: "1px solid color-mix(in srgb, var(--border-color) 68%, transparent)",
-                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+                      background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                      border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+                      boxShadow: "0 10px 20px color-mix(in srgb, var(--shadow-color) 60%, transparent)",
                     }}
                     title={user.name}
                   >
@@ -458,15 +529,15 @@ export function AppHeader() {
                         display: "grid",
                         gap: 6,
                         backdropFilter: "blur(18px)",
-                        background: "color-mix(in srgb, var(--background-elevated) 92%, transparent)",
-                        boxShadow: "0 18px 50px rgba(15, 23, 42, 0.16)",
+                        background: "color-mix(in srgb, var(--background-elevated) 94%, transparent)",
+                        boxShadow: "0 18px 42px color-mix(in srgb, var(--shadow-color) 78%, transparent)",
                       }}
                     >
                       <div
                         style={{
                           padding: "10px 12px",
                           borderRadius: 14,
-                          background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                          background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                         }}
                       >
                         <div
@@ -508,11 +579,51 @@ export function AppHeader() {
                             borderRadius: 14,
                             textDecoration: "none",
                             color: "inherit",
-                            background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                           }}
                         >
                           <div className="eyebrow">Раздел</div>
                           <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Мои объявления</div>
+                        </Link>
+
+                        <Link
+                          href="/messages"
+                          onClick={() => setIsAccountMenuOpen(false)}
+                          role="menuitem"
+                          style={{
+                            display: "grid",
+                            gap: 4,
+                            padding: "12px 12px",
+                            borderRadius: 14,
+                            textDecoration: "none",
+                            color: "inherit",
+                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                            position: "relative",
+                          }}
+                        >
+                          <div className="eyebrow">Раздел</div>
+                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Сообщения</div>
+                          {unreadCount > 0 ? (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: 10,
+                                right: 10,
+                                minWidth: 20,
+                                height: 20,
+                                borderRadius: 999,
+                                background: "var(--color-primary)",
+                                color: "#fff",
+                                display: "grid",
+                                placeItems: "center",
+                                padding: "0 6px",
+                                fontSize: 11,
+                                fontWeight: 800,
+                              }}
+                            >
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                          ) : null}
                         </Link>
 
                         <Link
@@ -526,7 +637,7 @@ export function AppHeader() {
                             borderRadius: 14,
                             textDecoration: "none",
                             color: "inherit",
-                            background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                           }}
                         >
                           <div className="eyebrow">Раздел</div>
@@ -545,7 +656,7 @@ export function AppHeader() {
                             borderRadius: 14,
                             textDecoration: "none",
                             color: "var(--color-primary-strong)",
-                            background: "color-mix(in srgb, var(--color-primary-soft) 74%, var(--background-elevated))",
+                            background: "color-mix(in srgb, var(--color-primary-soft) 38%, var(--background-elevated))",
                           }}
                         >
                           <div className="eyebrow">Действие</div>
@@ -590,7 +701,7 @@ export function AppHeader() {
                     </div>
                   ) : null}
                 </div>
-              ) : (
+              ) : canRenderAuthState ? (
                 <button
                   aria-label="Аккаунт"
                   className="icon-button app-header-account-button"
@@ -605,13 +716,28 @@ export function AppHeader() {
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 16,
-                    background: "color-mix(in srgb, var(--background) 84%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--border-color) 68%, transparent)",
-                    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                    border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+                    boxShadow: "0 10px 20px color-mix(in srgb, var(--shadow-color) 60%, transparent)",
                   }}
                 >
                   <img alt="" src="/icons/account.svg" className="app-header-icon-image" style={{ width: 20, height: 20 }} />
                 </button>
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="app-header-account-button"
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 16,
+                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+                    border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+                    boxShadow: "0 10px 20px color-mix(in srgb, var(--shadow-color) 60%, transparent)",
+                    opacity: 0,
+                    pointerEvents: "none",
+                  }}
+                />
               )}
             </div>
           </div>

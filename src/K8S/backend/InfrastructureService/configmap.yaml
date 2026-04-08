@@ -16,3 +16,10 @@ data:
   Overpass__RetryCount: "1"
   Overpass__RetryDelayMs: "500"
   Overpass__UserAgent: DiplomaRealEstateApp/1.0 (local-overpass)
+  RouteMetrics__Provider: Osrm
+  Osrm__BaseUrl: http://osrm-foot-svc:5000
+  Osrm__FootBaseUrl: http://osrm-foot-svc:5000
+  Osrm__CarBaseUrl: http://osrm-car-svc:5000
+  Osrm__FootProfile: foot
+  Osrm__CarProfile: driving
+  Osrm__RequestTimeoutSeconds: "8"

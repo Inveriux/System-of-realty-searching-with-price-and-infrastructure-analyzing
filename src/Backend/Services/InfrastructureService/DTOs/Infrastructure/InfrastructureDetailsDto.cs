@@ -11,6 +11,7 @@ public sealed class InfrastructureDetailsDto
     public Dictionary<string, int> PrimaryRadiusConfig { get; init; } = [];
     public Dictionary<string, int?> FallbackRadiusConfig { get; init; } = [];
     public IReadOnlyCollection<string> Highlights { get; init; } = [];
+    public IReadOnlyCollection<string> Warnings { get; init; } = [];
     public IReadOnlyCollection<string> MissingPrimaryCategories { get; init; } = [];
     public Dictionary<string, string> ClassificationVersions { get; init; } = [];
     public string ScoringProfile { get; init; } = "residential";

@@ -1,0 +1,257 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: osrm-config
+  namespace: diploma
+data:
+  OSRM_PBF_URL: https://download.geofabrik.de/europe/belarus-latest.osm.pbf
+  OSRM_DATASET_FILE: belarus-latest.osrm
+  OSRM_DATASET_PBF: belarus-latest.osm.pbf
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: osrm-foot-pvc
+  namespace: diploma
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: osrm-car-pvc
+  namespace: diploma
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osrm-foot-deployment
+  namespace: diploma
+  labels:
+    app: osrm-foot
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: osrm-foot
+  template:
+    metadata:
+      labels:
+        app: osrm-foot
+    spec:
+      initContainers:
+        - name: download-osrm-foot-pbf
+          image: curlimages/curl:8.12.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              if [ ! -f "/data/$OSRM_DATASET_FILE" ]; then
+                rm -f "/data/$OSRM_DATASET_PBF.part"
+                rm -f "/data/$OSRM_DATASET_PBF"
+                curl --fail --location --retry 5 --retry-all-errors --output "/data/$OSRM_DATASET_PBF.part" "$OSRM_PBF_URL"
+                mv "/data/$OSRM_DATASET_PBF.part" "/data/$OSRM_DATASET_PBF"
+              fi
+          envFrom:
+            - configMapRef:
+                name: osrm-config
+          volumeMounts:
+            - name: osrm-foot-data
+              mountPath: /data
+        - name: prepare-osrm-foot
+          image: osrm/osrm-backend:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cd /data
+              if [ ! -f "$OSRM_DATASET_FILE" ]; then
+                osrm-extract -p /opt/foot.lua "/data/$OSRM_DATASET_PBF"
+                osrm-partition "/data/$OSRM_DATASET_FILE"
+                osrm-customize "/data/$OSRM_DATASET_FILE"
+              fi
+          envFrom:
+            - configMapRef:
+                name: osrm-config
+          volumeMounts:
+            - name: osrm-foot-data
+              mountPath: /data
+      containers:
+        - name: osrm-foot
+          image: osrm/osrm-backend:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - osrm-routed
+            - --algorithm
+            - mld
+            - /data/belarus-latest.osrm
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: osrm-foot-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "3000m"
+              memory: "6Gi"
+      volumes:
+        - name: osrm-foot-data
+          persistentVolumeClaim:
+            claimName: osrm-foot-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osrm-car-deployment
+  namespace: diploma
+  labels:
+    app: osrm-car
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: osrm-car
+  template:
+    metadata:
+      labels:
+        app: osrm-car
+    spec:
+      initContainers:
+        - name: download-osrm-car-pbf
+          image: curlimages/curl:8.12.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              if [ ! -f "/data/$OSRM_DATASET_FILE" ]; then
+                rm -f "/data/$OSRM_DATASET_PBF.part"
+                rm -f "/data/$OSRM_DATASET_PBF"
+                curl --fail --location --retry 5 --retry-all-errors --output "/data/$OSRM_DATASET_PBF.part" "$OSRM_PBF_URL"
+                mv "/data/$OSRM_DATASET_PBF.part" "/data/$OSRM_DATASET_PBF"
+              fi
+          envFrom:
+            - configMapRef:
+                name: osrm-config
+          volumeMounts:
+            - name: osrm-car-data
+              mountPath: /data
+        - name: prepare-osrm-car
+          image: osrm/osrm-backend:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              cd /data
+              if [ ! -f "$OSRM_DATASET_FILE" ]; then
+                osrm-extract -p /opt/car.lua "/data/$OSRM_DATASET_PBF"
+                osrm-partition "/data/$OSRM_DATASET_FILE"
+                osrm-customize "/data/$OSRM_DATASET_FILE"
+              fi
+          envFrom:
+            - configMapRef:
+                name: osrm-config
+          volumeMounts:
+            - name: osrm-car-data
+              mountPath: /data
+      containers:
+        - name: osrm-car
+          image: osrm/osrm-backend:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - osrm-routed
+            - --algorithm
+            - mld
+            - /data/belarus-latest.osrm
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: osrm-car-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "3000m"
+              memory: "6Gi"
+      volumes:
+        - name: osrm-car-data
+          persistentVolumeClaim:
+            claimName: osrm-car-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: osrm-foot-svc
+  namespace: diploma
+spec:
+  selector:
+    app: osrm-foot
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: osrm-car-svc
+  namespace: diploma
+spec:
+  selector:
+    app: osrm-car
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000

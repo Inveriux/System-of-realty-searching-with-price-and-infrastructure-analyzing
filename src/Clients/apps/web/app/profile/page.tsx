@@ -155,7 +155,7 @@ export default function ProfilePage() {
                 overflow: "hidden",
                 display: "grid",
                 placeItems: "center",
-                background: "color-mix(in srgb, var(--color-primary-soft) 78%, white)",
+                background: "color-mix(in srgb, var(--color-primary-soft) 28%, var(--background-elevated))",
                 color: "var(--color-primary-strong)",
                 fontSize: "2rem",
                 fontWeight: 800,

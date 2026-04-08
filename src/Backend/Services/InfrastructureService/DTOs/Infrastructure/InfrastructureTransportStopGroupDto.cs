@@ -13,4 +13,8 @@ public sealed class InfrastructureTransportStopGroupDto
     public IReadOnlyCollection<string> StopTypes { get; init; } = [];
     public IReadOnlyCollection<Guid> SourcePoiIds { get; init; } = [];
     public decimal NearestDistanceMeters { get; init; }
+    public decimal? RouteDistanceMeters { get; init; }
+    public decimal? WalkMinutes { get; init; }
+    public bool UsedRouting { get; init; }
+    public string FallbackMode { get; init; } = "none";
 }

@@ -170,7 +170,13 @@ public sealed class TransportStopGroupingService : ITransportStopGroupingService
                 builder.Append(ch);
         }
 
-        return builder.Length == 0 ? representativePoiId.ToString("N") : builder.ToString();
+        if (builder.Length == 0)
+            return representativePoiId.ToString("N");
+
+        // Different stop groups can share the same normalized name across the city.
+        // Keep the readable normalized prefix, but append a stable POI-based suffix
+        // so downstream dictionaries do not collide on duplicate names.
+        return $"{builder}-{representativePoiId:N}";
     }
 
     private static decimal CalculateDistanceMeters(decimal latitude1, decimal longitude1, decimal latitude2, decimal longitude2)

@@ -1079,7 +1079,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
             borderRadius: 28,
             padding: 28,
             background:
-              "linear-gradient(135deg, color-mix(in srgb, var(--color-primary-soft) 80%, white), var(--background-elevated))",
+              "linear-gradient(135deg, color-mix(in srgb, var(--background-elevated) 97%, white), color-mix(in srgb, var(--background-muted) 88%, white))",
           }}
         >
           <div className="eyebrow">{mode === "edit" ? "Редактирование" : "Новое объявление"}</div>

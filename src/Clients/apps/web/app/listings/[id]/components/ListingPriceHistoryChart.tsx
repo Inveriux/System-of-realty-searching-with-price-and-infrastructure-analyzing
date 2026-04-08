@@ -178,10 +178,18 @@ export function ListingPriceHistoryChart({ history }: Props) {
             </text>
           ))}
           {normalized.length > 1 ? (
-            <path d={path} fill="none" stroke="#7c3aed" strokeWidth="3" strokeLinecap="round" />
+            <path d={path} fill="none" stroke="var(--chart-primary)" strokeWidth="3" strokeLinecap="round" />
           ) : null}
           {normalized.map((point, index) => (
-            <circle key={index} cx={point.x} cy={point.y} r="4.5" fill="#7c3aed" stroke="white" strokeWidth="2" />
+            <circle
+              key={index}
+              cx={point.x}
+              cy={point.y}
+              r="4.5"
+              fill="var(--chart-primary)"
+              stroke="color-mix(in srgb, var(--background-elevated) 92%, white)"
+              strokeWidth="2"
+            />
           ))}
         </svg>
       </div>

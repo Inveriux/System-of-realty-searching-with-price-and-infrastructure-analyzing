@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         destination: "http://diploma.com:5102/api/:path*",
       },
       {
+        source: "/hubs/:path*",
+        destination: "http://diploma.com:5102/hubs/:path*",
+      },
+      {
         source: "/seed-images/:path*",
         destination: "http://127.0.0.1:9001/:path*",
       },

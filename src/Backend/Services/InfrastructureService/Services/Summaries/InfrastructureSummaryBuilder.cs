@@ -31,6 +31,9 @@ public sealed class InfrastructureSummaryBuilder : IInfrastructureSummaryBuilder
     public IReadOnlyCollection<string> BuildHighlights(InfrastructureScore score, InfrastructureDetailsDto details, IReadOnlyCollection<LocationPoiSnapshotItem> items)
     {
         var highlights = new List<string>();
+        var nearbyCategories = details.NearbyCategories.ToDictionary(
+            static category => category.SubcategoryCode,
+            StringComparer.OrdinalIgnoreCase);
 
         if (score.TransportScore >= 65m)
             highlights.Add("Хорошая транспортная доступность.");
@@ -51,6 +54,18 @@ public sealed class InfrastructureSummaryBuilder : IInfrastructureSummaryBuilder
 
         if (details.SearchFeatures.ParkingCountPrimary > 0 && details.SearchFeatures.NearestParkingWalkMinutes is not null)
             highlights.Add($"Парковка рядом: {details.SearchFeatures.NearestParkingWalkMinutes:0.#} мин пешком.");
+
+        if (details.SearchFeatures.NearestStoreWalkMinutes is not null)
+            highlights.Add($"Ближайший супермаркет: {details.SearchFeatures.NearestStoreWalkMinutes:0.#} мин пешком.");
+
+        if (details.SearchFeatures.NearestPharmacyWalkMinutes is not null)
+            highlights.Add($"Ближайшая аптека: {details.SearchFeatures.NearestPharmacyWalkMinutes:0.#} мин пешком.");
+
+        if (nearbyCategories.TryGetValue("school", out var schoolCategory) && schoolCategory.ReachableWithin15MinCount > 0)
+            highlights.Add($"Школ в 15 мин пешком: {schoolCategory.ReachableWithin15MinCount}.");
+
+        if (nearbyCategories.TryGetValue("kindergarten", out var kindergartenCategory) && kindergartenCategory.ReachableWithin15MinCount > 0)
+            highlights.Add($"Детских садов в 15 мин пешком: {kindergartenCategory.ReachableWithin15MinCount}.");
 
         if (score.CommerceScore >= 60m)
             highlights.Add("Рядом есть магазины и повседневная коммерция.");

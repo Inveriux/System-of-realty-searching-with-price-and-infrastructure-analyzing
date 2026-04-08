@@ -15,19 +15,19 @@ export const colors = {
     shadow: "rgba(85, 46, 189, 0.14)",
   },
   dark: {
-    background: "#120d1f",
-    backgroundElevated: "#1b1430",
-    backgroundMuted: "#241a40",
-    foreground: "#f5f1ff",
-    foregroundMuted: "#b6abd8",
-    border: "#3a2f61",
-    primary: "#9f7bff",
-    primaryStrong: "#ba9eff",
-    primarySoft: "#2a1f46",
-    accent: "#d6c7ff",
+    background: "#0f1115",
+    backgroundElevated: "#151922",
+    backgroundMuted: "#1b2130",
+    foreground: "#f3f4f8",
+    foregroundMuted: "#98a2b3",
+    border: "#2a3142",
+    primary: "#8b5cf6",
+    primaryStrong: "#a78bfa",
+    primarySoft: "#201a2e",
+    accent: "#c4b5fd",
     success: "#4cd39a",
     danger: "#ff8aac",
-    shadow: "rgba(12, 7, 24, 0.45)",
+    shadow: "rgba(0, 0, 0, 0.34)",
   },
 } as const;
 
@@ -40,5 +40,5 @@ export const radii = {
 
 export const shadows = {
   card: "0 24px 60px var(--shadow-color)",
-  glow: "0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent), 0 18px 45px var(--shadow-color)",
+  glow: "0 0 0 1px color-mix(in srgb, var(--color-primary) 12%, transparent), 0 18px 45px var(--shadow-color)",
 } as const;

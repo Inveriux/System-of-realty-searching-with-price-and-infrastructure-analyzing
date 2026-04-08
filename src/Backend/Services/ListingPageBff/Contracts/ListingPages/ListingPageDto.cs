@@ -102,7 +102,13 @@ public sealed class ListingPageInfrastructureNearbyCategoryDto
     public string CategoryCode { get; init; } = string.Empty;
     public string SubcategoryCode { get; init; } = string.Empty;
     public int CountInPrimaryRadius { get; init; }
+    public int CandidateCount { get; init; }
+    public int ReachableWithin10MinCount { get; init; }
+    public int ReachableWithin15MinCount { get; init; }
     public decimal? NearestDistanceM { get; init; }
+    public decimal? RouteDistanceMeters { get; init; }
+    public decimal? TravelDurationSeconds { get; init; }
+    public decimal? WalkingMinutes { get; init; }
     public decimal? NearestWalkMinutes { get; init; }
     public decimal? NearestDriveMinutes { get; init; }
     public bool NearestDriveMinutesEstimated { get; init; }
@@ -110,6 +116,8 @@ public sealed class ListingPageInfrastructureNearbyCategoryDto
     public decimal? NearestAnyWalkMinutes { get; init; }
     public decimal? NearestAnyDriveMinutes { get; init; }
     public bool NearestAnyDriveMinutesEstimated { get; init; }
+    public bool UsedRouting { get; init; }
+    public string FallbackMode { get; init; } = "none";
     public int? FoundInRadiusM { get; init; }
     public bool FoundInPrimaryRadius { get; init; }
 }
@@ -157,6 +165,10 @@ public sealed class ListingPageInfrastructureTransportStopGroupDto
     public IReadOnlyCollection<string> StopTypes { get; init; } = [];
     public IReadOnlyCollection<string> SourcePoiIds { get; init; } = [];
     public decimal NearestDistanceMeters { get; init; }
+    public decimal? RouteDistanceMeters { get; init; }
+    public decimal? WalkMinutes { get; init; }
+    public bool UsedRouting { get; init; }
+    public string FallbackMode { get; init; } = "none";
 }
 
 public sealed class ListingPageGroupedTransportSummaryDto

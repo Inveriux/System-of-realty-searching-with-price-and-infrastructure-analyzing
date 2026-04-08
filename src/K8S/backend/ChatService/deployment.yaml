@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service-deployment
+  namespace: diploma
+  labels:
+    app: chat-service
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: chat-service-deployment
+  template:
+    metadata:
+      labels:
+        app: chat-service-deployment
+    spec:
+      containers:
+        - name: chat-service
+          image: diploma.chatservice:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: chat-service-config
+            - secretRef:
+                name: chat-service-secret
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z chat-service-db-svc 5432; do echo waiting for postgres; sleep 2; done;']
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service-svc
+  namespace: diploma
+spec:
+  selector:
+    app: chat-service-deployment
+  ports:
+    - protocol: TCP
+      port: 8080

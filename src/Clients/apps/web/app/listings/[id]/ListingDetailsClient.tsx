@@ -1,6 +1,6 @@
 "use client";
 
-import { useListingPageQuery } from "@diploma/features";
+import { useListingPageQuery, useStartConversation } from "@diploma/features";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChartPie,
@@ -13,8 +13,10 @@ import {
 } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "../../components/AppShell";
+import { AuthDialog } from "../../components/AuthDialog";
 import { useAuth } from "../../providers";
 import { ListingGallery } from "./ListingGallery";
 import { ListingLocationMap } from "./ListingLocationMap";
@@ -376,7 +378,7 @@ function getCategoryAccent(category: string) {
     case "Транспорт":
       return "#2563eb";
     case "Образование":
-      return "#7c3aed";
+      return "var(--color-primary)";
     case "Досуг":
       return "#15803d";
     default:
@@ -388,11 +390,13 @@ function ScoreDial({
   label,
   value,
   color,
+  iconColor,
   icon,
 }: {
   label: string;
   value?: number | null;
   color: string;
+  iconColor?: string;
   icon: ReactNode;
 }) {
   const normalized = Math.max(0, Math.min(100, value ?? 0));
@@ -417,7 +421,10 @@ function ScoreDial({
           />
         </svg>
         <div className="absolute inset-0 grid place-items-center">
-          <div className="listing-details-score-icon grid h-[56px] w-[56px] place-items-center rounded-full text-white shadow-sm" style={{ background: color }}>
+          <div
+            className="listing-details-score-icon grid h-[56px] w-[56px] place-items-center rounded-full shadow-sm"
+            style={{ background: color, color: iconColor ?? "#ffffff" }}
+          >
             {icon}
           </div>
         </div>
@@ -589,10 +596,13 @@ type Props = {
 };
 
 export function ListingDetailsClient({ listingId }: Props) {
-  const { api } = useAuth();
+  const router = useRouter();
+  const { api, status, user } = useAuth();
   const viewed = useViewedListings();
   const { pushViewed } = viewed;
   const queryClient = useQueryClient();
+  const startConversationMutation = useStartConversation(api);
+  const [dialogMode, setDialogMode] = useState<"signin" | "signup" | null>(null);
   const { data, isLoading, error } = useListingPageQuery(api, listingId);
   const [activeInfrastructureCategory, setActiveInfrastructureCategory] = useState<string | null>(null);
   const [activeInfrastructureSubcategory, setActiveInfrastructureSubcategory] = useState<string | null>(null);
@@ -814,16 +824,46 @@ export function ListingDetailsClient({ listingId }: Props) {
   const infrastructureScoreCards = infrastructure ? [
     { key: "transport", label: "Транспорт", value: infrastructure.transportScore, color: "#2563eb", icon: <TramFront className="h-6 w-6" /> },
     { key: "commerce", label: "Коммерция", value: infrastructure.commerceScore, color: "#0f766e", icon: <ShoppingBag className="h-6 w-6" /> },
-    { key: "education", label: "Образование", value: infrastructure.educationScore, color: "#7c3aed", icon: <GraduationCap className="h-6 w-6" /> },
+    { key: "education", label: "Образование", value: infrastructure.educationScore, color: "var(--color-primary)", icon: <GraduationCap className="h-6 w-6" /> },
     { key: "healthcare", label: "Здоровье", value: infrastructure.healthcareScore, color: "#c2410c", icon: <HeartPulse className="h-6 w-6" /> },
     { key: "leisure", label: "Досуг", value: infrastructure.leisureScore, color: "#15803d", icon: <Trees className="h-6 w-6" /> },
-    { key: "total", label: "Общая оценка", value: infrastructure.totalScore, color: "#111827", icon: <ChartPie className="h-6 w-6" /> },
+    {
+      key: "total",
+      label: "Общая оценка",
+      value: infrastructure.totalScore,
+      color: "var(--foreground)",
+      iconColor: "var(--background)",
+      icon: (
+        <span style={{ color: "var(--background)" }}>
+          <ChartPie className="h-6 w-6" />
+        </span>
+      ),
+    },
   ] : [];
   const infoCardClass = "rounded-[20px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-4";
 
+  async function handleStartConversation() {
+    if (status !== "authenticated") {
+      setDialogMode("signin");
+      return;
+    }
+
+    if (user?.id && user.id === listing.agentId) {
+      return;
+    }
+
+    const conversation = await startConversationMutation.mutateAsync({
+      listingId,
+      otherUserId: listing.agentId,
+    });
+
+    router.push(`/messages?conversationId=${conversation.conversationId}`);
+  }
+
   return (
-    <AppShell>
-      <main className="listing-details-page grid gap-6 pb-10" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}>
+    <>
+      <AppShell>
+        <main className="listing-details-page grid gap-6 pb-10" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}>
         <section
           className="listing-details-top grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
           style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflowX: "clip" }}
@@ -884,6 +924,17 @@ export function ListingDetailsClient({ listingId }: Props) {
                 ) : null}
                 {seller.email ? <div>Электронная почта: {seller.email}</div> : null}
               </div>
+              {user?.id !== listing.agentId ? (
+                <button
+                  type="button"
+                  className="button-primary"
+                  onClick={() => void handleStartConversation()}
+                  disabled={startConversationMutation.isPending}
+                  style={{ width: "100%", marginTop: 16, justifyContent: "center" }}
+                >
+                  Написать продавцу
+                </button>
+              ) : null}
             </section>
 
             <ListingPriceAnalytics
@@ -925,7 +976,7 @@ export function ListingDetailsClient({ listingId }: Props) {
 
               <div className="listing-details-price-group flex flex-wrap items-start gap-3 xl:justify-end" style={{ minWidth: 0 }}>
                 <div
-                  className="listing-details-price-card inline-flex max-w-full items-center rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_64%,var(--background-elevated))] px-5 py-4 font-black tracking-[-0.05em] text-[var(--color-primary-strong)]"
+                  className="listing-details-price-card inline-flex max-w-full items-center rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_24%,var(--background-elevated))] px-5 py-4 font-black tracking-[-0.05em] text-[var(--color-primary-strong)]"
                   style={{ minWidth: 0, width: "100%", flexWrap: "wrap", overflowWrap: "anywhere", gap: 8 }}
                 >
                   <span className="inline-flex items-center" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap", gap: 2 }}>
@@ -1006,7 +1057,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                   <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
                     {stat.label}
                   </div>
-                  <div className="mt-1 break-words text-[1.2rem] leading-tight font-extrabold tracking-[-0.03em] whitespace-normal">
+                  <div className="mt-1 break-words text-[1.2rem] leading-tight font-extrabold tracking-[-0.03em] whitespace-normal text-[var(--foreground)]">
                     {stat.value}{stat.unit ? ` ${stat.unit}` : ""}
                   </div>
                 </div>
@@ -1055,7 +1106,7 @@ export function ListingDetailsClient({ listingId }: Props) {
 
         {infrastructure ? (
           <section className="surface rounded-[32px] p-6 sm:p-8">
-            <section className="grid gap-5 rounded-[28px] border border-[var(--border-color)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary-soft)_45%,white)_0%,var(--background-elevated)_100%)] p-6">
+            <section className="grid gap-5 rounded-[28px] border border-[var(--border-color)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary-soft)_16%,var(--background-elevated))_0%,var(--background-elevated)_100%)] p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="grid gap-2">
                   <div className="eyebrow">Инфраструктура рядом</div>
@@ -1113,7 +1164,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                               style={{
                                 borderColor: isActive ? accent : "var(--border-color)",
                                 background: isActive
-                                  ? `color-mix(in srgb, ${accent} 10%, var(--background-elevated))`
+                                  ? `color-mix(in srgb, ${accent} 8%, var(--background-elevated))`
                                   : "var(--background-elevated)",
                               }}
                             >
@@ -1166,7 +1217,7 @@ export function ListingDetailsClient({ listingId }: Props) {
                                       style={{
                                         borderColor: isActive ? "var(--color-primary)" : "var(--border-color)",
                                         background: isActive
-                                          ? "color-mix(in srgb, var(--color-primary-soft) 58%, var(--background-elevated))"
+                                          ? "color-mix(in srgb, var(--color-primary-soft) 22%, var(--background-elevated))"
                                           : "var(--background-elevated)",
                                         color: "var(--foreground)",
                                       }}
@@ -1365,7 +1416,9 @@ export function ListingDetailsClient({ listingId }: Props) {
           </section>
         ) : null}
 
-      </main>
-    </AppShell>
+        </main>
+      </AppShell>
+      <AuthDialog mode={dialogMode} onClose={() => setDialogMode(null)} />
+    </>
   );
 }

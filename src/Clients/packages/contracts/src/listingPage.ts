@@ -58,7 +58,13 @@ export type ListingPageInfrastructureNearbyCategoryDto = {
   categoryCode: string;
   subcategoryCode: string;
   countInPrimaryRadius: number;
+  candidateCount: number;
+  reachableWithin10MinCount: number;
+  reachableWithin15MinCount: number;
   nearestDistanceM: number | null;
+  routeDistanceMeters: number | null;
+  travelDurationSeconds: number | null;
+  walkingMinutes: number | null;
   nearestWalkMinutes: number | null;
   nearestDriveMinutes: number | null;
   nearestDriveMinutesEstimated: boolean;
@@ -66,6 +72,8 @@ export type ListingPageInfrastructureNearbyCategoryDto = {
   nearestAnyWalkMinutes: number | null;
   nearestAnyDriveMinutes: number | null;
   nearestAnyDriveMinutesEstimated: boolean;
+  usedRouting: boolean;
+  fallbackMode: string;
   foundInRadiusM: number | null;
   foundInPrimaryRadius: boolean;
 };
@@ -110,6 +118,10 @@ export type ListingPageInfrastructureTransportStopGroupDto = {
   stopTypes: string[];
   sourcePoiIds: string[];
   nearestDistanceMeters: number;
+  routeDistanceMeters: number | null;
+  walkMinutes: number | null;
+  usedRouting: boolean;
+  fallbackMode: string;
 };
 
 export type ListingPageGroupedTransportSummaryDto = {

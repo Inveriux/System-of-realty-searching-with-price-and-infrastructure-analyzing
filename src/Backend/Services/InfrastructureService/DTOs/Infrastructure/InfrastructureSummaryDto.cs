@@ -9,6 +9,7 @@ public sealed class InfrastructureSummaryDto
     public InfrastructureScoreDto Score { get; init; } = null!;
     public string Summary { get; init; } = string.Empty;
     public IReadOnlyCollection<string> Highlights { get; init; } = [];
+    public IReadOnlyCollection<string> Warnings { get; init; } = [];
     public IReadOnlyCollection<PoiDto> Pois { get; init; } = [];
     public IReadOnlyCollection<InfrastructureNearbyCategoryDto> NearbyCategories { get; init; } = [];
     public InfrastructureTransportDetailsDto TransportDetails { get; init; } = new();

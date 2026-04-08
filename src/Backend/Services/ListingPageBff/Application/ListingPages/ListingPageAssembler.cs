@@ -223,7 +223,13 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
                     CategoryCode = x.CategoryCode,
                     SubcategoryCode = x.SubcategoryCode,
                     CountInPrimaryRadius = x.CountInPrimaryRadius,
+                    CandidateCount = x.CandidateCount,
+                    ReachableWithin10MinCount = x.ReachableWithin10MinCount,
+                    ReachableWithin15MinCount = x.ReachableWithin15MinCount,
                     NearestDistanceM = x.NearestDistanceM,
+                    RouteDistanceMeters = x.RouteDistanceMeters,
+                    TravelDurationSeconds = x.TravelDurationSeconds,
+                    WalkingMinutes = x.WalkingMinutes,
                     NearestWalkMinutes = x.NearestWalkMinutes,
                     NearestDriveMinutes = x.NearestDriveMinutes,
                     NearestDriveMinutesEstimated = x.NearestDriveMinutesEstimated,
@@ -231,6 +237,8 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
                     NearestAnyWalkMinutes = x.NearestAnyWalkMinutes,
                     NearestAnyDriveMinutes = x.NearestAnyDriveMinutes,
                     NearestAnyDriveMinutesEstimated = x.NearestAnyDriveMinutesEstimated,
+                    UsedRouting = x.UsedRouting,
+                    FallbackMode = x.FallbackMode,
                     FoundInRadiusM = x.FoundInRadiusM,
                     FoundInPrimaryRadius = x.FoundInPrimaryRadius
                 })
@@ -266,7 +274,11 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
                         PlatformCount = group.PlatformCount,
                         StopTypes = group.StopTypes.ToArray(),
                         SourcePoiIds = group.SourcePoiIds.Select(static id => id.ToString()).ToArray(),
-                        NearestDistanceMeters = group.NearestDistanceMeters
+                        NearestDistanceMeters = group.NearestDistanceMeters,
+                        RouteDistanceMeters = group.RouteDistanceMeters,
+                        WalkMinutes = group.WalkMinutes,
+                        UsedRouting = group.UsedRouting,
+                        FallbackMode = group.FallbackMode
                     })
                     .ToArray(),
                 NearestMetroDistanceM = infrastructure.TransportDetails.NearestMetroDistanceM,
@@ -519,7 +531,7 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
         string label,
         string iconSrc)
     {
-        var item = infrastructure.NearbyCategories.FirstOrDefault(x => x.SubcategoryCode == subcategoryCode);
+        var item = ResolveCompactSummaryCategory(infrastructure, subcategoryCode);
 
         return new ListingPageCompactInfrastructureItemDto
         {
@@ -543,6 +555,20 @@ public sealed class ListingPageAssembler(TimeProvider timeProvider)
                     ? "В основной зоне доступности не найдено"
                     : "В доступном радиусе не найдено"
         };
+    }
+
+    private static DownstreamInfrastructureNearbyCategoryDto? ResolveCompactSummaryCategory(
+        DownstreamInfrastructureSummaryDto infrastructure,
+        string subcategoryCode)
+    {
+        if (!subcategoryCode.Equals("store", StringComparison.OrdinalIgnoreCase))
+            return infrastructure.NearbyCategories.FirstOrDefault(x => x.SubcategoryCode == subcategoryCode);
+
+        return infrastructure.NearbyCategories
+            .Where(x => x.SubcategoryCode is "supermarket" or "convenience_store" or "hypermarket" or "discount_store")
+            .OrderBy(x => x.WalkingMinutes ?? x.NearestWalkMinutes ?? decimal.MaxValue)
+            .ThenBy(x => x.RouteDistanceMeters ?? x.NearestDistanceM ?? decimal.MaxValue)
+            .FirstOrDefault();
     }
 
     private static decimal? ResolveInfrastructureScore(

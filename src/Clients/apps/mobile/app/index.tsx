@@ -12,6 +12,7 @@ const MOBILE_TABS = [
   { key: "listings", label: "Каталог", path: "/listings" },
   { key: "analytics", label: "Аналитика", path: "/analytics/pricing" },
   { key: "favorites", label: "Избранное", path: "/favorites" },
+  { key: "messages", label: "Чаты", path: "/messages" },
   { key: "profile", label: "Профиль", path: "/profile" },
 ] as const;
 
@@ -23,16 +24,16 @@ const NATIVE_SHELL_PALETTES = {
     screenBackground: "#f2eaff",
     barBorder: "rgba(109, 40, 217, 0.22)",
     activeBackground: "rgba(109, 40, 217, 0.12)",
-    shadowColor: "#6d28d9",
+    shadowColor: "#5b21b6",
   },
   dark: {
-    active: "#e9ddff",
-    inactive: "#9f8ac7",
-    barBackground: "#1a1328",
-    screenBackground: "#120d1f",
-    barBorder: "rgba(186, 158, 255, 0.24)",
-    activeBackground: "rgba(159, 123, 255, 0.18)",
-    shadowColor: "#090511",
+    active: "#a78bfa",
+    inactive: "#8f99ab",
+    barBackground: "#151922",
+    screenBackground: "#0f1115",
+    barBorder: "rgba(42, 49, 66, 0.9)",
+    activeBackground: "rgba(139, 92, 246, 0.14)",
+    shadowColor: "#05070b",
   },
 } as const;
 
@@ -152,6 +153,38 @@ function ProfileTabIcon({ active, palette }: { active: boolean; palette: ShellPa
   );
 }
 
+function MessagesTabIcon({ active, palette }: { active: boolean; palette: ShellPalette }) {
+  const color = active ? palette.active : palette.inactive;
+
+  return (
+    <View style={{ width: 22, height: 22, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: 16,
+          height: 13,
+          borderWidth: 1.8,
+          borderColor: color,
+          borderRadius: 5,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          bottom: 2,
+          right: 5,
+          width: 6,
+          height: 6,
+          backgroundColor: palette.barBackground,
+          borderLeftWidth: 1.8,
+          borderBottomWidth: 1.8,
+          borderColor: color,
+          transform: [{ rotate: "-35deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
 function TabIcon({
   tabKey,
   active,
@@ -166,6 +199,8 @@ function TabIcon({
       return <ChartTabIcon active={active} palette={palette} />;
     case "favorites":
       return <FavoritesTabIcon active={active} palette={palette} />;
+    case "messages":
+      return <MessagesTabIcon active={active} palette={palette} />;
     case "profile":
       return <ProfileTabIcon active={active} palette={palette} />;
     default:
@@ -196,6 +231,7 @@ export default function MobileWebViewScreen() {
   const webViewRef = useRef<WebView>(null);
   const [hasError, setHasError] = useState(false);
   const [nativeTheme, setNativeTheme] = useState<ThemeMode>("light");
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const initialUrl = useMemo(() => resolveMobileSourceUrl(DEFAULT_WEB_APP_URL), []);
   const [currentUrl, setCurrentUrl] = useState(initialUrl);
   const [pendingTabKey, setPendingTabKey] = useState<string | null>(null);
@@ -210,6 +246,9 @@ export default function MobileWebViewScreen() {
       }
       if (pathname.startsWith("/favorites")) {
         return "favorites";
+      }
+      if (pathname.startsWith("/messages")) {
+        return "messages";
       }
       if (pathname.startsWith("/profile")) {
         return "profile";
@@ -230,6 +269,8 @@ export default function MobileWebViewScreen() {
           ? "analytics"
           : path.startsWith("/favorites")
             ? "favorites"
+            : path.startsWith("/messages")
+              ? "messages"
             : path.startsWith("/profile")
               ? "profile"
               : "listings";
@@ -311,15 +352,15 @@ export default function MobileWebViewScreen() {
                   + 'html[data-theme="light"][data-mobile-client-shell="true"] .app-header-account-button img,'
                   + 'html[data-theme="light"][data-mobile-client-shell="true"] .app-header-icon-cluster img{filter:none !important;}'
                   + 'html[data-theme="dark"][data-mobile-client-shell="true"] .theme-toggle-button{'
-                  + 'color:#f5e9ff !important;'
-                  + 'background:linear-gradient(180deg, rgba(109, 40, 217, 0.92), rgba(76, 29, 149, 0.96)) !important;'
-                  + 'border:1px solid rgba(196, 181, 253, 0.34) !important;'
-                  + 'box-shadow:0 10px 24px rgba(76, 29, 149, 0.28) !important;}'
+                  + 'color:var(--color-primary-strong) !important;'
+                  + 'background:color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted)) !important;'
+                  + 'border:1px solid color-mix(in srgb, var(--border-color) 88%, transparent) !important;'
+                  + 'box-shadow:0 10px 24px color-mix(in srgb, var(--shadow-color) 66%, transparent) !important;}'
                   + 'html[data-theme="light"][data-mobile-client-shell="true"] .theme-toggle-button{'
-                  + 'color:#5b21b6 !important;'
-                  + 'background:linear-gradient(180deg, rgba(245, 232, 255, 0.98), rgba(233, 213, 255, 0.98)) !important;'
-                  + 'border:1px solid rgba(139, 92, 246, 0.28) !important;'
-                  + 'box-shadow:0 10px 24px rgba(139, 92, 246, 0.16) !important;}';
+                  + 'color:var(--color-primary-strong) !important;'
+                  + 'background:color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted)) !important;'
+                  + 'border:1px solid color-mix(in srgb, var(--border-color) 88%, transparent) !important;'
+                  + 'box-shadow:0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent) !important;}';
                 var existingStyle = document.getElementById(SHELL_STYLE_ID);
                 if (existingStyle) {
                   existingStyle.textContent = css;
@@ -387,6 +428,8 @@ export default function MobileWebViewScreen() {
                   ? "analytics"
                   : pathname.startsWith("/favorites")
                     ? "favorites"
+                    : pathname.startsWith("/messages")
+                      ? "messages"
                     : pathname.startsWith("/profile")
                       ? "profile"
                       : "listings";
@@ -406,6 +449,11 @@ export default function MobileWebViewScreen() {
                 (message.payload === "light" || message.payload === "dark")
               ) {
                 setNativeTheme(message.payload);
+                return;
+              }
+
+              if (message.type === "chat-unread-count" && typeof message.payload === "number") {
+                setChatUnreadCount(message.payload);
               }
             } catch {
               // Ignore debug messages from the page.
@@ -493,6 +541,26 @@ export default function MobileWebViewScreen() {
               }}
             >
               <TabIcon tabKey={tab.key} active={isActive} palette={palette} />
+              {tab.key === "messages" && chatUnreadCount > 0 ? (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 16,
+                    minWidth: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    backgroundColor: palette.active,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 5,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                  </Text>
+                </View>
+              ) : null}
               <Text
                 style={{
                   fontSize: 11,

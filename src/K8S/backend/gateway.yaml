@@ -127,6 +127,16 @@ spec:
       backendRefs:
         - name: user-service-svc
           port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /api/chat
+      - path:
+          type: PathPrefix
+          value: /hubs/chat
+      backendRefs:
+        - name: chat-service-svc
+          port: 8080
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -171,6 +181,16 @@ spec:
           value: /api/pricing-analytics
       backendRefs:
         - name: pricing-analytics-service-svc
+          port: 8080
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /api/chat
+      - path:
+          type: PathPrefix
+          value: /hubs/chat
+      backendRefs:
+        - name: chat-service-svc
           port: 8080
     - matches:
       - path:

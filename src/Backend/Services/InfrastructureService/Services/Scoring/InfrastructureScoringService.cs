@@ -46,6 +46,7 @@ public sealed class InfrastructureScoringService(
             PrimaryRadiusConfig = details.PrimaryRadiusConfig,
             FallbackRadiusConfig = details.FallbackRadiusConfig,
             Highlights = details.Highlights,
+            Warnings = details.Warnings,
             MissingPrimaryCategories = details.MissingPrimaryCategories,
             ClassificationVersions = details.ClassificationVersions,
             ScoringProfile = options.Value.ActiveProfile

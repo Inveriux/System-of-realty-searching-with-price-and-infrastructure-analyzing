@@ -4,3 +4,4 @@ export * from "./src/pagedResponse";
 export * from "./src/auth";
 export * from "./src/search";
 export * from "./src/pricing-analytics";
+export * from "./src/chat";

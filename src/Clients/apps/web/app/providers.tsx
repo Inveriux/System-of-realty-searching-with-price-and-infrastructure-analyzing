@@ -21,6 +21,7 @@ import React, {
   useState,
 } from "react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { THEME_STORAGE_KEY, type ThemeMode } from "./theme.constants";
 
 const API_BASE_URL =
   typeof window !== "undefined"
@@ -28,9 +29,6 @@ const API_BASE_URL =
     : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://diploma.com:5102");
 const ACCESS_TOKEN_COOKIE = "diploma_access_token";
 const REFRESH_TOKEN_COOKIE = "diploma_refresh_token";
-const THEME_STORAGE_KEY = "diploma_theme";
-
-type ThemeMode = "light" | "dark";
 type AuthStatus = "loading" | "authenticated" | "guest";
 
 type ThemeContextValue = {
@@ -52,9 +50,6 @@ type AuthContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-export { THEME_STORAGE_KEY };
-export type { ThemeMode };
 
 declare global {
   interface Window {
@@ -96,6 +91,11 @@ function deleteCookie(name: string) {
 function ThemeProvider({ children, initialTheme }: { children: React.ReactNode; initialTheme: ThemeMode }) {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof document !== "undefined") {
+      const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (storedTheme === "light" || storedTheme === "dark") {
+        return storedTheme;
+      }
+
       const rootTheme = document.documentElement.dataset.theme;
       if (rootTheme === "light" || rootTheme === "dark") {
         return rootTheme;
@@ -114,18 +114,18 @@ function ThemeProvider({ children, initialTheme }: { children: React.ReactNode; 
   }
 
   useLayoutEffect(() => {
-    const rootTheme = document.documentElement.dataset.theme;
-    if (rootTheme === "light" || rootTheme === "dark") {
-      applyTheme(rootTheme);
-      setTheme(rootTheme);
-      setIsThemeReady(true);
-      return;
-    }
-
     const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (storedTheme === "light" || storedTheme === "dark") {
       applyTheme(storedTheme);
       setTheme(storedTheme);
+      setIsThemeReady(true);
+      return;
+    }
+
+    const rootTheme = document.documentElement.dataset.theme;
+    if (rootTheme === "light" || rootTheme === "dark") {
+      applyTheme(rootTheme);
+      setTheme(rootTheme);
       setIsThemeReady(true);
       return;
     }

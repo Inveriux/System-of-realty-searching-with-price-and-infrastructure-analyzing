@@ -83,6 +83,19 @@ builder.Services.AddOptions<RouteMetricsOptions>()
     .Validate(x => x.DriveSpeedKmPerHour > 0, "DriveSpeedKmPerHour must be positive.")
     .ValidateOnStart();
 
+builder.Services.AddOptions<OsrmOptions>()
+    .BindConfiguration(OsrmOptions.SectionName)
+    .Validate(
+        x => !string.IsNullOrWhiteSpace(x.BaseUrl) || !string.IsNullOrWhiteSpace(x.FootBaseUrl),
+        "Osrm base url or foot base url is required.")
+    .Validate(
+        x => !string.IsNullOrWhiteSpace(x.BaseUrl) || !string.IsNullOrWhiteSpace(x.CarBaseUrl),
+        "Osrm base url or car base url is required.")
+    .Validate(x => !string.IsNullOrWhiteSpace(x.FootProfile), "Osrm foot profile is required.")
+    .Validate(x => !string.IsNullOrWhiteSpace(x.CarProfile), "Osrm car profile is required.")
+    .Validate(x => x.RequestTimeoutSeconds > 0, "Osrm timeout must be positive.")
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient<IYandexGeocoderClient, YandexGeocoderClient>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<YandexOptions>>().Value;
@@ -101,6 +114,13 @@ builder.Services.AddHttpClient<IGeoapifyPlacesClient, GeoapifyPlacesClient>((ser
     var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<GeoapifyOptions>>().Value;
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
+
+builder.Services.AddHttpClient<IRouteServiceClient, OsrmRouteServiceClient>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OsrmOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.RequestTimeoutSeconds);
 });
 
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();

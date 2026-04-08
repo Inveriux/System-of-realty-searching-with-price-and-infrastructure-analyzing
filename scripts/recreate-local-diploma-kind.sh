@@ -18,6 +18,7 @@ BACKEND_K8S_ROOT="${K8S_ROOT}/backend"
 CERT_DIR="${K8S_ROOT}/cert"
 BACKEND_ROOT="${REPO_ROOT}/src/Backend"
 KIND_HOST_DATA_ROOT="${KIND_HOST_DATA_ROOT:-${REPO_ROOT}/.local/kind-data}"
+PREPARE_OSRM_DATA="${PREPARE_OSRM_DATA:-true}"
 KIND_GENERATED_CONFIG_PATH=""
 
 readonly APP_IMAGES=(
@@ -87,7 +88,19 @@ prepare_host_directories() {
     "${KIND_HOST_DATA_ROOT}/user-service-data" \
     "${KIND_HOST_DATA_ROOT}/search-service-data" \
     "${KIND_HOST_DATA_ROOT}/infrastructure-service-data" \
-    "${KIND_HOST_DATA_ROOT}/overpass-belarus-db"
+    "${KIND_HOST_DATA_ROOT}/overpass-belarus-db" \
+    "${KIND_HOST_DATA_ROOT}/osrm-foot-data" \
+    "${KIND_HOST_DATA_ROOT}/osrm-car-data"
+}
+
+prepare_osrm_data() {
+  if [[ "${PREPARE_OSRM_DATA}" != "true" ]]; then
+    log "Skipping OSRM data preparation because PREPARE_OSRM_DATA=${PREPARE_OSRM_DATA}"
+    return
+  fi
+
+  log "Preparing OSRM Belarus graphs on persistent host storage"
+  "${REPO_ROOT}/scripts/prepare-osrm-belarus-data.sh"
 }
 
 generate_kind_config() {
@@ -198,6 +211,8 @@ wait_for_rollouts() {
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/listing-page-bff -n "${NAMESPACE}" --timeout=5m
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/pricing-analytics-service -n "${NAMESPACE}" --timeout=5m
   kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/overpass-belarus-deployment -n "${NAMESPACE}" --timeout=15m
+  kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/osrm-foot-deployment -n "${NAMESPACE}" --timeout=15m
+  kubectl --context "${CLUSTER_CONTEXT}" rollout status deployment/osrm-car-deployment -n "${NAMESPACE}" --timeout=15m
 }
 
 print_summary() {
@@ -217,6 +232,7 @@ main() {
   delete_previous_cluster
   remove_previous_builds
   prepare_host_directories
+  prepare_osrm_data
   generate_kind_config
   create_cluster
   build_images

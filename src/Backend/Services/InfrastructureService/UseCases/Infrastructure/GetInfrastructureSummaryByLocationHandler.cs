@@ -42,6 +42,7 @@ public sealed class GetInfrastructureSummaryByLocationHandler(
             Highlights = scoreResult.Data.Details.Highlights.Count > 0
                 ? scoreResult.Data.Details.Highlights
                 : summaryBuilder.BuildHighlights(scoreResult.Data.ToModel(location.Id), scoreResult.Data.Details, snapshotItems),
+            Warnings = scoreResult.Data.Details.Warnings,
             Pois = poisResult.Data,
             NearbyCategories = scoreResult.Data.Details.NearbyCategories,
             TransportDetails = scoreResult.Data.Details.TransportDetails,

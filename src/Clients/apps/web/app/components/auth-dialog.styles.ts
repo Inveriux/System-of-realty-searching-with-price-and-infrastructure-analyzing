@@ -69,7 +69,7 @@ export const authDialogStyles = {
     width: 34,
     height: 34,
     borderRadius: 999,
-    background: "color-mix(in srgb, var(--color-primary-soft) 72%, white)",
+    background: "color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted))",
     color: "var(--color-primary-strong)",
     fontSize: 20,
     fontWeight: 900,
@@ -101,8 +101,8 @@ export const authDialogStyles = {
   error: {
     borderRadius: 18,
     padding: "12px 14px",
-    background: "color-mix(in srgb, #d04b73 12%, var(--background-elevated))",
-    border: "1px solid color-mix(in srgb, #d04b73 36%, var(--border-color))",
+    background: "color-mix(in srgb, var(--color-danger) 12%, var(--background-elevated))",
+    border: "1px solid color-mix(in srgb, var(--color-danger) 36%, var(--border-color))",
     color: "var(--foreground)",
   } satisfies CSSProperties,
   actions: {

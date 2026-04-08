@@ -117,7 +117,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
             {axisUnitLabels[0]}
           </span>
           <span className="inline-flex items-center gap-2">
-            <span style={{ width: 10, height: 10, borderRadius: 999, background: "#6d28d9" }} />
+            <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--chart-primary)" }} />
             Средняя
           </span>
           <span className="inline-flex items-center gap-2">
@@ -174,7 +174,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
             <div style={{ position: "relative", width: mobileScrollableWidth, minWidth: mobileScrollableWidth }}>
               {activePoint ? (
                 <div
-                  className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-xl border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--background-elevated)_96%,white)] px-3 py-2 text-xs shadow-[0_18px_50px_var(--shadow-color)]"
+                  className="pointer-events-none absolute z-10 -translate-x-1/2 rounded-xl border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--background-elevated)_98%,var(--background-muted))] px-3 py-2 text-xs shadow-[0_18px_50px_var(--shadow-color)]"
                   style={{
                     top: 4,
                     left: Math.min(Math.max(getMobileX(activeMobileIndex), 76), mobileScrollableWidth - 76),
@@ -188,7 +188,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
                   <div className="mt-1.5 grid gap-1">
                     <div>Дата: {activePoint.label}</div>
                     <div className="flex items-center gap-2">
-                      <span style={{ width: 8, height: 8, borderRadius: 999, background: "#6d28d9" }} />
+                      <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--chart-primary)" }} />
                       <span>Средняя: {formatValue(activePoint.average)}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
                   </text>
                 ))}
                 {mobileAveragePoints.length > 1 ? (
-                  <path d={buildPath(mobileAveragePoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))} fill="none" stroke="#6d28d9" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d={buildPath(mobileAveragePoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))} fill="none" stroke="var(--chart-primary)" strokeWidth="2.5" strokeLinecap="round" />
                 ) : null}
                 {mobileMedianPoints.length > 1 ? (
                   <path d={buildPath(mobileMedianPoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
@@ -281,8 +281,8 @@ export function PricingTrendChart({ title, description, points }: Props) {
                     cx={point.x - mobilePaddingLeft}
                     cy={point.y}
                     r={activeIndex === index ? "6" : "4.5"}
-                    fill="#6d28d9"
-                    stroke="white"
+                    fill="var(--chart-primary)"
+                    stroke="color-mix(in srgb, var(--background-elevated) 92%, white)"
                     strokeWidth="2"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -322,7 +322,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
       <div className="relative mt-5 hidden overflow-hidden sm:block">
         {activePoint ? (
           <div
-            className="pointer-events-none absolute top-2 z-10 -translate-x-1/2 rounded-2xl border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--background-elevated)_96%,white)] px-4 py-3 text-sm shadow-[0_18px_50px_var(--shadow-color)]"
+            className="pointer-events-none absolute top-2 z-10 -translate-x-1/2 rounded-2xl border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--background-elevated)_98%,var(--background-muted))] px-4 py-3 text-sm shadow-[0_18px_50px_var(--shadow-color)]"
             style={{ left: `${tooltipLeft}%` }}
           >
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--foreground-muted)]">
@@ -330,7 +330,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
             </div>
             <div className="mt-2 grid gap-1.5">
               <div className="flex items-center gap-2">
-                <span style={{ width: 10, height: 10, borderRadius: 999, background: "#6d28d9" }} />
+                <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--chart-primary)" }} />
                 <span>Средняя: {formatValue(activePoint.average)}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -423,7 +423,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
           })}
 
           {averagePoints.length > 1 ? (
-            <path d={buildPath(averagePoints)} fill="none" stroke="#6d28d9" strokeWidth="3" strokeLinecap="round" />
+            <path d={buildPath(averagePoints)} fill="none" stroke="var(--chart-primary)" strokeWidth="3" strokeLinecap="round" />
           ) : null}
           {medianPoints.length > 1 ? (
             <path d={buildPath(medianPoints)} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" />
@@ -435,8 +435,8 @@ export function PricingTrendChart({ title, description, points }: Props) {
               cx={point.x}
               cy={point.y}
               r={activeIndex === index ? "6" : "4.5"}
-              fill="#6d28d9"
-              stroke="white"
+              fill="var(--chart-primary)"
+              stroke="color-mix(in srgb, var(--background-elevated) 92%, white)"
               strokeWidth="2"
               onMouseEnter={() => setActiveIndex(index)}
             />

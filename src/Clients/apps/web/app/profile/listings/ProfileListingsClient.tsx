@@ -243,7 +243,7 @@ export function ProfileListingsClient() {
               onClick={() => setViewMode("active")}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                 viewMode === "active"
-                  ? "border-[color:var(--color-primary)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_78%,var(--background-elevated))] text-[color:var(--color-primary-strong)]"
+                  ? "border-[color:var(--color-primary)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_28%,var(--background-elevated))] text-[color:var(--color-primary-strong)]"
                   : "border-[color:var(--border-color)] bg-[color:var(--background-elevated)] text-[color:var(--foreground-muted)]"
               }`}
             >

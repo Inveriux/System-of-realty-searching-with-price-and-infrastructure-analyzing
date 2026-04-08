@@ -2,11 +2,13 @@
 
 import { Suspense } from "react";
 import { AppHeader } from "./AppHeader";
+import { ChatUnreadBridge } from "./ChatUnreadBridge";
 import { appShellStyles } from "./app-shell.styles";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell-root" style={appShellStyles.root}>
+      <ChatUnreadBridge />
       <Suspense fallback={null}>
         <AppHeader />
       </Suspense>

@@ -65,7 +65,13 @@ const ListingPageInfrastructureNearbyCategoryDtoSchema = z.object({
   categoryCode: z.string(),
   subcategoryCode: z.string(),
   countInPrimaryRadius: z.number(),
+  candidateCount: z.number(),
+  reachableWithin10MinCount: z.number(),
+  reachableWithin15MinCount: z.number(),
   nearestDistanceM: nullableNumber,
+  routeDistanceMeters: nullableNumber,
+  travelDurationSeconds: nullableNumber,
+  walkingMinutes: nullableNumber,
   nearestWalkMinutes: nullableNumber,
   nearestDriveMinutes: nullableNumber,
   nearestDriveMinutesEstimated: z.boolean(),
@@ -73,6 +79,8 @@ const ListingPageInfrastructureNearbyCategoryDtoSchema = z.object({
   nearestAnyWalkMinutes: nullableNumber,
   nearestAnyDriveMinutes: nullableNumber,
   nearestAnyDriveMinutesEstimated: z.boolean(),
+  usedRouting: z.boolean(),
+  fallbackMode: z.string(),
   foundInRadiusM: nullableNumber,
   foundInPrimaryRadius: z.boolean(),
 });
@@ -89,6 +97,10 @@ const ListingPageInfrastructureTransportStopGroupDtoSchema = z.object({
   stopTypes: z.array(z.string()),
   sourcePoiIds: z.array(z.string()),
   nearestDistanceMeters: z.number(),
+  routeDistanceMeters: nullableNumber,
+  walkMinutes: nullableNumber,
+  usedRouting: z.boolean(),
+  fallbackMode: z.string(),
 });
 
 const ListingPageInfrastructureTransportDetailsDtoSchema = z.object({

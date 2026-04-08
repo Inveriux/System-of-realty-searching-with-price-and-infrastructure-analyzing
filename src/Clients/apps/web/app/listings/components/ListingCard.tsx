@@ -409,7 +409,7 @@ export function ListingCard({ item }: ListingCardProps) {
                 </span>
               ) : null}
               {item.educationCount != null && item.educationCount > 0 ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#7c3aed_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ede9fe_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#6d28d9]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_24%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-primary-strong)]">
                   Учеба: {item.educationCount}
                 </span>
               ) : null}
