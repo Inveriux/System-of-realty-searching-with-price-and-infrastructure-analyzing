@@ -18,6 +18,7 @@ import { AppShell } from "../../components/AppShell";
 import { useAuth } from "../../providers";
 import { ListingGallery } from "./ListingGallery";
 import { ListingLocationMap } from "./ListingLocationMap";
+import { ListingPriceAnalytics } from "./components/ListingPriceAnalytics";
 import { useViewedListings } from "../lib/listing-collections";
 
 const fallbackImage =
@@ -885,6 +886,12 @@ export function ListingDetailsClient({ listingId }: Props) {
               </div>
             </section>
 
+            <ListingPriceAnalytics
+              listingId={listingId}
+              currentPriceAmountByn={listing.priceAmountByn ?? listing.priceAmount ?? null}
+              areaTotal={listing.areaTotal ?? 0}
+            />
+
           </aside>
         </section>
 
@@ -918,11 +925,13 @@ export function ListingDetailsClient({ listingId }: Props) {
 
               <div className="listing-details-price-group flex flex-wrap items-start gap-3 xl:justify-end" style={{ minWidth: 0 }}>
                 <div
-                  className="inline-flex max-w-full items-center rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_64%,var(--background-elevated))] px-5 py-4 font-black tracking-[-0.05em] text-[var(--color-primary-strong)]"
-                  style={{ minWidth: 0, width: "100%", flexWrap: "wrap", overflowWrap: "anywhere", gap: 8, fontSize: "0.72rem" }}
+                  className="listing-details-price-card inline-flex max-w-full items-center rounded-[24px] border border-[var(--border-color)] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_64%,var(--background-elevated))] px-5 py-4 font-black tracking-[-0.05em] text-[var(--color-primary-strong)]"
+                  style={{ minWidth: 0, width: "100%", flexWrap: "wrap", overflowWrap: "anywhere", gap: 8 }}
                 >
                   <span className="inline-flex items-center" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap", gap: 2 }}>
-                    <span style={{ fontSize: "0.62rem", lineHeight: 1 }}>{formatPrice(listing.priceAmountByn ?? listing.priceAmount)}</span>
+                    <span className="listing-details-price-main" style={{ lineHeight: 1 }}>
+                      {formatPrice(listing.priceAmountByn ?? listing.priceAmount)}
+                    </span>
                     <span
                       className="inline-block h-[0.92em] w-[0.74em] shrink-0 bg-current align-[-0.08em]"
                       style={bynIconStyle}
@@ -931,9 +940,13 @@ export function ListingDetailsClient({ listingId }: Props) {
                   </span>
                   {listing.priceAmountUsd != null ? (
                     <>
-                      <span className="font-extrabold text-[var(--foreground-muted)]" style={{ fontSize: "0.72rem", marginInline: 2 }}>/</span>
+                      <span className="listing-details-price-divider font-extrabold text-[var(--foreground-muted)]" style={{ marginInline: 2 }}>
+                        /
+                      </span>
                       <span className="inline-flex items-center" style={{ minWidth: 0, maxWidth: "100%", flexWrap: "wrap", gap: 2 }}>
-                        <span style={{ fontSize: "0.62rem", lineHeight: 1 }}>{formatPrice(listing.priceAmountUsd)}</span>
+                        <span className="listing-details-price-secondary" style={{ lineHeight: 1 }}>
+                          {formatPrice(listing.priceAmountUsd)}
+                        </span>
                         <span
                           className="inline-block h-[0.92em] w-[0.82em] shrink-0 bg-current align-[-0.08em]"
                           style={dollarIconStyle}

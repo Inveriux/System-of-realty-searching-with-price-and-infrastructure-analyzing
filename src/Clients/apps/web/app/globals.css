@@ -20,17 +20,37 @@
   --shell-width: 1280px;
 }
 
-@media (min-width: 1024px) {
+  .listing-details-price-card {
+    font-size: 1.62rem !important;
+  }
+
   .listing-details-price-main {
-    font-size: 0.72rem !important;
+    font-size: 1.4rem !important;
   }
 
   .listing-details-price-divider {
-    font-size: 0.8rem !important;
+    font-size: 1.62rem !important;
   }
 
   .listing-details-price-secondary {
-    font-size: 0.72rem !important;
+    font-size: 1.4rem !important;
+  }
+
+@media (min-width: 1024px) {
+  .listing-details-price-card {
+    font-size: 1.62rem !important;
+  }
+
+  .listing-details-price-main {
+    font-size: 1.62rem !important;
+  }
+
+  .listing-details-price-divider {
+    font-size: 1.8rem !important;
+  }
+
+  .listing-details-price-secondary {
+    font-size: 1.62rem !important;
   }
 }
 
@@ -734,7 +754,7 @@ select.field:focus {
 
   .app-header-surface {
     border-radius: 22px !important;
-    padding: 10px !important;
+    padding: 8px 10px !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
   }
@@ -747,6 +767,11 @@ select.field:focus {
       "search search" !important;
     align-items: stretch !important;
     gap: 10px !important;
+  }
+
+  .app-header-top:has(.app-header-search-hidden-mobile) {
+    grid-template-areas: "brand actions" !important;
+    gap: 6px !important;
   }
 
   .app-header-brand,
@@ -762,6 +787,7 @@ select.field:focus {
     max-width: 100%;
     align-self: center;
     gap: 6px !important;
+    padding: 0 !important;
   }
 
   .app-header-search {
@@ -782,8 +808,8 @@ select.field:focus {
   }
 
   .app-header-brand {
-    padding: 4px 6px !important;
-    border-radius: 16px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
   }
 
   .app-header-brand-text {
@@ -801,9 +827,9 @@ select.field:focus {
   }
 
   .app-header-logo-wrap {
-    width: 52px !important;
-    height: 32px !important;
-    border-radius: 12px !important;
+    width: 72px !important;
+    height: 42px !important;
+    border-radius: 0 !important;
   }
 
   .app-header-icon-cluster {
@@ -1530,7 +1556,7 @@ html[data-theme="dark"] .theme-toggle-button {
 }
 
   .app-header-brand {
-    padding: 4px 6px !important;
+    padding: 0 !important;
   }
 
   .app-header-actions {
@@ -1542,8 +1568,8 @@ html[data-theme="dark"] .theme-toggle-button {
   }
 
   .app-header-logo-wrap {
-    width: 46px !important;
-    height: 28px !important;
+    width: 82px !important;
+    height: 48px !important;
   }
 
   .app-header-account-menu {

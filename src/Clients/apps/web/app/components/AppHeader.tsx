@@ -191,35 +191,31 @@ export function AppHeader() {
                 alignItems: "center",
                 gap: 10,
                 minWidth: 0,
-                padding: "8px 12px",
-                borderRadius: 22,
+                padding: "4px 0",
+                borderRadius: 0,
                 textDecoration: "none",
                 color: "inherit",
-                background: "color-mix(in srgb, var(--background) 76%, transparent)",
-                border: "1px solid color-mix(in srgb, var(--border-color) 60%, transparent)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.24)",
               }}
             >
               <div
                 className="app-header-logo-wrap"
                 style={{
-                  width: 78,
-                  height: 44,
-                  borderRadius: 16,
+                  width: 102,
+                  height: 60,
+                  borderRadius: 0,
                   overflow: "visible",
                   display: "grid",
                   placeItems: "center",
-                  background: "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-soft) 84%, white), color-mix(in srgb, var(--background) 70%, white))",
                 }}
               >
                 <img
                   alt="Realt"
-                  src="/header-logo.png"
+                  src="/new_icon.png"
                   style={{
                     width: "100%",
                     height: "100%",
                     objectFit: "contain",
-                    transform: "translateY(-20%)",
+                    transform: "translateY(-14%)",
                   }}
                 />
               </div>

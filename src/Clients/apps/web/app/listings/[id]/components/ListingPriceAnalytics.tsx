@@ -64,10 +64,6 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
   const comparison = comparisonQuery.data;
   const tone = getRelativeTone(comparison?.relativePosition);
 
-  if (isMobileViewport) {
-    return null;
-  }
-
   return (
     <section className="listing-price-analytics surface rounded-[28px] p-6" style={{ minWidth: 0, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
       <div className="listing-price-analytics-grid grid gap-4">
@@ -143,7 +139,7 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="hidden items-center justify-center gap-2 rounded-[16px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--background-muted)] sm:inline-flex"
+              className="inline-flex items-center justify-center gap-2 rounded-[16px] border border-[var(--border-color)] bg-[var(--background-elevated)] px-4 py-3 text-center text-sm font-semibold text-[var(--foreground)] transition hover:bg-[var(--background-muted)]"
             >
               <LineChart className="h-4 w-4 text-[var(--color-primary)]" />
               <span>Показать график и детали</span>
@@ -161,7 +157,7 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
             background: "color-mix(in srgb, #0f172a 56%, transparent)",
             display: "grid",
             placeItems: "center",
-            padding: "24px",
+            padding: isMobileViewport ? "12px" : "24px",
           }}
           onClick={() => setIsModalOpen(false)}
         >
@@ -171,10 +167,10 @@ export function ListingPriceAnalytics({ listingId, currentPriceAmountByn, areaTo
               width: "min(980px, 100%)",
               minWidth: 0,
               maxWidth: "100%",
-              maxHeight: "min(88vh, 920px)",
+              maxHeight: isMobileViewport ? "calc(100dvh - 24px)" : "min(88vh, 920px)",
               overflowY: "auto",
               borderRadius: 28,
-              padding: 24,
+              padding: isMobileViewport ? 16 : 24,
             }}
             onClick={(event) => event.stopPropagation()}
           >

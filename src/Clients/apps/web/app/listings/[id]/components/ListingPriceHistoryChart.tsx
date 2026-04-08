@@ -1,6 +1,7 @@
 "use client";
 
 import type { ListingPriceHistory } from "@diploma/contracts/pricing-analytics";
+import { useEffect, useState } from "react";
 
 type Props = {
   history: ListingPriceHistory;
@@ -34,6 +35,17 @@ function formatDate(value?: string | null, options?: Intl.DateTimeFormatOptions)
 }
 
 export function ListingPriceHistoryChart({ history }: Props) {
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobileViewport(window.innerWidth < 768);
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
   if (history.history.length === 0) {
     return (
       <div className="rounded-[24px] border border-[var(--border-color)] bg-[var(--background-elevated)] p-5 text-sm text-[var(--foreground-muted)]">
@@ -53,14 +65,15 @@ export function ListingPriceHistoryChart({ history }: Props) {
   const height = 340;
   const paddingTop = 20;
   const paddingRight = 24;
-  const paddingBottom = 54;
-  const paddingLeft = 84;
+  const paddingBottom = isMobileViewport ? 64 : 54;
+  const paddingLeft = isMobileViewport ? 160 : 84;
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
   const range = Math.max(maxValue - minValue, 1);
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
   const stepX = points.length > 1 ? chartWidth / (points.length - 1) : 0;
+  const axisFontSize = isMobileViewport ? 24 : 11;
 
   const normalized = points
     .map((point, index) => point.priceAmountByn == null ? null : ({
@@ -98,11 +111,7 @@ export function ListingPriceHistoryChart({ history }: Props) {
         </div>
       </div>
 
-      <div className="rounded-[18px] bg-[var(--background-muted)] px-4 py-3 text-sm text-[var(--foreground-muted)] sm:hidden">
-        График истории цены скрыт на мобильном экране. Ниже доступен список всех изменений цены.
-      </div>
-
-      <div className="hidden overflow-hidden sm:block" style={{ minWidth: 0 }}>
+      <div className="overflow-hidden" style={{ minWidth: 0 }}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           style={{ width: "100%", minWidth: 0, maxWidth: "100%", height: "auto", display: "block" }}
@@ -120,7 +129,7 @@ export function ListingPriceHistoryChart({ history }: Props) {
                   stroke="color-mix(in srgb, var(--border-color) 82%, transparent)"
                   strokeWidth="1"
                 />
-                <text x={12} y={y + 4} fill="var(--foreground-muted)" fontSize="11">
+                <text x={12} y={y + 4} fill="var(--foreground-muted)" fontSize={axisFontSize}>
                   {Math.round(value)}
                 </text>
               </g>
@@ -163,7 +172,7 @@ export function ListingPriceHistoryChart({ history }: Props) {
               y={height - 18}
               textAnchor="middle"
               fill="var(--foreground-muted)"
-              fontSize="11"
+              fontSize={axisFontSize}
             >
               {formatDate(point.effectiveDateUtc, { month: "2-digit", year: "2-digit" })}
             </text>
