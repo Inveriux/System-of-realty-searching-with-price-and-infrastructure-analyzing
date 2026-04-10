@@ -25,9 +25,39 @@ export function AppHeader() {
   const isCreateListingPage = pathname.startsWith("/create-listing");
   const isPricingAnalyticsPage = pathname.startsWith("/analytics/pricing");
   const isListingDetailsPage = /^\/listings\/[^/]+$/.test(pathname);
+  const isProfilePage = pathname.startsWith("/profile");
   const unreadCount = hasHydrated && status === "authenticated" ? (unreadCountQuery.data?.count ?? 0) : 0;
   const canRenderAuthState = hasHydrated && status !== "loading";
   const isAuthenticated = canRenderAuthState && status === "authenticated";
+  const activeIconButtonStyle = {
+    background: "color-mix(in srgb, var(--color-primary-soft) 86%, var(--background-elevated))",
+    color: "var(--color-primary-strong)",
+    border: "1px solid var(--color-primary-border)",
+    boxShadow: "0 10px 22px color-mix(in srgb, var(--shadow-color) 64%, transparent)",
+  } as const;
+  const idleIconButtonStyle = {
+    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+    color: "inherit",
+    border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+    boxShadow: "0 8px 18px color-mix(in srgb, var(--shadow-color) 54%, transparent)",
+  } as const;
+  const unreadBadgeStyle = {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 19,
+    height: 19,
+    borderRadius: 999,
+    background: "linear-gradient(180deg, var(--color-primary-strong), var(--color-primary-active))",
+    color: "var(--text-on-accent)",
+    display: "grid",
+    placeItems: "center",
+    padding: "0 5px",
+    fontSize: 11,
+    fontWeight: 800,
+    border: "1px solid color-mix(in srgb, var(--color-primary-strong) 70%, transparent)",
+    boxShadow: "0 8px 16px color-mix(in srgb, var(--shadow-color) 66%, transparent)",
+  } as const;
 
   useEffect(() => {
     setHasHydrated(true);
@@ -213,12 +243,13 @@ export function AppHeader() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
+                gap: 2,
                 minWidth: 0,
                 padding: "4px 0",
                 borderRadius: 0,
                 textDecoration: "none",
                 color: "inherit",
+                marginLeft: -8,
               }}
             >
               <div
@@ -233,7 +264,7 @@ export function AppHeader() {
                 }}
               >
                 <img
-                  alt="Realt"
+                  alt="Domio"
                   src="/new_icon.png"
                   style={{
                     width: "100%",
@@ -243,29 +274,21 @@ export function AppHeader() {
                   }}
                 />
               </div>
-              <div className="app-header-brand-text" style={{ minWidth: 0 }}>
+              <div className="app-header-brand-text" style={{ minWidth: 0, marginLeft: -8 }}>
                 <div
                   className="app-header-brand-title"
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "1.22rem",
+                    fontSize: "2.64rem",
                     letterSpacing: "-0.07em",
                     fontWeight: 800,
                     lineHeight: 1,
+                    minHeight: 60,
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
-                  Realt
-                </div>
-                <div
-                  className="eyebrow app-header-brand-subtitle"
-                  style={{
-                    marginTop: 4,
-                    fontSize: "0.66rem",
-                    letterSpacing: "0.12em",
-                    color: "var(--foreground-muted)",
-                  }}
-                >
-                  Недвижимость
+                  Domio
                 </div>
               </div>
             </Link>
@@ -279,6 +302,8 @@ export function AppHeader() {
                   flex: "1 1 520px",
                   minWidth: "min(100%, 220px)",
                   maxWidth: 760,
+                  marginLeft: 28,
+                  display: isProfilePage ? "none" : undefined,
                 }}
               >
                 <img
@@ -301,7 +326,7 @@ export function AppHeader() {
                   className="field"
                   aria-label="Поиск"
                   placeholder="Поиск по объявлениям, адресу или жилому комплексу"
-                  value={searchQuery}
+                  value={searchQuery ?? ""}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   style={{
                     borderRadius: 22,
@@ -309,7 +334,7 @@ export function AppHeader() {
                     padding: "0.92rem 1.1rem",
                     paddingLeft: "2.85rem",
                     paddingRight: "1.15rem",
-                    fontSize: "0.98rem",
+                    fontSize: "1.04rem",
                     fontWeight: 500,
                     background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
                     border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
@@ -328,39 +353,42 @@ export function AppHeader() {
                   href="/create-listing"
                   className="app-header-create-button"
                   style={{
-                    minHeight: 46,
-                    padding: "0 16px",
+                    minHeight: 42,
+                    width: 42,
+                    minWidth: 42,
+                    justifyContent: "center",
+                    padding: 0,
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 0,
                     textDecoration: "none",
-                    borderRadius: 18,
+                    borderRadius: 14,
                     fontSize: "0.95rem",
                     fontWeight: 700,
                     letterSpacing: "-0.02em",
                     background: isCreateListingPage
-                      ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-strong) 72%, black), color-mix(in srgb, var(--color-primary) 78%, black))"
-                      : "linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 78%, white), color-mix(in srgb, var(--color-primary-strong) 76%, black))",
-                    color: "white",
-                    boxShadow: "0 12px 22px color-mix(in srgb, var(--shadow-color) 72%, transparent)",
+                      ? "color-mix(in srgb, var(--color-primary-active) 94%, black)"
+                      : "color-mix(in srgb, var(--color-primary-active) 82%, var(--background-elevated))",
+                    border: "1px solid color-mix(in srgb, var(--color-primary) 44%, var(--border-color))",
+                    color: "var(--text-on-accent)",
+                    boxShadow: "0 14px 26px color-mix(in srgb, var(--shadow-color) 74%, transparent)",
                   }}
                   title="Добавить объявление"
                 >
                   <span
                     style={{
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       display: "grid",
                       placeItems: "center",
                       borderRadius: 999,
-                      background: "rgba(255,255,255,0.12)",
-                      fontSize: "1rem",
+                      background: "transparent",
+                      fontSize: "1.08rem",
                       lineHeight: 1,
                     }}
                   >
                     +
                   </span>
-                  <span>Добавить</span>
                 </Link>
               ) : null}
 
@@ -374,6 +402,7 @@ export function AppHeader() {
                   borderRadius: 18,
                   background: "color-mix(in srgb, var(--background-elevated) 92%, var(--background-muted))",
                   border: "1px solid color-mix(in srgb, var(--border-color) 88%, transparent)",
+                  boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--background-elevated) 18%, transparent)",
                 }}
               >
                 <button
@@ -387,12 +416,7 @@ export function AppHeader() {
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: isMessagesPage
-                      ? "color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated))"
-                      : "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                    color: isMessagesPage ? "var(--color-primary-strong)" : "inherit",
-                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
-                    border: "none",
+                    ...(isMessagesPage ? activeIconButtonStyle : idleIconButtonStyle),
                     padding: 0,
                     position: "relative",
                   }}
@@ -401,21 +425,7 @@ export function AppHeader() {
                   <MessageCircleMore size={18} />
                   {unreadCount > 0 ? (
                     <span
-                      style={{
-                        position: "absolute",
-                        top: -4,
-                        right: -4,
-                        minWidth: 18,
-                        height: 18,
-                        borderRadius: 999,
-                        background: "var(--color-primary)",
-                        color: "#fff",
-                        display: "grid",
-                        placeItems: "center",
-                        padding: "0 5px",
-                        fontSize: 11,
-                        fontWeight: 800,
-                      }}
+                      style={unreadBadgeStyle}
                     >
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
@@ -432,10 +442,7 @@ export function AppHeader() {
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                    color: "inherit",
-                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
-                    border: "none",
+                    ...(isPricingAnalyticsPage ? activeIconButtonStyle : idleIconButtonStyle),
                     padding: 0,
                   }}
                   title="Ценовая аналитика"
@@ -453,12 +460,7 @@ export function AppHeader() {
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: isFavoritesPage
-                      ? "color-mix(in srgb, var(--color-primary-soft) 48%, var(--background-elevated))"
-                      : "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                    color: isFavoritesPage ? "var(--color-primary-strong)" : "inherit",
-                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
-                    border: "none",
+                    ...(isFavoritesPage ? activeIconButtonStyle : idleIconButtonStyle),
                     padding: 0,
                   }}
                   title="Избранное"
@@ -466,15 +468,13 @@ export function AppHeader() {
                   <img alt="" src="/icons/favorites.svg" className="app-header-icon-image" style={{ width: 18, height: 18 }} />
                 </button>
                 <div
-                  className={isMessagesPage ? "app-header-theme-compact" : undefined}
                   style={{
-                    width: isMessagesPage ? 34 : 40,
+                    width: 40,
                     height: 40,
                     display: "grid",
                     placeItems: "center",
                     borderRadius: 14,
-                    background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                    boxShadow: "0 6px 16px color-mix(in srgb, var(--shadow-color) 58%, transparent)",
+                    ...idleIconButtonStyle,
                     overflow: "hidden",
                   }}
                 >
@@ -606,19 +606,9 @@ export function AppHeader() {
                           {unreadCount > 0 ? (
                             <span
                               style={{
-                                position: "absolute",
+                                ...unreadBadgeStyle,
                                 top: 10,
                                 right: 10,
-                                minWidth: 20,
-                                height: 20,
-                                borderRadius: 999,
-                                background: "var(--color-primary)",
-                                color: "#fff",
-                                display: "grid",
-                                placeItems: "center",
-                                padding: "0 6px",
-                                fontSize: 11,
-                                fontWeight: 800,
                               }}
                             >
                               {unreadCount > 99 ? "99+" : unreadCount}
@@ -656,7 +646,8 @@ export function AppHeader() {
                             borderRadius: 14,
                             textDecoration: "none",
                             color: "var(--color-primary-strong)",
-                            background: "color-mix(in srgb, var(--color-primary-soft) 38%, var(--background-elevated))",
+                            background: "color-mix(in srgb, var(--color-primary-soft) 78%, var(--background-elevated))",
+                            border: "1px solid var(--color-primary-border)",
                           }}
                         >
                           <div className="eyebrow">Действие</div>
@@ -691,7 +682,7 @@ export function AppHeader() {
                           border: "none",
                           textAlign: "left",
                           font: "inherit",
-                          color: "var(--color-danger, #b42318)",
+                          color: "var(--color-danger-strong)",
                           background: "transparent",
                           cursor: "pointer",
                         }}

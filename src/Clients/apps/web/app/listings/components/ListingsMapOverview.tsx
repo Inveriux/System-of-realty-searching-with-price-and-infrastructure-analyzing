@@ -159,11 +159,11 @@ export function ListingsMapOverview({
                 balloonContentHeader: listing.title,
                 balloonContentBody: `
                   <div style="display:grid;gap:8px;min-width:220px;">
-                    <div style="color:#5b3df5;font-size:13px;font-weight:700;">${listing.propertyType}</div>
-                    <div style="color:#667085;font-size:13px;">${listing.addressText ?? "Адрес уточняется"}</div>
+                    <div style="color:var(--color-primary);font-size:13px;font-weight:700;">${listing.propertyType}</div>
+                    <div style="color:var(--foreground-muted);font-size:13px;">${listing.addressText ?? "Адрес уточняется"}</div>
                     <div style="font-weight:800;">${listing.priceText}</div>
-                    ${publishedDateLabel ? `<div style="color:#667085;font-size:12px;">Опубликовано: ${publishedDateLabel}</div>` : ""}
-                    <a href="${listing.href}" style="color:#5b3df5;font-weight:700;text-decoration:none;">Открыть объявление</a>
+                    ${publishedDateLabel ? `<div style="color:var(--foreground-muted);font-size:12px;">Опубликовано: ${publishedDateLabel}</div>` : ""}
+                    <a href="${listing.href}" style="color:var(--color-primary);font-weight:700;text-decoration:none;">Открыть объявление</a>
                   </div>
                 `,
               },
@@ -211,11 +211,6 @@ export function ListingsMapOverview({
             map.geoObjects.add(radiusCircle);
             map.geoObjects.add(selectedPlacemark);
           }
-
-          map.events?.add("click", (event) => {
-            const [latitude, longitude] = (event as { get: (key: string) => [number, number] }).get("coords");
-            onSelectCenter?.({ latitude, longitude });
-          });
 
           selectedPlacemarkRef.current = selectedPlacemark;
           radiusCircleRef.current = radiusCircle;
@@ -275,10 +270,12 @@ export function ListingsMapOverview({
         <div className="listings-map-overview-header" style={listingsMapOverviewStyles.header}>
           <h2 className="section-title" style={listingsMapOverviewStyles.title}>Объекты на карте</h2>
           <div className="listings-map-overview-actions" style={listingsMapOverviewStyles.headerActions}>
-            <div className="listings-map-overview-help" style={listingsMapOverviewStyles.helpText}>
-              Кликни по карте, чтобы поставить метку. Поиск объявлений будет идти рядом с этой точкой в заданном радиусе.
-            </div>
-            {onClearCenter ? (
+            {selectedCenter && onClearCenter ? (
+              <div className="listings-map-overview-help" style={listingsMapOverviewStyles.helpText}>
+                На карте показана текущая точка поиска по радиусу из фильтров.
+              </div>
+            ) : null}
+            {selectedCenter && onClearCenter ? (
               <button className="button-secondary" onClick={onClearCenter} type="button">
                 Сбросить точку
               </button>
@@ -296,7 +293,7 @@ export function ListingsMapOverview({
         />
 
         {mapError ? (
-          <div className="rounded-[18px] border border-[#f0c36d] bg-[#fff5df] px-4 py-3 text-sm text-[#8c5a00]">
+          <div className="rounded-[18px] border border-[color:color-mix(in_srgb,var(--color-warning)_26%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-warning-soft)_84%,var(--background-elevated))] px-4 py-3 text-sm text-[color:var(--color-warning)]">
             {mapError}
           </div>
         ) : null}

@@ -8,6 +8,7 @@ public interface IUserRepository
     Task<string?> GetUserRoleAsync(User user);
     Task<User?> GetByRefreshTokenAsync(string refreshTokenHash);
     Task<User?> GetByEmailAsync(string email, bool IsTracking = false);
+    Task<User?> GetFirstByRoleAsync(string role, bool isTracking = false);
     Task CreateUserAsync(User user, string password, string role);
     Task CreateGoogleUserAsync(User user, string role);
     Task<int> SaveChangesAsync();

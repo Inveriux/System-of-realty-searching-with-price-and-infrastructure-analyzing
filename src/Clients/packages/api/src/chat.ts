@@ -54,6 +54,11 @@ export async function startConversation(api: ApiClient, payload: StartConversati
   return result.data;
 }
 
+export async function startSupportConversation(api: ApiClient) {
+  const result = await api.post("/api/chat/conversations/support/start", {}, ConversationDetailsResultSchema);
+  return result.data;
+}
+
 export async function getMyConversations(api: ApiClient) {
   const result = await api.get("/api/chat/conversations", ConversationListResultSchema);
   return result.data;

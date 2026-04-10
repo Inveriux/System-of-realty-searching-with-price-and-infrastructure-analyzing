@@ -3,6 +3,7 @@ namespace ChatService.DTOs.Chat;
 public sealed class ConversationListItemDto
 {
     public Guid ConversationId { get; init; }
+    public string ConversationType { get; init; } = string.Empty;
     public Guid ListingId { get; init; }
     public string ListingTitle { get; init; } = string.Empty;
     public decimal? ListingPrice { get; init; }
@@ -19,6 +20,7 @@ public sealed class ConversationListItemDto
 public sealed class ConversationDetailsDto
 {
     public Guid ConversationId { get; init; }
+    public string ConversationType { get; init; } = string.Empty;
     public Guid ListingId { get; init; }
     public string ListingTitle { get; init; } = string.Empty;
     public decimal? ListingPrice { get; init; }
@@ -27,6 +29,8 @@ public sealed class ConversationDetailsDto
     public Guid OtherUserId { get; init; }
     public string OtherUserName { get; init; } = string.Empty;
     public string? OtherUserAvatarUrl { get; init; }
+    public string? OtherUserEmail { get; init; }
+    public string? OtherUserPhone { get; init; }
 }
 
 public sealed class MessageDto

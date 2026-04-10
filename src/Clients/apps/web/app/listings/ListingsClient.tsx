@@ -818,42 +818,6 @@ export function ListingsClient({
         open={isMapOverviewOpen}
         onClose={() => setIsMapOverviewOpen(false)}
         listings={mapListings}
-        selectedCenter={
-          filters.centerLatitude != null && filters.centerLongitude != null
-            ? {
-                latitude: filters.centerLatitude,
-                longitude: filters.centerLongitude,
-              }
-            : null
-        }
-        radiusMeters={parseOptionalNumber(filters.radiusMeters)}
-        onSelectCenter={(point) =>
-          setFilters((current) => ({
-            ...current,
-            page: 0,
-            searchInMapArea: false,
-            boundsMinLatitude: null,
-            boundsMinLongitude: null,
-            boundsMaxLatitude: null,
-            boundsMaxLongitude: null,
-            centerLatitude: point.latitude,
-            centerLongitude: point.longitude,
-            radiusMeters: current.radiusMeters || "1500",
-          }))
-        }
-        onClearCenter={() =>
-          setFilters((current) => ({
-            ...current,
-            page: 0,
-            searchInMapArea: false,
-            boundsMinLatitude: null,
-            boundsMinLongitude: null,
-            boundsMaxLatitude: null,
-            boundsMaxLongitude: null,
-            centerLatitude: null,
-            centerLongitude: null,
-          }))
-        }
       />
 
       {isFiltersModalOpen && typeof document !== "undefined"

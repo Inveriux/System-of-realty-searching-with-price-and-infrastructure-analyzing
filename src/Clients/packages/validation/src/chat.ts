@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  ConversationType,
   ConversationDetailsDto,
   ConversationListItemDto,
   ConversationMessagesPageDto,
@@ -9,6 +10,8 @@ import type {
   StartConversationDto,
   UnreadCountDto,
 } from "@diploma/contracts/chat";
+
+export const ConversationTypeSchema: z.ZodType<ConversationType> = z.enum(["listing", "support"]);
 
 export const StartConversationDtoSchema: z.ZodType<StartConversationDto> = z.object({
   listingId: z.string().uuid(),
@@ -22,6 +25,7 @@ export const SendMessageDtoSchema: z.ZodType<SendMessageDto> = z.object({
 
 export const ConversationListItemDtoSchema: z.ZodType<ConversationListItemDto> = z.object({
   conversationId: z.string().uuid(),
+  conversationType: ConversationTypeSchema,
   listingId: z.string().uuid(),
   listingTitle: z.string(),
   listingPrice: z.number().nullable(),
@@ -37,6 +41,7 @@ export const ConversationListItemDtoSchema: z.ZodType<ConversationListItemDto> =
 
 export const ConversationDetailsDtoSchema: z.ZodType<ConversationDetailsDto> = z.object({
   conversationId: z.string().uuid(),
+  conversationType: ConversationTypeSchema,
   listingId: z.string().uuid(),
   listingTitle: z.string(),
   listingPrice: z.number().nullable(),
@@ -45,6 +50,8 @@ export const ConversationDetailsDtoSchema: z.ZodType<ConversationDetailsDto> = z
   otherUserId: z.string().uuid(),
   otherUserName: z.string(),
   otherUserAvatarUrl: z.string().nullable(),
+  otherUserEmail: z.string().nullable(),
+  otherUserPhone: z.string().nullable(),
 });
 
 export const MessageDtoSchema: z.ZodType<MessageDto> = z.object({

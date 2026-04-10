@@ -198,7 +198,7 @@ export function ListingCard({ item }: ListingCardProps) {
                 {typeLabel}
               </span>
               {item.isHidden ? (
-                <span className="rounded-full px-3 py-1.5 text-[12px] font-semibold shadow-sm backdrop-blur bg-[color:color-mix(in_srgb,#fff4e5_88%,white)] text-[#b45309]">
+                <span className="rounded-full px-3 py-1.5 text-[12px] font-semibold shadow-sm backdrop-blur bg-[color:color-mix(in_srgb,var(--color-warning-soft)_88%,white)] text-[color:var(--color-warning)]">
                   Скрыто
                 </span>
               ) : null}
@@ -210,7 +210,7 @@ export function ListingCard({ item }: ListingCardProps) {
                   type="button"
                   onClick={handleEditPrice}
                   disabled={item.isEditingPrice}
-                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#dcfce7_82%,white)] text-[#166534] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--color-success-soft)_84%,white)] text-[color:var(--color-success-strong)] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label={item.isEditingPrice ? "Открытие изменения цены" : "Изменить цену"}
                   title={item.isEditingPrice ? "Открытие изменения цены" : "Изменить цену"}
                 >
@@ -235,9 +235,9 @@ export function ListingCard({ item }: ListingCardProps) {
                 className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 shadow-sm backdrop-blur transition hover:scale-[1.03]"
                 style={{
                   background: item.isFavorite
-                    ? "color-mix(in srgb, #ffe2ea 88%, white)"
+                    ? "color-mix(in srgb, var(--color-danger-soft) 88%, white)"
                     : "color-mix(in srgb, var(--background-elevated) 86%, var(--color-primary-soft))",
-                  color: item.isFavorite ? "#be123c" : "var(--color-primary-strong)",
+                  color: item.isFavorite ? "var(--color-danger-strong)" : "var(--color-primary-strong)",
                 }}
                 aria-label={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
                 title={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
@@ -249,7 +249,7 @@ export function ListingCard({ item }: ListingCardProps) {
                   type="button"
                   onClick={handleHide}
                   disabled={item.isHiding || item.isHidden}
-                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#eef2ff_88%,white)] text-[#4338ca] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--color-info-soft)_88%,white)] text-[color:var(--color-info)] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label="Скрыть объявление"
                   title="Скрыть объявление"
                 >
@@ -261,7 +261,7 @@ export function ListingCard({ item }: ListingCardProps) {
                   type="button"
                   onClick={handleUnhide}
                   disabled={item.isUnhiding}
-                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#ecfccb_88%,white)] text-[#3f6212] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--color-success-soft)_88%,white)] text-[color:var(--color-success-strong)] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label="Вернуть объявление"
                   title="Вернуть объявление"
                 >
@@ -273,7 +273,7 @@ export function ListingCard({ item }: ListingCardProps) {
                   type="button"
                   onClick={handleDelete}
                   disabled={item.isDeleting}
-                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,#ffe2e2_88%,white)] text-[#b42318] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 bg-[color:color-mix(in_srgb,var(--color-danger-soft)_88%,white)] text-[color:var(--color-danger-strong)] shadow-sm backdrop-blur transition hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label="Удалить объявление"
                   title="Удалить объявление"
                 >
@@ -399,12 +399,12 @@ export function ListingCard({ item }: ListingCardProps) {
           <div className="mt-3 border-t border-[color:color-mix(in_srgb,var(--color-primary)_14%,var(--border-color))] pt-2.5">
             <div className="flex flex-wrap gap-2">
               {infrastructureScore ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#0f766e_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ccfbf1_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#115e59]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-success)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-success-soft)_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-success-strong)]">
                   Инфраструктура: {infrastructureScore}
                 </span>
               ) : null}
               {item.transportCount != null && item.transportCount > 0 ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#2563eb_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#1d4ed8]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-info)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-info-soft)_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-info)]">
                   Транспорт: {item.transportCount}
                 </span>
               ) : null}
@@ -414,17 +414,17 @@ export function ListingCard({ item }: ListingCardProps) {
                 </span>
               ) : null}
               {item.healthcareCount != null && item.healthcareCount > 0 ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#b42318_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee4e2_80%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#b42318]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-danger)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-danger-soft)_80%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-danger-strong)]">
                   Медицина: {item.healthcareCount}
                 </span>
               ) : null}
               {transportNearest ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#0f766e_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ecfeff_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#155e75]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-info)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-info-soft)_72%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-info)]">
                   До транспорта: {transportNearest}
                 </span>
               ) : null}
               {item.hasCoordinates === false ? (
-                <span className="rounded-full border border-[color:color-mix(in_srgb,#c2410c_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#ffedd5_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[#9a3412]">
+                <span className="rounded-full border border-[color:color-mix(in_srgb,var(--color-warning)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-warning-soft)_78%,var(--background-elevated))] px-2.5 py-1 text-[10.5px] font-bold text-[color:var(--color-warning)]">
                   На карте пока недоступно
                 </span>
               ) : null}
@@ -441,7 +441,7 @@ export function ListingCard({ item }: ListingCardProps) {
             {item.nearestMetroName || parkingLabel ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.nearestMetroName ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#dc2626_20%,var(--border-color))] bg-[color:color-mix(in_srgb,#fee2e2_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#b91c1c]">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--color-danger)_20%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-danger-soft)_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[color:var(--color-danger-strong)]">
                     <img
                       src="/map-markers/minsk-metro.svg"
                       alt=""
@@ -453,7 +453,7 @@ export function ListingCard({ item }: ListingCardProps) {
                   </div>
                 ) : null}
                 {parkingLabel ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,#1d4ed8_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[#1d4ed8]">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--color-info)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-info-soft)_82%,var(--background-elevated))] px-3 py-1.5 text-[11.5px] font-bold text-[color:var(--color-info)]">
                     <img
                       src="/map-markers/parking.svg"
                       alt=""

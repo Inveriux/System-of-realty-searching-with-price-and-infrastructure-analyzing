@@ -115,6 +115,10 @@ public class UserEndpoints : IEndpointRegistrar
             .WithName("GetSellerPublicProfile")
             .WithSummary("Gets the public seller profile by agent id.")
             .WithDescription("Returns a public-safe seller profile projection intended for BFF consumption.");
+        agentsGroup.MapGet("/support-profile", GetSupportPublicProfileAsync)
+            .WithName("GetSupportPublicProfile")
+            .WithSummary("Gets the public support operator profile.")
+            .WithDescription("Returns the default public-safe support operator profile for support conversations.");
 
         return group;
     }
@@ -312,6 +316,14 @@ public class UserEndpoints : IEndpointRegistrar
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetSellerPublicProfileQuery(id), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    public async Task<IResult> GetSupportPublicProfileAsync(
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetSupportPublicProfileQuery(), cancellationToken);
         return result.ToHttpResult();
     }
 }

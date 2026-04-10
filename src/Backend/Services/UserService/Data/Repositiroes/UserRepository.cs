@@ -27,6 +27,14 @@ public class UserRepository(ApplicationDbContext context,
             .FirstOrDefaultAsync(u => u.Email == email);
     }
 
+    public async Task<User?> GetFirstByRoleAsync(string role, bool isTracking = false)
+    {
+        var users = await userManager.GetUsersInRoleAsync(role);
+        return users
+            .OrderBy(x => x.Name)
+            .FirstOrDefault();
+    }
+
     public async Task<User?> GetByRefreshTokenAsync(string refreshTokenHash)
     {
         return await userManager.Users

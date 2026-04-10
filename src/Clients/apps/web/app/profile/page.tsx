@@ -5,6 +5,7 @@ import { useListingsQuery } from "@diploma/features";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { AppShell } from "../components/AppShell";
+import { AuthDialog } from "../components/AuthDialog";
 import { useAuth } from "../providers";
 
 function getInitials(name?: string | null) {
@@ -36,6 +37,7 @@ export default function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [authDialogMode, setAuthDialogMode] = useState<"signin" | "signup" | null>(null);
 
   useEffect(() => {
     setName(user?.name ?? "");
@@ -125,18 +127,24 @@ export default function ProfilePage() {
   if (status !== "authenticated" || !user) {
     return (
       <AppShell>
-        <section className="surface grid gap-4 rounded-[28px] p-7">
-          <div className="eyebrow">Профиль</div>
-          <h1 className="section-title">Войдите в аккаунт</h1>
-          <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 680 }}>
-            Профиль, избранное и управление своими объявлениями доступны только после входа.
-          </p>
-          <div>
-            <Link className="button-primary" href="/listings">
-              Перейти к каталогу
-            </Link>
-          </div>
-        </section>
+        <>
+          <section className="surface grid gap-4 rounded-[28px] p-7">
+            <div className="eyebrow">Профиль</div>
+            <h1 className="section-title">Войдите в аккаунт</h1>
+            <p style={{ margin: 0, color: "var(--foreground-muted)", maxWidth: 680 }}>
+              Профиль, избранное и управление своими объявлениями доступны только после входа.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button className="button-primary" type="button" onClick={() => setAuthDialogMode("signin")}>
+                Войти в аккаунт
+              </button>
+              <button className="button-secondary" type="button" onClick={() => setAuthDialogMode("signup")}>
+                Регистрация
+              </button>
+            </div>
+          </section>
+          <AuthDialog mode={authDialogMode} onClose={() => setAuthDialogMode(null)} />
+        </>
       </AppShell>
     );
   }
@@ -144,138 +152,140 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <main className="grid gap-6 pb-10">
-        <section className="surface profile-hero grid gap-6 rounded-[30px] p-7">
-          <div className="profile-top-grid grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
-            <div
-              className="profile-avatar"
-              style={{
-                width: 108,
-                height: 108,
-                borderRadius: 30,
-                overflow: "hidden",
-                display: "grid",
-                placeItems: "center",
-                background: "color-mix(in srgb, var(--color-primary-soft) 28%, var(--background-elevated))",
-                color: "var(--color-primary-strong)",
-                fontSize: "2rem",
-                fontWeight: 800,
-                letterSpacing: "-0.06em",
-              }}
-            >
-              {user.accountImageUrl ? (
-                <img
-                  alt={user.name}
-                  src={user.accountImageUrl}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <span>{getInitials(user.name)}</span>
-              )}
-            </div>
+        <section className="profile-main-grid grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
+          <section className="grid gap-6">
+            <section className="surface profile-hero grid gap-6 rounded-[30px] p-7">
+              <div className="profile-top-grid grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
+                <div
+                  className="profile-avatar"
+                  style={{
+                    width: 108,
+                    height: 108,
+                    borderRadius: 30,
+                    overflow: "hidden",
+                    display: "grid",
+                    placeItems: "center",
+                    background: "color-mix(in srgb, var(--color-primary-soft) 28%, var(--background-elevated))",
+                    color: "var(--color-primary-strong)",
+                    fontSize: "2rem",
+                    fontWeight: 800,
+                    letterSpacing: "-0.06em",
+                  }}
+                >
+                  {user.accountImageUrl ? (
+                    <img
+                      alt={user.name}
+                      src={user.accountImageUrl}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span>{getInitials(user.name)}</span>
+                  )}
+                </div>
 
-            <div className="profile-header-info">
-              <div className="eyebrow">Профиль</div>
-              <h1 className="section-title profile-title" style={{ marginTop: 8 }}>
-                {user.name}
-              </h1>
-              <p className="profile-meta" style={{ margin: "0.5rem 0 0", color: "var(--foreground-muted)" }}>
-                {user.email}
-              </p>
-              {user.phoneNumber ? (
-                <p className="profile-meta" style={{ margin: "0.35rem 0 0", color: "var(--foreground-muted)" }}>
-                  {user.phoneNumber}
-                </p>
-              ) : null}
-            </div>
-          </div>
+                <div className="profile-header-info">
+                  <div className="eyebrow">Профиль</div>
+                  <h1 className="section-title profile-title" style={{ marginTop: 8 }}>
+                    {user.name}
+                  </h1>
+                  <p className="profile-meta" style={{ margin: "0.5rem 0 0", color: "var(--foreground-muted)" }}>
+                    {user.email}
+                  </p>
+                  {user.phoneNumber ? (
+                    <p className="profile-meta" style={{ margin: "0.35rem 0 0", color: "var(--foreground-muted)" }}>
+                      {user.phoneNumber}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </section>
 
-          <div className="profile-sections-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Link
-              href="/profile/listings"
-              className="surface profile-section-card"
-              style={{
-                borderRadius: 22,
-                padding: 18,
-                textDecoration: "none",
-                color: "inherit",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div className="eyebrow">Раздел</div>
-              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Мои объявления</div>
-              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                {listingsLoading ? "Загрузка..." : `${ownListingsCount} объектов`}
+            <section className="surface profile-actions-card grid gap-3 rounded-[30px] p-5">
+              <div>
+                <div className="eyebrow">Быстрые действия</div>
+                <h2 className="section-title" style={{ marginTop: 6 }}>Управление объявлениями</h2>
               </div>
-            </Link>
-            <Link
-              href="/favorites"
-              className="surface profile-section-card"
-              style={{
-                borderRadius: 22,
-                padding: 18,
-                textDecoration: "none",
-                color: "inherit",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div className="eyebrow">Раздел</div>
-              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Избранное</div>
-              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                Сохраненные объекты
-              </div>
-            </Link>
-            <Link
-              href="/history"
-              className="surface profile-section-card"
-              style={{
-                borderRadius: 22,
-                padding: 18,
-                textDecoration: "none",
-                color: "inherit",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div className="eyebrow">Раздел</div>
-              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>История просмотра</div>
-              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                Недавно открытые объекты
-              </div>
-            </Link>
-            <Link
-              href="/create-listing"
-              className="surface profile-section-card"
-              style={{
-                borderRadius: 22,
-                padding: 18,
-                textDecoration: "none",
-                color: "inherit",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div className="eyebrow">Действие</div>
-              <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Добавить объявление</div>
-              <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
-                Создание нового объекта
-              </div>
-            </Link>
-          </div>
-        </section>
 
-        <section className="profile-main-grid grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="surface profile-actions-card grid gap-4 rounded-[30px] p-7">
-            <div>
-              <div className="eyebrow">Быстрые действия</div>
-              <h2 className="section-title" style={{ marginTop: 8 }}>Управление объявлениями</h2>
-            </div>
+              <div className="profile-actions-grid">
+                <Link className="button-primary profile-action-button" href="/profile/listings">
+                  Открыть мои объявления
+                </Link>
+                <Link className="button-secondary profile-action-button" href="/create-listing">
+                  Добавить новое объявление
+                </Link>
+              </div>
+            </section>
 
-            <div className="profile-actions-grid grid gap-3 sm:grid-cols-2">
-              <Link className="button-primary" href="/profile/listings">
-                Открыть мои объявления
+            <section className="profile-sections-grid grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/profile/listings"
+                className="surface profile-section-card"
+                style={{
+                  borderRadius: 22,
+                  padding: 18,
+                  textDecoration: "none",
+                  color: "inherit",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div className="eyebrow">Раздел</div>
+                <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Мои объявления</div>
+                <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                  {listingsLoading ? "Загрузка..." : `${ownListingsCount} объектов`}
+                </div>
               </Link>
-              <Link className="button-secondary" href="/create-listing">
-                Добавить новое объявление
+              <Link
+                href="/favorites"
+                className="surface profile-section-card"
+                style={{
+                  borderRadius: 22,
+                  padding: 18,
+                  textDecoration: "none",
+                  color: "inherit",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div className="eyebrow">Раздел</div>
+                <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Избранное</div>
+                <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                  Сохраненные объекты
+                </div>
               </Link>
-            </div>
+              <Link
+                href="/history"
+                className="surface profile-section-card"
+                style={{
+                  borderRadius: 22,
+                  padding: 18,
+                  textDecoration: "none",
+                  color: "inherit",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div className="eyebrow">Раздел</div>
+                <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>История просмотра</div>
+                <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                  Недавно открытые объекты
+                </div>
+              </Link>
+              <Link
+                href="/create-listing"
+                className="surface profile-section-card"
+                style={{
+                  borderRadius: 22,
+                  padding: 18,
+                  textDecoration: "none",
+                  color: "inherit",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div className="eyebrow">Действие</div>
+                <div style={{ marginTop: 8, fontWeight: 800, fontSize: "1.05rem" }}>Добавить объявление</div>
+                <div style={{ marginTop: 6, color: "var(--foreground-muted)", fontSize: 14 }}>
+                  Создание нового объекта
+                </div>
+              </Link>
+            </section>
           </section>
 
           <aside className="surface profile-settings-card grid gap-4 rounded-[30px] p-7 self-start">

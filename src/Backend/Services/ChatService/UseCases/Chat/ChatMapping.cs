@@ -5,6 +5,9 @@ namespace ChatService.UseCases.Chat;
 
 internal static class ChatMapping
 {
+    public static string GetConversationType(this Conversation conversation)
+        => conversation.ListingId == Guid.Empty ? ConversationTypes.Support : ConversationTypes.Listing;
+
     public static string BuildUserPairKey(Guid firstUserId, Guid secondUserId)
     {
         var left = firstUserId.ToString("N");
@@ -32,20 +35,34 @@ internal static class ChatMapping
             IsMine = message.SenderUserId == currentUserId
         };
 
-    public static ConversationDetailsDto ToDetailsDto(this Conversation conversation, Guid currentUserId)
+    public static string ResolveOtherUserDisplayName(this Conversation conversation, ConversationParticipant otherParticipant, string currentUserRole)
+    {
+        if (conversation.GetConversationType() == ConversationTypes.Support
+            && !string.Equals(currentUserRole, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Поддержка Domio";
+        }
+
+        return otherParticipant.DisplayName;
+    }
+
+    public static ConversationDetailsDto ToDetailsDto(this Conversation conversation, Guid currentUserId, string currentUserRole)
     {
         var other = conversation.Participants.First(x => x.UserId != currentUserId);
         return new ConversationDetailsDto
         {
             ConversationId = conversation.Id,
+            ConversationType = conversation.GetConversationType(),
             ListingId = conversation.ListingId,
             ListingTitle = conversation.ListingTitle,
             ListingPrice = conversation.ListingPriceAmount,
             ListingPriceCurrency = conversation.ListingPriceCurrency,
             ListingImageUrl = conversation.ListingImageUrl,
             OtherUserId = other.UserId,
-            OtherUserName = other.DisplayName,
-            OtherUserAvatarUrl = other.AvatarUrl
+            OtherUserName = conversation.ResolveOtherUserDisplayName(other, currentUserRole),
+            OtherUserAvatarUrl = other.AvatarUrl,
+            OtherUserEmail = null,
+            OtherUserPhone = null
         };
     }
 }

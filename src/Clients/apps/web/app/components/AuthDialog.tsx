@@ -112,7 +112,6 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
 
   return (
     <div
-      onClick={onClose}
       style={authDialogStyles.backdrop}
     >
       <div
@@ -165,6 +164,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
                 На {pendingVerification.email} отправлен 6-значный код подтверждения.
               </div>
               <input
+                key="verification-code"
                 className="field"
                 inputMode="numeric"
                 maxLength={6}
@@ -201,6 +201,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
           ) : activeMode === "signup" ? (
             <>
               <input
+                key="signup-name"
                 className="field"
                 onChange={(event) =>
                   setSignUpValues((current) => ({ ...current, name: event.target.value }))
@@ -210,6 +211,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
                 value={signUpValues.name}
               />
               <input
+                key="signup-avatar"
                 accept="image/*"
                 id="auth-avatar-upload"
                 onChange={(event) => {
@@ -235,6 +237,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
 
           {pendingVerification ? null : (
             <input
+              key={`email-${activeMode}`}
               className="field"
               onChange={(event) => {
                 const email = event.target.value;
@@ -253,6 +256,7 @@ export function AuthDialog({ mode, onClose }: AuthDialogProps) {
 
           {pendingVerification ? null : (
             <input
+              key={`password-${activeMode}`}
               className="field"
               minLength={8}
               onChange={(event) => {

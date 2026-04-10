@@ -8,7 +8,7 @@ export const listingCardClasses = {
   body: "flex flex-1 flex-col px-4 pt-3 sm:px-4.5 sm:pt-3.5",
   footer: "px-4 pt-3 pb-3 sm:px-4.5",
   button:
-    "inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-[color:color-mix(in_srgb,var(--color-primary)_22%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary-strong)_86%,black)_0%,color-mix(in_srgb,var(--color-primary)_90%,black)_100%)] px-4 py-2.5 text-[0.95rem] font-semibold text-white shadow-[0_10px_20px_color-mix(in_srgb,var(--shadow-color)_80%,transparent)] transition group-hover:translate-y-[-1px]",
+    "inline-flex w-full items-center justify-center gap-2 rounded-[14px] border border-[color:color-mix(in_srgb,var(--color-primary)_44%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-active)_82%,var(--background-elevated))] px-4 py-2.5 text-[0.95rem] font-semibold text-[color:var(--text-on-accent)] shadow-[0_14px_26px_color-mix(in_srgb,var(--shadow-color)_74%,transparent)] transition group-hover:translate-y-[-1px]",
   skeletonArticle:
     "flex h-full animate-pulse flex-col overflow-hidden rounded-[28px] border border-[color:color-mix(in_srgb,var(--border-color)_90%,transparent)] bg-[color:color-mix(in_srgb,var(--background-elevated)_96%,var(--background-muted))] shadow-[0_14px_30px_var(--shadow-color)]",
   skeletonMedia:
@@ -16,7 +16,7 @@ export const listingCardClasses = {
   skeletonBody: "flex flex-1 flex-col px-4.5 pt-3.5",
   skeletonFooter: "px-4.5 pt-3 pb-3",
   skeletonButton:
-    "h-11 rounded-[14px] bg-[color:color-mix(in_srgb,var(--color-primary)_72%,var(--color-primary-strong))]",
+    "h-11 rounded-[14px] bg-[color:color-mix(in_srgb,var(--color-primary-active)_82%,var(--background-elevated))]",
   priceRow:
     "flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[1.16rem] sm:text-[1.28rem] xl:text-[1.38rem] leading-none font-bold tracking-[-0.05em] text-[color:var(--color-primary-strong)]",
   title:

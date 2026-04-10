@@ -1027,7 +1027,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
         <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>{label}</span>
         <select
           className="field"
-          value={value}
+          value={value ?? ""}
           onChange={(event) => onChange(event.target.value)}
           required
         >

@@ -16,6 +16,7 @@ public sealed class GetMyConversationsHandler(
     public async Task<Result<IReadOnlyCollection<ConversationListItemDto>>> Handle(GetMyConversationsQuery request, CancellationToken cancellationToken)
     {
         var currentUserId = currentUserProvider.GetUserId();
+        var currentUserRole = currentUserProvider.GetRole();
 
         var conversations = await dbContext.Conversations
             .AsNoTracking()
@@ -40,13 +41,14 @@ public sealed class GetMyConversationsHandler(
             return new ConversationListItemDto
             {
                 ConversationId = conversation.Id,
+                ConversationType = conversation.GetConversationType(),
                 ListingId = conversation.ListingId,
                 ListingTitle = conversation.ListingTitle,
                 ListingPrice = conversation.ListingPriceAmount,
                 ListingPriceCurrency = conversation.ListingPriceCurrency,
                 ListingImageUrl = conversation.ListingImageUrl,
                 OtherUserId = other.UserId,
-                OtherUserName = other.DisplayName,
+                OtherUserName = conversation.ResolveOtherUserDisplayName(other, currentUserRole),
                 OtherUserAvatarUrl = other.AvatarUrl,
                 LastMessagePreview = conversation.LastMessagePreview,
                 LastMessageAt = conversation.LastMessageAtUtc,

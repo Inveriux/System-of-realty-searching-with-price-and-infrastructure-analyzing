@@ -16,12 +16,12 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Realt",
+  title: "Domio",
   description: "Платформа объявлений по недвижимости",
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    icon: "/new_icon.png",
+    shortcut: "/new_icon.png",
+    apple: "/new_icon.png",
   },
 };
 

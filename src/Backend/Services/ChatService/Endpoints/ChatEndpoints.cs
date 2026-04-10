@@ -16,6 +16,7 @@ public sealed class ChatEndpoints : IEndpointRegistrar
             .RequireAuthorization();
 
         group.MapPost("/conversations/start", StartConversationAsync);
+        group.MapPost("/conversations/support/start", StartSupportConversationAsync);
         group.MapGet("/conversations", GetMyConversationsAsync);
         group.MapGet("/conversations/{conversationId:guid}", GetConversationDetailsAsync);
         group.MapGet("/conversations/{conversationId:guid}/messages", GetConversationMessagesAsync);
@@ -31,6 +32,11 @@ public sealed class ChatEndpoints : IEndpointRegistrar
         StartConversationRequestDto request,
         CancellationToken cancellationToken)
         => (await sender.Send(new StartConversationCommand(request), cancellationToken)).ToHttpResult();
+
+    public async Task<IResult> StartSupportConversationAsync(
+        ISender sender,
+        CancellationToken cancellationToken)
+        => (await sender.Send(new StartSupportConversationCommand(), cancellationToken)).ToHttpResult();
 
     public async Task<IResult> GetMyConversationsAsync(
         ISender sender,

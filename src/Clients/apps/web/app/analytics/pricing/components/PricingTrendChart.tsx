@@ -121,7 +121,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
             Средняя
           </span>
           <span className="inline-flex items-center gap-2">
-            <span style={{ width: 10, height: 10, borderRadius: 999, background: "#059669" }} />
+            <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--chart-secondary)" }} />
             Медиана
           </span>
         </div>
@@ -192,7 +192,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
                       <span>Средняя: {formatValue(activePoint.average)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span style={{ width: 8, height: 8, borderRadius: 999, background: "#059669" }} />
+                      <span style={{ width: 8, height: 8, borderRadius: 999, background: "var(--chart-secondary)" }} />
                       <span>Медиана: {formatValue(activePoint.median)}</span>
                     </div>
                   </div>
@@ -270,10 +270,24 @@ export function PricingTrendChart({ title, description, points }: Props) {
                   </text>
                 ))}
                 {mobileAveragePoints.length > 1 ? (
-                  <path d={buildPath(mobileAveragePoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))} fill="none" stroke="var(--chart-primary)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path
+                    d={buildPath(mobileAveragePoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))}
+                    fill="none"
+                    stroke="var(--chart-primary)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
                 ) : null}
                 {mobileMedianPoints.length > 1 ? (
-                  <path d={buildPath(mobileMedianPoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+                  <path
+                    d={buildPath(mobileMedianPoints.map((point) => ({ x: point.x - mobilePaddingLeft, y: point.y })))}
+                    fill="none"
+                    stroke="var(--chart-secondary)"
+                    strokeWidth="2.25"
+                    strokeLinecap="round"
+                    strokeDasharray="6 6"
+                    opacity="0.95"
+                  />
                 ) : null}
                 {mobileAveragePoints.map((point, index) => (
                   <circle
@@ -300,8 +314,8 @@ export function PricingTrendChart({ title, description, points }: Props) {
                     cx={point.x - mobilePaddingLeft}
                     cy={point.y}
                     r={activeIndex === index ? "6" : "4.5"}
-                    fill="#059669"
-                    stroke="white"
+                    fill="var(--chart-secondary)"
+                    stroke="color-mix(in srgb, var(--background-elevated) 92%, white)"
                     strokeWidth="2"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -334,7 +348,7 @@ export function PricingTrendChart({ title, description, points }: Props) {
                 <span>Средняя: {formatValue(activePoint.average)}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span style={{ width: 10, height: 10, borderRadius: 999, background: "#059669" }} />
+                <span style={{ width: 10, height: 10, borderRadius: 999, background: "var(--chart-secondary)" }} />
                 <span>Медиана: {formatValue(activePoint.median)}</span>
               </div>
             </div>
@@ -423,10 +437,24 @@ export function PricingTrendChart({ title, description, points }: Props) {
           })}
 
           {averagePoints.length > 1 ? (
-            <path d={buildPath(averagePoints)} fill="none" stroke="var(--chart-primary)" strokeWidth="3" strokeLinecap="round" />
+            <path
+              d={buildPath(averagePoints)}
+              fill="none"
+              stroke="var(--chart-primary)"
+              strokeWidth="3.25"
+              strokeLinecap="round"
+            />
           ) : null}
           {medianPoints.length > 1 ? (
-            <path d={buildPath(medianPoints)} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" />
+            <path
+              d={buildPath(medianPoints)}
+              fill="none"
+              stroke="var(--chart-secondary)"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeDasharray="7 7"
+              opacity="0.95"
+            />
           ) : null}
 
           {averagePoints.map((point, index) => (
@@ -447,8 +475,8 @@ export function PricingTrendChart({ title, description, points }: Props) {
               cx={point.x}
               cy={point.y}
               r={activeIndex === index ? "6" : "4.5"}
-              fill="#059669"
-              stroke="white"
+              fill="var(--chart-secondary)"
+              stroke="color-mix(in srgb, var(--background-elevated) 92%, white)"
               strokeWidth="2"
               onMouseEnter={() => setActiveIndex(index)}
             />

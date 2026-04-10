@@ -19,6 +19,7 @@ public sealed class SendMessageHandler(
     public async Task<Result<MessageDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = currentUserProvider.GetUserId();
+        var currentUserRole = currentUserProvider.GetRole();
         var conversation = await dbContext.Conversations
             .Include(x => x.Participants)
             .FirstOrDefaultAsync(
@@ -55,7 +56,13 @@ public sealed class SendMessageHandler(
 
         foreach (var participantId in conversation.Participants.Select(x => x.UserId))
         {
-            var item = await MarkConversationReadHandler.BuildConversationListItemAsync(dbContext, conversation.Id, participantId, cancellationToken);
+            var participantRole = participantId == currentUserId ? currentUserRole : "User";
+            var item = await MarkConversationReadHandler.BuildConversationListItemAsync(
+                dbContext,
+                conversation.Id,
+                participantId,
+                participantRole,
+                cancellationToken);
             if (item is not null)
             {
                 await chatRealtimeNotifier.NotifyConversationUpdatedAsync(participantId, item, cancellationToken);

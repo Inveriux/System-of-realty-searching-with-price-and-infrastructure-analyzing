@@ -18,6 +18,7 @@ public sealed class MarkConversationReadHandler(
     public async Task<Result> Handle(MarkConversationReadCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = currentUserProvider.GetUserId();
+        var currentUserRole = currentUserProvider.GetRole();
         var conversation = await dbContext.Conversations
             .Include(x => x.Participants)
             .FirstOrDefaultAsync(
@@ -59,8 +60,8 @@ public sealed class MarkConversationReadHandler(
 
         await chatRealtimeNotifier.NotifyMessagesReadAsync(conversation.Id, otherParticipantId, payload, cancellationToken);
 
-        var currentUserConversation = await BuildConversationListItemAsync(dbContext, conversation.Id, currentUserId, cancellationToken);
-        var otherUserConversation = await BuildConversationListItemAsync(dbContext, conversation.Id, otherParticipantId, cancellationToken);
+        var currentUserConversation = await BuildConversationListItemAsync(dbContext, conversation.Id, currentUserId, currentUserRole, cancellationToken);
+        var otherUserConversation = await BuildConversationListItemAsync(dbContext, conversation.Id, otherParticipantId, "User", cancellationToken);
 
         if (currentUserConversation is not null)
         {
@@ -79,6 +80,7 @@ public sealed class MarkConversationReadHandler(
         ApplicationDbContext dbContext,
         Guid conversationId,
         Guid userId,
+        string currentUserRole,
         CancellationToken cancellationToken)
     {
         var conversation = await dbContext.Conversations
@@ -102,13 +104,14 @@ public sealed class MarkConversationReadHandler(
         return new ConversationListItemDto
         {
             ConversationId = conversation.Id,
+            ConversationType = conversation.GetConversationType(),
             ListingId = conversation.ListingId,
             ListingTitle = conversation.ListingTitle,
             ListingPrice = conversation.ListingPriceAmount,
             ListingPriceCurrency = conversation.ListingPriceCurrency,
             ListingImageUrl = conversation.ListingImageUrl,
             OtherUserId = other.UserId,
-            OtherUserName = other.DisplayName,
+            OtherUserName = conversation.ResolveOtherUserDisplayName(other, currentUserRole),
             OtherUserAvatarUrl = other.AvatarUrl,
             LastMessagePreview = conversation.LastMessagePreview,
             LastMessageAt = conversation.LastMessageAtUtc,

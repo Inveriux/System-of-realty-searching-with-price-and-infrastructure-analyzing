@@ -9,13 +9,25 @@
   --border-color: #d8cdf8;
   --color-primary: #6d3df2;
   --color-primary-strong: #5326d4;
+  --color-primary-active: #4d22c7;
   --color-primary-soft: #efe8ff;
+  --color-primary-surface: #f4eeff;
+  --color-primary-border: color-mix(in srgb, var(--color-primary) 28%, var(--border-color));
   --color-accent: #9f7bff;
+  --text-on-accent: #ffffff;
   --shadow-color: rgba(85, 46, 189, 0.1);
   --color-success: #127a50;
+  --color-success-strong: #0d5e3d;
+  --color-success-soft: #ddf6ea;
   --color-danger: #d04b73;
+  --color-danger-strong: #a83c5e;
+  --color-danger-soft: #ffe3eb;
+  --color-warning: #c88412;
+  --color-warning-soft: #fff0cc;
+  --color-info: #2563eb;
+  --color-info-soft: #e1ecff;
   --chart-primary: var(--color-primary);
-  --chart-secondary: #059669;
+  --chart-secondary: var(--color-success);
   --font-body: "Manrope", sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --radius-sm: 12px;
@@ -87,21 +99,33 @@ html[data-theme="dark"] {
   --foreground: #f3f4f8;
   --foreground-muted: #98a2b3;
   --border-color: #2a3142;
-  --color-primary: #8b5cf6;
-  --color-primary-strong: #a78bfa;
-  --color-primary-soft: #201a2e;
-  --color-accent: #c4b5fd;
+  --color-primary: #9b6bff;
+  --color-primary-strong: #b79bff;
+  --color-primary-active: #7c4dff;
+  --color-primary-soft: #241a36;
+  --color-primary-surface: #1d1630;
+  --color-primary-border: color-mix(in srgb, var(--color-primary) 34%, var(--border-color));
+  --color-accent: #d2c2ff;
+  --text-on-accent: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.34);
-  --color-success: #4cd39a;
-  --color-danger: #ff8aac;
+  --color-success: #52d6a3;
+  --color-success-strong: #7ff0bf;
+  --color-success-soft: #172b24;
+  --color-danger: #ff8fa8;
+  --color-danger-strong: #ffb0c2;
+  --color-danger-soft: #351b25;
+  --color-warning: #f6c768;
+  --color-warning-soft: #332816;
+  --color-info: #68b7ff;
+  --color-info-soft: #162636;
   --chart-primary: var(--color-primary);
-  --chart-secondary: #34b37e;
+  --chart-secondary: var(--color-success);
 }
 
 .theme-toggle-button {
   color: var(--color-primary-strong);
-  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
-  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--color-primary-soft));
+  border: 1px solid color-mix(in srgb, var(--border-color) 92%, transparent);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent);
 }
 
@@ -117,15 +141,20 @@ html[data-theme="dark"] .app-header-icon-image {
 
 html[data-theme="dark"] .theme-toggle-button {
   color: var(--color-primary-strong);
-  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
-  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--color-primary-soft));
+  border-color: color-mix(in srgb, var(--border-color) 92%, transparent);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 66%, transparent);
 }
 
 html[data-mobile-client-shell="true"] .app-header-account,
+html[data-mobile-client-shell="true"] .app-header-account-button,
 html[data-mobile-client-shell="true"] .app-header-create-button,
 html[data-mobile-client-shell="true"] .app-header-icon-cluster > button {
   display: none !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-brand-title {
+  font-size: 1.12rem !important;
 }
 
 * {
@@ -214,7 +243,8 @@ img {
     transform 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .button-primary:hover,
@@ -224,17 +254,22 @@ img {
 }
 
 .button-primary {
-  background: var(--color-primary);
-  color: white;
+  background: color-mix(in srgb, var(--color-primary-active) 82%, var(--background-elevated));
+  color: var(--text-on-accent);
   border-radius: 14px;
   padding: 0.82rem 1.2rem;
+  border-color: color-mix(in srgb, var(--color-primary) 44%, var(--border-color));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent),
+    0 14px 26px color-mix(in srgb, var(--shadow-color) 74%, transparent);
 }
 
 .button-secondary,
 .icon-button {
-  background: color-mix(in srgb, var(--background-elevated) 92%, var(--background-muted));
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
   color: var(--foreground);
   border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 52%, transparent);
 }
 
 .button-secondary {
@@ -248,6 +283,41 @@ img {
   border-radius: 14px;
 }
 
+.button-primary:hover {
+  background: color-mix(in srgb, var(--color-primary-active) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-primary) 54%, var(--border-color));
+}
+
+.button-primary:active {
+  background: color-mix(in srgb, var(--color-primary-active) 94%, black);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary-active) 20%, transparent),
+    0 8px 18px color-mix(in srgb, var(--shadow-color) 68%, transparent);
+}
+
+.button-secondary:hover,
+.icon-button:hover {
+  background: color-mix(in srgb, var(--background-elevated) 88%, var(--color-primary-soft));
+  border-color: var(--color-primary-border);
+  color: var(--color-accent);
+}
+
+.button-secondary:active,
+.icon-button:active {
+  background: color-mix(in srgb, var(--background-elevated) 82%, var(--color-primary-soft));
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--border-color));
+}
+
+.button-primary:focus-visible,
+.button-secondary:focus-visible,
+.icon-button:focus-visible,
+.field:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary-strong) 34%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--color-primary-soft) 54%, transparent);
+}
+
 .field {
   width: 100%;
   border-radius: var(--radius-md);
@@ -255,12 +325,19 @@ img {
   background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
   color: var(--foreground);
   padding: 0.92rem 1rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
 .field:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--color-primary) 46%, var(--border-color));
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary-soft) 32%, transparent);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--background-elevated) 92%, var(--color-primary-soft));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 36%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--color-primary-soft) 54%, transparent);
 }
 
 .field::placeholder {
@@ -305,9 +382,9 @@ select.field::-ms-expand {
 }
 
 select.field:focus {
-  border-color: color-mix(in srgb, var(--color-primary-strong) 52%, var(--border-color));
+  border-color: var(--color-primary);
   box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--color-primary-soft) 26%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-primary-soft) 42%, transparent),
     0 10px 24px color-mix(in srgb, var(--shadow-color) 32%, transparent);
 }
 
@@ -349,6 +426,47 @@ select.field:focus {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
   background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.42rem 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.status-badge-accent {
+  background: color-mix(in srgb, var(--color-primary-soft) 88%, var(--background-elevated));
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-strong);
+}
+
+.status-badge-success {
+  background: color-mix(in srgb, var(--color-success-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-success) 32%, var(--border-color));
+  color: var(--color-success-strong);
+}
+
+.status-badge-danger {
+  background: color-mix(in srgb, var(--color-danger-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-danger) 32%, var(--border-color));
+  color: var(--color-danger-strong);
+}
+
+.status-badge-warning {
+  background: color-mix(in srgb, var(--color-warning-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-warning) 32%, var(--border-color));
+  color: var(--color-warning);
+}
+
+.status-badge-info {
+  background: color-mix(in srgb, var(--color-info-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-info) 32%, var(--border-color));
+  color: var(--color-info);
 }
 
 .listing-create-preview-strip {
@@ -474,13 +592,15 @@ select.field:focus {
 }
 
 .listing-create-alert-error {
-  background: color-mix(in srgb, #d04b73 12%, var(--background-elevated));
-  border-color: color-mix(in srgb, #d04b73 36%, var(--border-color));
+  background: color-mix(in srgb, var(--color-danger-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-danger) 36%, var(--border-color));
+  color: var(--color-danger-strong);
 }
 
 .listing-create-alert-success {
-  background: color-mix(in srgb, #3aa675 12%, var(--background-elevated));
-  border-color: color-mix(in srgb, #3aa675 36%, var(--border-color));
+  background: color-mix(in srgb, var(--color-success-soft) 88%, var(--background-elevated));
+  border-color: color-mix(in srgb, var(--color-success) 36%, var(--border-color));
+  color: var(--color-success-strong);
 }
 
 .listing-create-modal-backdrop {
@@ -610,6 +730,28 @@ select.field:focus {
   display: grid;
   place-items: center;
   align-self: stretch;
+}
+
+.profile-actions-card {
+  gap: 14px;
+}
+
+.profile-actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.profile-action-button {
+  min-height: 42px;
+  padding: 0.68rem 0.95rem;
+  font-size: 0.92rem;
+  width: auto;
+  min-width: 0;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 
 .listing-create-map-search-icon {
@@ -801,6 +943,7 @@ select.field:focus {
     grid-area: search;
     width: 100%;
     max-width: 100% !important;
+    margin-left: 0 !important;
   }
 
   .app-header-actions {
@@ -863,6 +1006,16 @@ select.field:focus {
     border-radius: 12px !important;
   }
 
+  .app-header-icon-cluster > div .theme-toggle-button {
+    width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    min-width: 38px !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent) !important;
+  }
+
   .app-header-theme-compact {
     width: 32px !important;
     height: 32px !important;
@@ -908,10 +1061,6 @@ select.field:focus {
     padding: 0 !important;
     justify-content: center !important;
     border-radius: 12px !important;
-  }
-
-  .app-header-create-button span:last-child {
-    display: none !important;
   }
 
   .app-header-search .field {
@@ -1565,8 +1714,8 @@ select.field:focus {
 
 .theme-toggle-button {
   color: var(--color-primary-strong);
-  background: color-mix(in srgb, var(--background-elevated) 94%, var(--background-muted));
-  border: 1px solid color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--color-primary-soft));
+  border: 1px solid var(--color-primary-border);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 58%, transparent);
   font-size: 1.28rem !important;
 }
@@ -1583,8 +1732,8 @@ html[data-theme="dark"] .app-header-icon-image {
 
 html[data-theme="dark"] .theme-toggle-button {
   color: var(--color-primary-strong);
-  background: color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted));
-  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  background: color-mix(in srgb, var(--background-elevated) 94%, var(--color-primary-soft));
+  border-color: var(--color-primary-border);
   box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color) 66%, transparent);
 }
 

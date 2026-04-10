@@ -27,12 +27,12 @@ const NATIVE_SHELL_PALETTES = {
     shadowColor: "#5b21b6",
   },
   dark: {
-    active: "#a78bfa",
-    inactive: "#8f99ab",
+    active: "#b79bff",
+    inactive: "#96a0b2",
     barBackground: "#151922",
     screenBackground: "#0f1115",
     barBorder: "rgba(42, 49, 66, 0.9)",
-    activeBackground: "rgba(139, 92, 246, 0.14)",
+    activeBackground: "rgba(155, 107, 255, 0.18)",
     shadowColor: "#05070b",
   },
 } as const;
@@ -338,11 +338,11 @@ export default function MobileWebViewScreen() {
                 var css = ''
                   + '[data-mobile-client-shell="true"] .app-header-icon-cluster > button,'
                   + '[data-mobile-client-shell="true"] .app-header-account,'
+                  + '[data-mobile-client-shell="true"] .app-header-account-button,'
                   + '[data-mobile-client-shell="true"] .app-header-create-button{display:none !important;}'
                   + '[data-mobile-client-shell="true"] .app-header-search-icon,'
                   + '[data-mobile-client-shell="true"] .theme-toggle-button,'
                   + '[data-mobile-client-shell="true"] .app-header-icon-cluster > div,'
-                  + '[data-mobile-client-shell="true"] .app-header-account-button,'
                   + '[data-mobile-client-shell="true"] .app-header-account-button img,'
                   + '[data-mobile-client-shell="true"] .theme-toggle-button img{transition:none !important;animation:none !important;}'
                   + 'html[data-theme="dark"][data-mobile-client-shell="true"] .app-header-search-icon,'
@@ -547,13 +547,15 @@ export default function MobileWebViewScreen() {
                     position: "absolute",
                     top: 4,
                     right: 16,
-                    minWidth: 18,
-                    height: 18,
+                    minWidth: 19,
+                    height: 19,
                     borderRadius: 999,
                     backgroundColor: palette.active,
                     alignItems: "center",
                     justifyContent: "center",
                     paddingHorizontal: 5,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.14)",
                   }}
                 >
                   <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>

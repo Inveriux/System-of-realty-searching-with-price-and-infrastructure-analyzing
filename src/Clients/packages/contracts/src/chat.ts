@@ -1,3 +1,5 @@
+export type ConversationType = "listing" | "support";
+
 export type StartConversationDto = {
   listingId: string;
   otherUserId?: string | null;
@@ -10,6 +12,7 @@ export type SendMessageDto = {
 
 export type ConversationListItemDto = {
   conversationId: string;
+  conversationType: ConversationType;
   listingId: string;
   listingTitle: string;
   listingPrice: number | null;
@@ -25,6 +28,7 @@ export type ConversationListItemDto = {
 
 export type ConversationDetailsDto = {
   conversationId: string;
+  conversationType: ConversationType;
   listingId: string;
   listingTitle: string;
   listingPrice: number | null;
@@ -33,6 +37,8 @@ export type ConversationDetailsDto = {
   otherUserId: string;
   otherUserName: string;
   otherUserAvatarUrl: string | null;
+  otherUserEmail: string | null;
+  otherUserPhone: string | null;
 };
 
 export type MessageDto = {

@@ -256,7 +256,7 @@ export function ProfileListingsClient() {
               onClick={() => setViewMode("hidden")}
               className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                 viewMode === "hidden"
-                  ? "border-[color:#b45309] bg-[color:color-mix(in_srgb,#fef3c7_84%,var(--background-elevated))] text-[#b45309]"
+                  ? "border-[color:var(--color-warning)] bg-[color:color-mix(in_srgb,var(--color-warning-soft)_84%,var(--background-elevated))] text-[color:var(--color-warning)]"
                   : "border-[color:var(--border-color)] bg-[color:var(--background-elevated)] text-[color:var(--foreground-muted)]"
               }`}
             >
@@ -282,7 +282,7 @@ export function ProfileListingsClient() {
             <section className="surface grid gap-4 rounded-[28px] p-7">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[color:var(--border-color)] bg-[color:var(--background-elevated)]">
                 {viewMode === "hidden" ? (
-                  <EyeOff className="h-6 w-6 text-[#b45309]" />
+                  <EyeOff className="h-6 w-6 text-[color:var(--color-warning)]" />
                 ) : (
                   <NotebookPen className="h-6 w-6 text-[color:var(--color-primary)]" />
                 )}

@@ -21,6 +21,7 @@ public sealed class StartConversationHandler(
     public async Task<Result<ConversationDetailsDto>> Handle(StartConversationCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = currentUserProvider.GetUserId();
+        var currentUserRole = currentUserProvider.GetRole();
         var listing = await listingCatalogClient.GetListingAsync(request.Request.ListingId, cancellationToken);
         if (listing is null)
         {
@@ -47,7 +48,7 @@ public sealed class StartConversationHandler(
 
         if (existingConversation is not null)
         {
-            return Result.Ok(existingConversation.ToDetailsDto(currentUserId));
+            return Result.Ok(existingConversation.ToDetailsDto(currentUserId, currentUserRole));
         }
 
         var otherUserProfile = await userProfileClient.GetPublicProfileAsync(otherUserId, cancellationToken);
@@ -111,12 +112,12 @@ public sealed class StartConversationHandler(
 
             if (createdByOtherRequest is not null)
             {
-                return Result.Ok(createdByOtherRequest.ToDetailsDto(currentUserId));
+                return Result.Ok(createdByOtherRequest.ToDetailsDto(currentUserId, currentUserRole));
             }
 
             throw;
         }
 
-        return Result.Ok(conversation.ToDetailsDto(currentUserId));
+        return Result.Ok(conversation.ToDetailsDto(currentUserId, currentUserRole));
     }
 }

@@ -29,11 +29,42 @@ public sealed class UserProfileClient(HttpClient httpClient) : IUserProfileClien
             return null;
         }
 
-        return new UserProfileSnapshot(envelope.Data.Id, envelope.Data.FullName, envelope.Data.AvatarUrl);
+        return new UserProfileSnapshot(
+            envelope.Data.Id,
+            envelope.Data.FullName,
+            envelope.Data.AvatarUrl,
+            envelope.Data.Email,
+            envelope.Data.Phone);
+    }
+
+    public async Task<UserProfileSnapshot?> GetSupportProfileAsync(CancellationToken cancellationToken)
+    {
+        using var response = await httpClient.GetAsync("api/agents/support-profile", cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var envelope = await JsonSerializer.DeserializeAsync<ApiEnvelope<DownstreamSellerPublicProfileDto>>(stream, JsonOptions, cancellationToken);
+        if (envelope?.IsSuccess != true || envelope.Data is null)
+        {
+            return null;
+        }
+
+        return new UserProfileSnapshot(
+            envelope.Data.Id,
+            envelope.Data.FullName,
+            envelope.Data.AvatarUrl,
+            envelope.Data.Email,
+            envelope.Data.Phone);
     }
 }
 
-public sealed record UserProfileSnapshot(Guid Id, string FullName, string? AvatarUrl);
+public sealed record UserProfileSnapshot(Guid Id, string FullName, string? AvatarUrl, string? Email, string? Phone);
 
 internal sealed class ApiEnvelope<T>
 {
@@ -46,4 +77,6 @@ internal sealed class DownstreamSellerPublicProfileDto
     public Guid Id { get; init; }
     public string FullName { get; init; } = string.Empty;
     public string? AvatarUrl { get; init; }
+    public string? Email { get; init; }
+    public string? Phone { get; init; }
 }

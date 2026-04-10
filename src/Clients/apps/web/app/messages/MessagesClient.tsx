@@ -1,7 +1,13 @@
 "use client";
 
-import { markConversationAsRead } from "@diploma/api/chat";
-import type { ConversationDetailsDto, ConversationListItemDto, MessageDto, MessagesReadDto } from "@diploma/contracts/chat";
+import { markConversationAsRead, startSupportConversation } from "@diploma/api/chat";
+import type {
+  ConversationDetailsDto,
+  ConversationListItemDto,
+  ConversationType,
+  MessageDto,
+  MessagesReadDto,
+} from "@diploma/contracts/chat";
 import {
   useConversationDetails,
   useConversationMessages,
@@ -73,30 +79,79 @@ function upsertConversationItem(items: ConversationListItemDto[], incoming: Conv
   });
 }
 
+function createClientMessageId() {
+  if (typeof globalThis !== "undefined" && globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+type MessagesScope = "listing" | "support";
+
+function renderSupportUserInfo(details: ConversationDetailsDto) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gap: 8,
+        padding: "12px 14px",
+        borderRadius: 18,
+        background: "var(--color-primary-surface)",
+        border: "1px solid var(--color-primary-border)",
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: "0.96rem", lineHeight: 1.15 }}>
+        Пользователь
+      </div>
+      <div style={{ display: "grid", gap: 4, color: "var(--foreground-muted)", fontSize: 13, lineHeight: 1.3 }}>
+        <div><span style={{ color: "var(--foreground)" }}>Имя:</span> {details.otherUserName}</div>
+        <div><span style={{ color: "var(--foreground)" }}>ID:</span> {details.otherUserId}</div>
+        <div><span style={{ color: "var(--foreground)" }}>Email:</span> {details.otherUserEmail ?? "нет данных"}</div>
+        <div><span style={{ color: "var(--foreground)" }}>Телефон:</span> {details.otherUserPhone ?? "нет данных"}</div>
+      </div>
+    </div>
+  );
+}
+
 export function MessagesClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { api, status } = useAuth();
+  const { api, status, user } = useAuth();
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [isWideLayout, setIsWideLayout] = useState(false);
+  const [isMobileClientShell, setIsMobileClientShell] = useState(false);
+  const [isStartingSupportConversation, setIsStartingSupportConversation] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const selectedConversationId = searchParams.get("conversationId");
+  const requestedScope: MessagesScope = searchParams.get("scope") === "support" ? "support" : "listing";
+  const isAdmin = user?.role?.toLowerCase() === "admin";
   const conversationsQuery = useMyConversations(api, status === "authenticated");
+  const allConversations = conversationsQuery.data ?? [];
+  const supportConversation = useMemo(
+    () => allConversations.find((item) => item.conversationType === "support") ?? null,
+    [allConversations],
+  );
+  const filteredConversations = useMemo(
+    () => allConversations.filter((item) => item.conversationType === requestedScope),
+    [allConversations, requestedScope],
+  );
   const selectedConversationFromList = useMemo(
-    () => conversationsQuery.data?.find((item) => item.conversationId === selectedConversationId) ?? null,
-    [conversationsQuery.data, selectedConversationId],
+    () => allConversations.find((item) => item.conversationId === selectedConversationId) ?? null,
+    [allConversations, selectedConversationId],
   );
   const conversationDetailsQuery = useConversationDetails(
     api,
     selectedConversationId,
-    status === "authenticated" && !selectedConversationFromList,
+    status === "authenticated" && (!selectedConversationFromList || selectedConversationFromList.conversationType === "support"),
   );
   const conversationDetails: ConversationDetailsDto | null = useMemo(() => {
     if (selectedConversationFromList) {
       return {
         conversationId: selectedConversationFromList.conversationId,
+        conversationType: selectedConversationFromList.conversationType,
         listingId: selectedConversationFromList.listingId,
         listingTitle: selectedConversationFromList.listingTitle,
         listingPrice: selectedConversationFromList.listingPrice,
@@ -105,13 +160,17 @@ export function MessagesClient() {
         otherUserId: selectedConversationFromList.otherUserId,
         otherUserName: selectedConversationFromList.otherUserName,
         otherUserAvatarUrl: selectedConversationFromList.otherUserAvatarUrl,
+        otherUserEmail: null,
+        otherUserPhone: null,
       };
     }
 
     return conversationDetailsQuery.data ?? null;
   }, [conversationDetailsQuery.data, selectedConversationFromList]);
+  const effectiveConversationDetails = conversationDetailsQuery.data ?? conversationDetails;
   const messagesQuery = useConversationMessages(api, selectedConversationId, 1, 50, status === "authenticated");
   const sendMessageMutation = useSendMessage(api, selectedConversationId);
+  const isSupportConversation = effectiveConversationDetails?.conversationType === "support";
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 960px)");
@@ -119,6 +178,14 @@ export function MessagesClient() {
     sync();
     mediaQuery.addEventListener("change", sync);
     return () => mediaQuery.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    setIsMobileClientShell(document.documentElement.hasAttribute("data-mobile-client-shell"));
   }, []);
 
   useEffect(() => {
@@ -207,7 +274,7 @@ export function MessagesClient() {
 
     const created = await sendMessageMutation.mutateAsync({
       text,
-      clientMessageId: crypto.randomUUID(),
+      clientMessageId: createClientMessageId(),
     });
 
     setDraft("");
@@ -215,13 +282,56 @@ export function MessagesClient() {
     await queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
   }
 
-  function handleConversationSelect(conversationId: string) {
-    router.push(`/messages?conversationId=${conversationId}`);
+  function buildMessagesHref(scope: MessagesScope, conversationId?: string | null) {
+    const params = new URLSearchParams();
+    if (scope === "support") {
+      params.set("scope", "support");
+    }
+    if (conversationId) {
+      params.set("conversationId", conversationId);
+    }
+
+    const query = params.toString();
+    return query ? `/messages?${query}` : "/messages";
+  }
+
+  function handleConversationSelect(conversationId: string, conversationType: ConversationType) {
+    const nextScope: MessagesScope = conversationType === "support" ? "support" : "listing";
+    router.push(buildMessagesHref(nextScope, conversationId));
+  }
+
+  function handleScopeChange(scope: MessagesScope) {
+    const matchingSelectedConversation = selectedConversationFromList?.conversationType === scope
+      ? selectedConversationFromList.conversationId
+      : null;
+    router.push(buildMessagesHref(scope, matchingSelectedConversation));
+  }
+
+  async function handleOpenSupportConversation() {
+    if (status !== "authenticated" || isAdmin) {
+      return;
+    }
+
+    if (supportConversation) {
+      router.push(buildMessagesHref("support", supportConversation.conversationId));
+      return;
+    }
+
+    setIsStartingSupportConversation(true);
+
+    try {
+      const conversation = await startSupportConversation(api);
+      await queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "unread-count"] });
+      router.push(buildMessagesHref("support", conversation.conversationId));
+    } finally {
+      setIsStartingSupportConversation(false);
+    }
   }
 
   if (status === "guest") {
     return (
-      <AppShell>
+      <AppShell lockScroll>
         <main className="grid gap-6">
           <section className="surface grid gap-4 rounded-[30px] p-8">
             <div className="eyebrow">Сообщения</div>
@@ -236,16 +346,27 @@ export function MessagesClient() {
   }
 
   return (
-    <AppShell>
-      <main className="grid gap-4 pb-6" style={{ marginTop: isWideLayout ? -20 : 0, paddingBottom: 0 }}>
+    <AppShell lockScroll>
+      <main
+        className="grid gap-4 pb-6"
+        style={{
+          marginTop: isWideLayout ? 0 : 0,
+          paddingBottom: 0,
+          height: isWideLayout ? "calc(100dvh - 152px)" : "100%",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         <section
           className="surface"
           style={{
             display: "grid",
             gap: 0,
-            minHeight: isWideLayout ? "calc(100dvh - 136px)" : "calc(100dvh - 120px)",
+            height: "100%",
+            minHeight: 0,
             borderRadius: 32,
             overflow: "hidden",
+            paddingBottom: isWideLayout ? 0 : isMobileClientShell ? 0 : 3,
             gridTemplateColumns: isWideLayout ? "360px minmax(0, 1fr)" : "minmax(0,1fr)",
           }}
         >
@@ -256,50 +377,106 @@ export function MessagesClient() {
               borderRight: isWideLayout ? "1px solid var(--border-color)" : "none",
               background: "var(--background-elevated)",
               minWidth: 0,
+              minHeight: 0,
+              overflow: "hidden",
             }}
           >
-            <div style={{ overflowY: "auto", minHeight: 0 }}>
+            <div style={{ overflowY: "auto", overflowX: "hidden", minHeight: 0, minWidth: 0 }}>
               <div
                 style={{
-                  padding: isWideLayout ? "14px 18px 10px" : "10px 16px 8px",
+                  padding: isWideLayout ? "14px 18px 12px" : "10px 16px 10px",
                   borderBottom: "1px solid var(--border-color)",
-                  fontFamily: "var(--font-display)",
-                  fontSize: isWideLayout ? "1.45rem" : "1.25rem",
-                  fontWeight: 700,
-                  letterSpacing: "-0.04em",
-                  lineHeight: 0.92,
+                  display: "grid",
+                  gap: 12,
                 }}
               >
-                Мои диалоги
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: isWideLayout ? "1.45rem" : "1.25rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.04em",
+                    lineHeight: 0.92,
+                  }}
+                >
+                  {isAdmin ? "Сообщения" : requestedScope === "support" ? "Поддержка" : "Мои диалоги"}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className={requestedScope === "listing" ? "button-primary" : "button-secondary"}
+                    onClick={() => handleScopeChange("listing")}
+                    style={{ minHeight: 36, padding: "0 14px", borderRadius: 14, fontSize: 14 }}
+                  >
+                    {isAdmin ? "Объявления" : "Диалоги"}
+                  </button>
+                  <button
+                    type="button"
+                    className={requestedScope === "support" ? "button-primary" : "button-secondary"}
+                    onClick={() => {
+                      if (isAdmin) {
+                        handleScopeChange("support");
+                        return;
+                      }
+
+                      void handleOpenSupportConversation();
+                    }}
+                    style={{ minHeight: 36, padding: "0 14px", borderRadius: 14, fontSize: 14 }}
+                  >
+                    Поддержка
+                  </button>
+                </div>
               </div>
-              {(conversationsQuery.data ?? []).length === 0 ? (
+              {filteredConversations.length === 0 ? (
                 <div style={{ padding: 24, color: "var(--foreground-muted)", display: "grid", gap: 8 }}>
-                  <div style={{ fontWeight: 700 }}>У вас пока нет диалогов.</div>
-                  <div>Откройте объявление и напишите продавцу.</div>
+                  <div style={{ fontWeight: 700 }}>
+                    {requestedScope === "support"
+                      ? (isAdmin ? "Обращений в поддержку пока нет." : "У вас пока нет обращения в поддержку.")
+                      : "У вас пока нет диалогов."}
+                  </div>
+                  <div>
+                    {requestedScope === "support"
+                      ? (isAdmin ? "Новые обращения пользователей появятся здесь." : "Если что-то не работает, откройте обращение в поддержку.")
+                      : "Откройте объявление и напишите продавцу."}
+                  </div>
+                  {!isAdmin && requestedScope === "support" ? (
+                    <button
+                      type="button"
+                      className="button-primary"
+                      onClick={() => void handleOpenSupportConversation()}
+                      disabled={isStartingSupportConversation}
+                      style={{ marginTop: 4, minHeight: 42, width: "fit-content", padding: "0 16px", borderRadius: 14 }}
+                    >
+                      {isStartingSupportConversation ? "Открываем..." : "Написать в поддержку"}
+                    </button>
+                  ) : null}
                 </div>
               ) : (
-                (conversationsQuery.data ?? []).map((item, index) => {
+                filteredConversations.map((item, index) => {
                   const isActive = item.conversationId === selectedConversationId;
                   return (
                     <button
                       key={item.conversationId}
                       type="button"
-                      onClick={() => handleConversationSelect(item.conversationId)}
+                      onClick={() => handleConversationSelect(item.conversationId, item.conversationType)}
                       style={{
                         width: "100%",
+                        minWidth: 0,
                         padding: index === 0
                           ? (isWideLayout ? "8px 18px 18px" : "6px 16px 16px")
                           : (isWideLayout ? 18 : 16),
                         border: "none",
                         borderBottom: "1px solid var(--border-color)",
                         background: isActive
-                          ? "color-mix(in srgb, var(--color-primary-soft) 22%, var(--background-elevated))"
+                          ? "color-mix(in srgb, var(--color-primary-soft) 86%, var(--background-elevated))"
                           : "transparent",
+                        boxShadow: isActive ? "inset 0 0 0 1px var(--color-primary-border)" : "none",
                         color: "inherit",
                         textAlign: "left",
                         display: "grid",
                         gap: 10,
                         cursor: "pointer",
+                        overflow: "hidden",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -329,12 +506,22 @@ export function MessagesClient() {
                             </div>
                           </div>
                           <div style={{ marginTop: 4, color: "var(--foreground-muted)", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {item.listingTitle}
+                            {item.conversationType === "support" ? "Техподдержка платформы" : item.listingTitle}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                        <div style={{ color: "var(--foreground-muted)", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", minWidth: 0, overflow: "hidden" }}>
+                        <div
+                          style={{
+                            minWidth: 0,
+                            flex: 1,
+                            color: "var(--foreground-muted)",
+                            fontSize: 14,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {item.lastMessagePreview ?? "Диалог создан"}
                         </div>
                         {item.unreadCount > 0 ? (
@@ -343,13 +530,15 @@ export function MessagesClient() {
                               minWidth: 22,
                               height: 22,
                               borderRadius: 999,
-                              background: "var(--color-primary)",
-                              color: "#fff",
+                              background: "linear-gradient(180deg, var(--color-primary-strong), var(--color-primary-active))",
+                              color: "var(--text-on-accent)",
                               display: "grid",
                               placeItems: "center",
                               padding: "0 6px",
                               fontSize: 12,
                               fontWeight: 800,
+                              border: "1px solid color-mix(in srgb, var(--color-primary-strong) 70%, transparent)",
+                              boxShadow: "0 8px 18px color-mix(in srgb, var(--shadow-color) 66%, transparent)",
                               flexShrink: 0,
                             }}
                           >
@@ -368,6 +557,8 @@ export function MessagesClient() {
             style={{
               display: !selectedConversationId && !isWideLayout ? "none" : "grid",
               minWidth: 0,
+              minHeight: 0,
+              overflow: "hidden",
               background: "var(--background)",
               gridTemplateRows: isWideLayout ? "auto auto minmax(0,1fr) auto" : "auto auto minmax(0,1fr) auto",
             }}
@@ -401,7 +592,7 @@ export function MessagesClient() {
                 >
                   <ArrowLeft size={18} />
                 </button>
-                {conversationDetails ? (
+                {effectiveConversationDetails ? (
                   <div style={{ minWidth: 0 }}>
                     <div
                       style={{
@@ -413,14 +604,14 @@ export function MessagesClient() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {conversationDetails.otherUserName}
+                      {effectiveConversationDetails.otherUserName}
                     </div>
                   </div>
                 ) : null}
               </div>
             ) : null}
 
-            {conversationDetails ? (
+            {effectiveConversationDetails ? (
               <>
                 {isWideLayout ? (
                   <>
@@ -439,112 +630,160 @@ export function MessagesClient() {
                           lineHeight: 1.1,
                         }}
                       >
-                        {conversationDetails.otherUserName}
+                        {effectiveConversationDetails.otherUserName}
                       </div>
                       <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
-                        Обсуждение объявления
+                        {isSupportConversation ? "Обращение в поддержку Domio" : "Обсуждение объявления"}
                       </div>
+                      {isSupportConversation && isAdmin ? (
+                        renderSupportUserInfo(effectiveConversationDetails)
+                      ) : null}
                     </div>
 
-                    <div style={{ padding: 18, borderBottom: "1px solid var(--border-color)" }}>
-                      <Link
-                        href={`/listings/${conversationDetails.listingId}`}
+                    {isSupportConversation ? (
+                      <div style={{ padding: 18, borderBottom: "1px solid var(--border-color)" }}>
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: 6,
+                            padding: 14,
+                            borderRadius: 22,
+                            background: "var(--background-elevated)",
+                            border: "1px solid var(--color-primary-border)",
+                          }}
+                        >
+                          <div style={{ fontWeight: 800, fontSize: "1rem" }}>Поддержка Domio</div>
+                          <div style={{ color: "var(--foreground-muted)", fontSize: 14 }}>
+                            Здесь можно решить технические и сервисные вопросы по платформе.
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: 18, borderBottom: "1px solid var(--border-color)" }}>
+                        <Link
+                          href={`/listings/${effectiveConversationDetails.listingId}`}
+                          style={{
+                            display: "grid",
+                            gap: 8,
+                            padding: 14,
+                            borderRadius: 22,
+                            background: "var(--background-elevated)",
+                            border: "1px solid var(--border-color)",
+                            color: "inherit",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                            <div
+                              style={{
+                                width: 72,
+                                height: 56,
+                                borderRadius: 16,
+                                overflow: "hidden",
+                                background: "var(--background-muted)",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {effectiveConversationDetails.listingImageUrl ? (
+                                <img alt={effectiveConversationDetails.listingTitle} src={effectiveConversationDetails.listingImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : null}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 800, lineHeight: 1.2, fontSize: "1rem" }}>{effectiveConversationDetails.listingTitle}</div>
+                              <div style={{ marginTop: 4, color: "var(--foreground-muted)", fontSize: "1rem" }}>
+                                {formatPrice(effectiveConversationDetails.listingPrice, effectiveConversationDetails.listingPriceCurrency)}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  isSupportConversation ? (
+                    <div style={{ padding: "8px 10px 6px", borderBottom: "1px solid var(--border-color)" }}>
+                      <div
                         style={{
                           display: "grid",
-                          gap: 8,
-                          padding: 14,
-                          borderRadius: 22,
+                          gap: 2,
+                          padding: "8px 10px",
+                          borderRadius: 16,
                           background: "var(--background-elevated)",
-                          border: "1px solid var(--border-color)",
-                          color: "inherit",
-                          textDecoration: "none",
+                          border: "1px solid var(--color-primary-border)",
                         }}
                       >
-                        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                        <div style={{ fontSize: "1rem", lineHeight: 1.15, fontWeight: 700 }}>Поддержка Domio</div>
+                        <div style={{ color: "var(--foreground-muted)", fontSize: "0.86rem", lineHeight: 1.15 }}>
+                          Технические и сервисные вопросы по платформе
+                        </div>
+                      </div>
+                      {isSupportConversation && isAdmin ? (
+                        <div style={{ marginTop: 6 }}>
+                          {renderSupportUserInfo(effectiveConversationDetails)}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div style={{ padding: "6px 10px 4px", borderBottom: "1px solid var(--border-color)" }}>
+                      <Link
+                        href={`/listings/${effectiveConversationDetails.listingId}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          color: "inherit",
+                          textDecoration: "none",
+                          minWidth: 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 65,
+                            height: 50,
+                            borderRadius: 14,
+                            overflow: "hidden",
+                            background: "var(--background-muted)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {effectiveConversationDetails.listingImageUrl ? (
+                            <img
+                              alt={effectiveConversationDetails.listingTitle}
+                              src={effectiveConversationDetails.listingImageUrl}
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          ) : null}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
                           <div
                             style={{
-                              width: 72,
-                              height: 56,
-                              borderRadius: 16,
+                              fontSize: "1.08rem",
+                              lineHeight: 1.15,
+                              fontWeight: 700,
                               overflow: "hidden",
-                              background: "var(--background-muted)",
-                              flexShrink: 0,
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {conversationDetails.listingImageUrl ? (
-                              <img alt={conversationDetails.listingTitle} src={conversationDetails.listingImageUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            ) : null}
+                            {effectiveConversationDetails.listingTitle}
                           </div>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 800, lineHeight: 1.2, fontSize: "1rem" }}>{conversationDetails.listingTitle}</div>
-                            <div style={{ marginTop: 4, color: "var(--foreground-muted)", fontSize: "1rem" }}>
-                              {formatPrice(conversationDetails.listingPrice, conversationDetails.listingPriceCurrency)}
-                            </div>
+                          <div
+                            style={{
+                              marginTop: 2,
+                              color: "var(--foreground-muted)",
+                              fontSize: "0.98rem",
+                              lineHeight: 1.1,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatPrice(effectiveConversationDetails.listingPrice, effectiveConversationDetails.listingPriceCurrency)}
                           </div>
                         </div>
                       </Link>
                     </div>
-                  </>
-                ) : (
-                  <div style={{ padding: "6px 10px 4px", borderBottom: "1px solid var(--border-color)" }}>
-                    <Link
-                      href={`/listings/${conversationDetails.listingId}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        color: "inherit",
-                        textDecoration: "none",
-                        minWidth: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 65,
-                          height: 50,
-                          borderRadius: 14,
-                          overflow: "hidden",
-                          background: "var(--background-muted)",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {conversationDetails.listingImageUrl ? (
-                          <img
-                            alt={conversationDetails.listingTitle}
-                            src={conversationDetails.listingImageUrl}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          />
-                        ) : null}
-                      </div>
-                      <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: "1.08rem",
-                            lineHeight: 1.15,
-                            fontWeight: 700,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {conversationDetails.listingTitle}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 2,
-                            color: "var(--foreground-muted)",
-                            fontSize: "0.98rem",
-                            lineHeight: 1.1,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {formatPrice(conversationDetails.listingPrice, conversationDetails.listingPriceCurrency)}
-                        </div>
-                      </div>
-                    </Link>
-                  </div>
+                  )
                 )}
 
                 <div
@@ -573,10 +812,15 @@ export function MessagesClient() {
                           padding: "7px 11px",
                           borderRadius: 16,
                           background: message.isMine
-                            ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 82%, white), color-mix(in srgb, var(--color-primary-strong) 82%, black))"
+                            ? "linear-gradient(180deg, color-mix(in srgb, var(--color-primary-strong) 94%, white), var(--color-primary-active))"
                             : "var(--background-elevated)",
-                          color: message.isMine ? "#fff" : "var(--foreground)",
-                          border: message.isMine ? "none" : "1px solid var(--border-color)",
+                          color: message.isMine ? "var(--text-on-accent)" : "var(--foreground)",
+                          border: message.isMine
+                            ? "1px solid color-mix(in srgb, var(--color-primary-strong) 52%, transparent)"
+                            : "1px solid var(--border-color)",
+                          boxShadow: message.isMine
+                            ? "0 10px 24px color-mix(in srgb, var(--shadow-color) 62%, transparent)"
+                            : "none",
                           lineHeight: 1.18,
                           fontWeight: 600,
                           whiteSpace: "pre-wrap",
@@ -591,7 +835,7 @@ export function MessagesClient() {
                             marginTop: 3,
                             fontSize: 10,
                             lineHeight: 1,
-                            color: message.isMine ? "color-mix(in srgb, #ffffff 82%, transparent)" : "var(--foreground-muted)",
+                            color: message.isMine ? "color-mix(in srgb, var(--text-on-accent) 82%, transparent)" : "var(--foreground-muted)",
                             textAlign: "right",
                           }}
                         >
@@ -605,12 +849,17 @@ export function MessagesClient() {
                 <form
                   onSubmit={handleSendMessage}
                   style={{
-                    padding: isWideLayout ? "10px 12px 12px" : "3px 6px 4px",
+                    padding: isWideLayout
+                      ? "10px 12px 12px"
+                      : isMobileClientShell
+                        ? "6px 8px calc(12px + env(safe-area-inset-bottom, 0px))"
+                        : "6px 8px calc(12px + env(safe-area-inset-bottom, 0px))",
                     borderTop: "1px solid var(--border-color)",
                     display: "grid",
                     gridTemplateColumns: isWideLayout ? "minmax(0,1fr) 56px" : "minmax(0,1fr) minmax(72px, 20%)",
                     gap: isWideLayout ? 12 : 6,
                     alignItems: "stretch",
+                    transform: isWideLayout ? undefined : isMobileClientShell ? "translateY(8px)" : undefined,
                   }}
                 >
                   <textarea
@@ -665,7 +914,22 @@ export function MessagesClient() {
                     <MessageCircleMore size={28} />
                   </div>
                   <div style={{ fontWeight: 800, color: "var(--foreground)" }}>Выберите диалог</div>
-                  <div>Откройте любой разговор слева или напишите продавцу из карточки объявления.</div>
+                  <div>
+                    {requestedScope === "support"
+                      ? (isAdmin ? "Выберите обращение пользователя слева." : "Откройте обращение в поддержку, и переписка появится здесь.")
+                      : "Откройте любой разговор слева или напишите продавцу из карточки объявления."}
+                  </div>
+                  {!isAdmin && requestedScope === "support" ? (
+                    <button
+                      type="button"
+                      className="button-primary"
+                      onClick={() => void handleOpenSupportConversation()}
+                      disabled={isStartingSupportConversation}
+                      style={{ minHeight: 42, padding: "0 16px", borderRadius: 14 }}
+                    >
+                      {isStartingSupportConversation ? "Открываем..." : "Написать в поддержку"}
+                    </button>
+                  ) : null}
                 </div>
               </div>
             )}

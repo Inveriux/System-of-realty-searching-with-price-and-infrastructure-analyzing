@@ -184,21 +184,21 @@ export function formatBooleanFeature(
 export function getDealBadgeTone(type: DealType) {
   return type === "Продажа"
     ? "border border-[color:color-mix(in_srgb,var(--foreground)_10%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-elevated)_92%,var(--background-muted))] text-[color:var(--foreground)]"
-    : "border border-[color:color-mix(in_srgb,#0f766e_22%,var(--border-color))] bg-[color:color-mix(in_srgb,#ccfbf1_72%,var(--background-elevated))] text-[#115e59]";
+    : "border border-[color:color-mix(in_srgb,var(--color-success)_24%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-success-soft)_82%,var(--background-elevated))] text-[color:var(--color-success-strong)]";
 }
 
 export function getPropertyBadgeTone(item: ListingCardItem) {
   switch (item.details.kind) {
     case "apartment":
-      return "border border-[color:color-mix(in_srgb,#2563eb_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dbeafe_82%,var(--background-elevated))] text-[#1d4ed8]";
+      return "border border-[color:color-mix(in_srgb,var(--color-info)_20%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-info-soft)_84%,var(--background-elevated))] text-[color:var(--color-info)]";
     case "house":
-      return "border border-[color:color-mix(in_srgb,#b45309_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#fef3c7_84%,var(--background-elevated))] text-[#b45309]";
+      return "border border-[color:color-mix(in_srgb,var(--color-warning)_22%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-warning-soft)_86%,var(--background-elevated))] text-[color:var(--color-warning)]";
     case "land":
-      return "border border-[color:color-mix(in_srgb,#15803d_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#dcfce7_82%,var(--background-elevated))] text-[#166534]";
+      return "border border-[color:color-mix(in_srgb,var(--color-success)_22%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-success-soft)_86%,var(--background-elevated))] text-[color:var(--color-success-strong)]";
     case "office":
       return "border border-[color:color-mix(in_srgb,var(--color-primary)_18%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--color-primary-soft)_24%,var(--background-elevated))] text-[color:var(--color-primary-strong)]";
     case "warehouse":
-      return "border border-[color:color-mix(in_srgb,#475569_18%,var(--border-color))] bg-[color:color-mix(in_srgb,#e2e8f0_82%,var(--background-elevated))] text-[#334155]";
+      return "border border-[color:color-mix(in_srgb,var(--foreground-muted)_22%,var(--border-color))] bg-[color:color-mix(in_srgb,var(--background-muted)_92%,var(--background-elevated))] text-[color:var(--foreground)]";
   }
 }
 
