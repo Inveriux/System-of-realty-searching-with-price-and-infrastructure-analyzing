@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +43,7 @@ export default function ProfilePage() {
   useEffect(() => {
     setName(user?.name ?? "");
     setPhoneNumber(user?.phoneNumber ?? "");
+    setRemoveAvatar(false);
   }, [user]);
 
   const ownListingsCount =
@@ -63,6 +65,7 @@ export default function ProfilePage() {
       await updateOwnProfile(api, {
         name: name.trim(),
         phoneNumber: phoneNumber.trim() || null,
+        accountImageUrl: removeAvatar ? null : user.accountImageUrl,
       });
 
       if (avatarFile) {
@@ -71,6 +74,7 @@ export default function ProfilePage() {
 
       await reloadCurrentUser();
       setAvatarFile(null);
+      setRemoveAvatar(false);
       setSaveMessage("Профиль обновлен.");
     } catch (submissionError) {
       if (
@@ -151,9 +155,15 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <main className="grid gap-6 pb-10">
+      <main
+        className="grid gap-6 pb-10 profile-page-main"
+        style={{
+          width: "100%",
+          marginInline: "auto",
+        }}
+      >
         <section className="profile-main-grid grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
-          <section className="grid gap-6">
+          <section className="profile-primary-column grid gap-6">
             <section className="surface profile-hero grid gap-6 rounded-[30px] p-7">
               <div className="profile-top-grid grid gap-5 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
                 <div
@@ -335,7 +345,10 @@ export default function ProfilePage() {
                 id="profile-avatar-upload"
                 type="file"
                 style={{ display: "none" }}
-                onChange={(event) => setAvatarFile(event.target.files?.[0] ?? null)}
+                onChange={(event) => {
+                  setAvatarFile(event.target.files?.[0] ?? null);
+                  setRemoveAvatar(false);
+                }}
               />
               <label
                 htmlFor="profile-avatar-upload"
@@ -358,6 +371,21 @@ export default function ProfilePage() {
                   {avatarFile ? avatarFile.name : "PNG, JPG, WEBP"}
                 </span>
               </label>
+
+              {user.accountImageUrl || avatarFile ? (
+                <button
+                  className="button-secondary"
+                  type="button"
+                  onClick={() => {
+                    setAvatarFile(null);
+                    setRemoveAvatar(true);
+                    setSaveMessage(null);
+                    setError(null);
+                  }}
+                >
+                  Убрать фото профиля
+                </button>
+              ) : null}
 
               {error ? (
                 <div style={{ color: "#b42318", fontSize: 14 }}>{error}</div>

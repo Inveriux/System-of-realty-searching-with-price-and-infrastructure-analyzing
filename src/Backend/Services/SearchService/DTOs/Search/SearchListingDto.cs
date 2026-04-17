@@ -21,6 +21,7 @@ public sealed class SearchListingDto
     public decimal? PriceAmountByn { get; init; }
     public decimal? PriceAmountUsd { get; init; }
     public string? PriceCurrency { get; init; }
+    public string? PricePeriod { get; init; }
     public decimal AreaTotal { get; init; }
     public string? MainMediaUrl { get; init; }
     public int MediaCount { get; init; }

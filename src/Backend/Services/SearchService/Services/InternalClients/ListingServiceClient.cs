@@ -40,6 +40,7 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
                 PriceAmountByn = wrapped.Data.PriceAmountByn,
                 PriceAmountUsd = wrapped.Data.PriceAmountUsd,
                 PriceCurrency = wrapped.Data.PriceCurrency,
+                PricePeriod = wrapped.Data.PricePeriod,
                 AreaTotal = wrapped.Data.AreaTotal,
                 MainMediaUrl = wrapped.Data.MainMedia,
                 MediaCount = wrapped.Data.MediaCount,
@@ -75,6 +76,7 @@ public sealed class ListingServiceClient(HttpClient httpClient, IOptions<Listing
         public decimal? PriceAmountByn { get; init; }
         public decimal? PriceAmountUsd { get; init; }
         public string? PriceCurrency { get; init; }
+        public string? PricePeriod { get; init; }
         public decimal AreaTotal { get; init; }
         public string? MainMedia { get; init; }
         public int MediaCount { get; init; }

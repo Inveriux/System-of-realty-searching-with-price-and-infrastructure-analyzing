@@ -27,7 +27,7 @@ const ACCESS_TOKEN_COOKIE = "diploma_access_token";
 const CHAT_HUB_URL =
   typeof window !== "undefined"
     ? "/hubs/chat"
-    : `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://diploma.com:5102"}/hubs/chat`;
+    : `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5102"}/hubs/chat`;
 
 function readCookie(name: string) {
   if (typeof document === "undefined") {

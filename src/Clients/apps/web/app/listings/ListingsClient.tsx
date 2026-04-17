@@ -12,7 +12,7 @@ import type {
   TransportLevel,
 } from "@diploma/contracts/search";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
@@ -27,6 +27,15 @@ import { listingsPageClasses } from "./styles/listings-page.styles";
 
 const LISTINGS_PAGE_SIZE = 12;
 const PAGINATION_WINDOW = 9;
+const LISTINGS_FILTERS_STORAGE_KEY = "domio:listings:filters";
+const SORT_OPTIONS: Array<{ value: SearchSortBy; label: string }> = [
+  { value: "relevance", label: "По релевантности" },
+  { value: "published_desc", label: "Сначала новые" },
+  { value: "area_desc", label: "Площадь больше" },
+  { value: "price_asc", label: "Цена по возрастанию" },
+  { value: "price_desc", label: "Цена по убыванию" },
+  { value: "infrastructure_desc", label: "Лучшая инфраструктура" },
+];
 
 const nearbySectionStyle: CSSProperties = {
   display: "grid",
@@ -74,6 +83,7 @@ const nearbyCheckStyle: CSSProperties = {
 type SearchFormState = {
   query: string;
   listingType: string;
+  pricePeriod: string;
   minPrice: string;
   maxPrice: string;
   minArea: string;
@@ -141,6 +151,7 @@ type SearchFormState = {
 const initialState: SearchFormState = {
   query: "",
   listingType: "",
+  pricePeriod: "",
   minPrice: "",
   maxPrice: "",
   minArea: "",
@@ -318,8 +329,36 @@ export function ListingsClient({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isMapOverviewOpen, setIsMapOverviewOpen] = useState(false);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isMobileSortMenu, setIsMobileSortMenu] = useState(false);
   const [filters, setFilters] = useState<SearchFormState>(initialState);
   const [appliedFilters, setAppliedFilters] = useState<SearchFormState>(initialState);
+  const [filtersHydrated, setFiltersHydrated] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(LISTINGS_FILTERS_STORAGE_KEY);
+      if (!raw) {
+        setFiltersHydrated(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as Partial<SearchFormState>;
+      const restored = { ...initialState, ...parsed };
+      setFilters(restored);
+      setAppliedFilters(restored);
+    } catch {
+      // Ignore broken session state and keep defaults.
+    } finally {
+      setFiltersHydrated(true);
+    }
+  }, []);
+
   useEffect(() => {
     const nextQuery = searchParams.get("q")?.trim() ?? "";
     setFilters((current) => (current.query === nextQuery ? current : {
@@ -333,11 +372,59 @@ export function ListingsClient({
       page: 0,
     }));
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!filtersHydrated || typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(LISTINGS_FILTERS_STORAGE_KEY, JSON.stringify(appliedFilters));
+  }, [appliedFilters, filtersHydrated]);
+
+  useEffect(() => {
+    function syncMobileState() {
+      setIsMobileSortMenu(window.innerWidth <= 1024);
+    }
+
+    syncMobileState();
+    window.addEventListener("resize", syncMobileState);
+
+    return () => {
+      window.removeEventListener("resize", syncMobileState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSortMenuOpen || !isMobileSortMenu) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!sortMenuRef.current?.contains(event.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsSortMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSortMenu, isSortMenuOpen]);
   const isAdmin = user?.role?.toLowerCase() === "admin";
   const searchRequest = useMemo<SearchListingsRequest>(() => ({
     listingIds: forcedListingIds ?? null,
     query: appliedFilters.query.trim() || null,
     listingType: appliedFilters.listingType || null,
+    pricePeriod: appliedFilters.pricePeriod || null,
     minPrice: parseOptionalNumber(appliedFilters.minPrice),
     maxPrice: parseOptionalNumber(appliedFilters.maxPrice),
     minArea: parseOptionalNumber(appliedFilters.minArea),
@@ -442,8 +529,8 @@ export function ListingsClient({
       canDelete: isAdmin || listing.agentId === user?.id,
       deletingId,
       onDelete: handleDelete,
-      isFavorite: favorites.isFavorite(listing.listingId),
-      onToggleFavorite: favorites.toggleFavorite,
+      isFavorite: user ? favorites.isFavorite(listing.listingId) : false,
+      onToggleFavorite: user ? favorites.toggleFavorite : undefined,
     }),
   );
   const mapItemsSource =
@@ -471,9 +558,11 @@ export function ListingsClient({
   ).length;
   const totalPages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / LISTINGS_PAGE_SIZE));
   const visiblePages = getVisiblePageNumbers(appliedFilters.page, totalPages);
+  const activeSortLabel = SORT_OPTIONS.find((option) => option.value === filters.sortBy)?.label ?? "Сортировка";
   const activeFiltersCount = [
     appliedFilters.query.trim(),
     appliedFilters.listingType,
+    appliedFilters.pricePeriod,
     appliedFilters.minPrice,
     appliedFilters.maxPrice,
     appliedFilters.minArea,
@@ -666,6 +755,11 @@ export function ListingsClient({
                         Сделка: {filters.listingType === "Sale" ? "Продажа" : "Аренда"}
                       </span>
                     ) : null}
+                    {filters.pricePeriod ? (
+                      <span className="surface" style={listingsClientStyles.filterTag}>
+                        Оплата: {filters.pricePeriod === "Daily" ? "за сутки" : filters.pricePeriod === "Monthly" ? "за месяц" : filters.pricePeriod}
+                      </span>
+                    ) : null}
                     {filters.minPrice || filters.maxPrice ? (
                       <span className="surface" style={listingsClientStyles.filterTag}>
                         Цена: {filters.minPrice || "0"} - {filters.maxPrice || "∞"}
@@ -773,21 +867,102 @@ export function ListingsClient({
           ) : null}
 
           <div className="listings-footer-row" style={listingsClientStyles.footerRow}>
-            <div style={listingsClientStyles.footerActions}>
-              <select
-                className="field listings-sort-select"
-                value={filters.sortBy}
-                onChange={(event) => updateAppliedFilter("sortBy", event.target.value as SearchSortBy)}
-                style={{ minWidth: 220 }}
+            {isMobileSortMenu ? (
+              <div
+                ref={sortMenuRef}
+                className="listings-sort-wrap"
+                style={{
+                  ...listingsClientStyles.footerActions,
+                  position: "relative",
+                  minWidth: 220,
+                }}
               >
-                <option value="relevance">По релевантности</option>
-                <option value="published_desc">Сначала новые</option>
-                <option value="area_desc">Площадь больше</option>
-                <option value="price_asc">Цена по возрастанию</option>
-                <option value="price_desc">Цена по убыванию</option>
-                <option value="infrastructure_desc">Лучшая инфраструктура</option>
-              </select>
-            </div>
+                <button
+                  type="button"
+                  className="field listings-sort-select"
+                  aria-haspopup="listbox"
+                  aria-expanded={isSortMenuOpen}
+                  onClick={() => setIsSortMenuOpen((current) => !current)}
+                  style={{
+                    width: "100%",
+                    minWidth: 220,
+                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span>{activeSortLabel}</span>
+                  <span aria-hidden="true" style={{ fontSize: 12, opacity: 0.72 }}>
+                    {isSortMenuOpen ? "▲" : "▼"}
+                  </span>
+                </button>
+
+                {isSortMenuOpen ? (
+                  <div
+                    role="listbox"
+                    aria-label="Сортировка объявлений"
+                    className="surface listings-sort-menu"
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 8px)",
+                      left: 0,
+                      right: 0,
+                      zIndex: 40,
+                      display: "grid",
+                      gap: 6,
+                      padding: 8,
+                      borderRadius: 18,
+                      background: "color-mix(in srgb, var(--background-elevated) 96%, transparent)",
+                      backdropFilter: "blur(18px)",
+                      boxShadow: "0 18px 42px color-mix(in srgb, var(--shadow-color) 78%, transparent)",
+                    }}
+                  >
+                    {SORT_OPTIONS.map((option) => {
+                      const isActive = option.value === filters.sortBy;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="option"
+                          aria-selected={isActive}
+                          className={isActive ? "button-primary" : "button-secondary"}
+                          onClick={() => {
+                            updateAppliedFilter("sortBy", option.value);
+                            setIsSortMenuOpen(false);
+                          }}
+                          style={{
+                            width: "100%",
+                            justifyContent: "flex-start",
+                            textAlign: "left",
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div style={listingsClientStyles.footerActions}>
+                <select
+                  className="field listings-sort-select"
+                  value={filters.sortBy}
+                  onChange={(event) => updateAppliedFilter("sortBy", event.target.value as SearchSortBy)}
+                  style={{ minWidth: 220 }}
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {paginationBlock}
@@ -818,6 +993,30 @@ export function ListingsClient({
         open={isMapOverviewOpen}
         onClose={() => setIsMapOverviewOpen(false)}
         listings={mapListings}
+        selectedCenter={
+          filters.centerLatitude != null && filters.centerLongitude != null
+            ? {
+                latitude: filters.centerLatitude,
+                longitude: filters.centerLongitude,
+              }
+            : null
+        }
+        radiusMeters={parseOptionalNumber(filters.radiusMeters)}
+        onSelectCenter={(point) => {
+          setFilters((current) => ({
+            ...current,
+            centerLatitude: point.latitude,
+            centerLongitude: point.longitude,
+            radiusMeters: current.radiusMeters.trim() ? current.radiusMeters : "1000",
+          }));
+        }}
+        onClearCenter={() => {
+          setFilters((current) => ({
+            ...current,
+            centerLatitude: null,
+            centerLongitude: null,
+          }));
+        }}
       />
 
       {isFiltersModalOpen && typeof document !== "undefined"
@@ -879,6 +1078,15 @@ export function ListingsClient({
                     <option value="">Все типы сделки</option>
                     <option value="Sale">Продажа</option>
                     <option value="Rent">Аренда</option>
+                  </select>
+                  <select
+                    className="field"
+                    value={filters.pricePeriod}
+                    onChange={(event) => updateFilter("pricePeriod", event.target.value)}
+                  >
+                    <option value="">Оплата: любая</option>
+                    <option value="Monthly">За месяц</option>
+                    <option value="Daily">За сутки</option>
                   </select>
                   <input
                     className="field"

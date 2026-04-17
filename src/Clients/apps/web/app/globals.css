@@ -154,7 +154,36 @@ html[data-mobile-client-shell="true"] .app-header-icon-cluster > button {
 }
 
 html[data-mobile-client-shell="true"] .app-header-brand-title {
-  font-size: 1.12rem !important;
+  font-size: 1.42rem !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header {
+  top: 6px !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-surface {
+  padding-top: 4px !important;
+  padding-bottom: 3px !important;
+  gap: 6px !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-top {
+  gap: 6px !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-brand {
+  padding: 0 !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-logo-wrap {
+  width: 92px !important;
+  height: 52px !important;
+}
+
+html[data-mobile-client-shell="true"] .app-header-search .field {
+  min-height: 46px !important;
+  padding-top: 0.72rem !important;
+  padding-bottom: 0.72rem !important;
 }
 
 * {
@@ -754,6 +783,31 @@ select.field:focus {
   flex: 0 0 auto;
 }
 
+@media (min-width: 1025px) {
+  .profile-main-grid {
+    grid-template-columns: minmax(0, 1fr) 400px !important;
+    max-width: none;
+  }
+
+  .profile-primary-column,
+  .profile-primary-column > *,
+  .profile-settings-card {
+    width: 100%;
+    max-width: none;
+  }
+
+  .profile-actions-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+  }
+
+  .profile-action-button {
+    width: auto;
+  }
+}
+
 .listing-create-map-search-icon {
   width: 18px;
   height: 18px;
@@ -903,7 +957,7 @@ select.field:focus {
 
   .app-header-surface {
     border-radius: 22px !important;
-    padding: 8px 10px !important;
+    padding: 4px 10px !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
   }
@@ -914,8 +968,8 @@ select.field:focus {
     grid-template-areas:
       "brand actions"
       "search search" !important;
-    align-items: stretch !important;
-    gap: 10px !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
 
   .app-header-top:has(.app-header-search-hidden-mobile) {
@@ -964,11 +1018,12 @@ select.field:focus {
 
   .app-header-brand-text {
     min-width: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .app-header-brand-title {
-    font-size: 0.9rem !important;
+    font-size: 1.72rem !important;
+    line-height: 1 !important;
     white-space: nowrap;
   }
 
@@ -977,9 +1032,13 @@ select.field:focus {
   }
 
   .app-header-logo-wrap {
-    width: 72px !important;
+    width: 80px !important;
     height: 42px !important;
     border-radius: 0 !important;
+  }
+
+  .app-header-logo-wrap img {
+    transform: translateY(-6%) !important;
   }
 
   .app-header-icon-cluster {
@@ -1064,9 +1123,11 @@ select.field:focus {
   }
 
   .app-header-search .field {
-    min-height: 46px !important;
+    min-height: 42px !important;
     padding-left: 2rem !important;
     padding-right: 0.95rem !important;
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
   }
 
   .app-header-search-icon {
@@ -1080,10 +1141,26 @@ select.field:focus {
     top: 76px !important;
     left: 12px !important;
     right: 12px !important;
+    bottom: 12px !important;
     width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    z-index: 80 !important;
+    max-height: calc(100dvh - 88px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 260 !important;
+  }
+
+  .app-header-account-mobile-menu {
+    z-index: 360 !important;
+    width: min(calc(100vw - 16px), 320px) !important;
+    min-width: 280px !important;
+    max-width: 320px !important;
+    max-height: min(72dvh, 540px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .app-header-account-grid {
@@ -1357,6 +1434,15 @@ select.field:focus {
     max-width: 100% !important;
   }
 
+  .listings-footer-row {
+    align-items: stretch !important;
+  }
+
+  .listings-footer-row > * {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
   .listings-quick-filter-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1617,6 +1703,26 @@ select.field:focus {
     column-gap: 14px !important;
   }
 
+  .profile-main-grid {
+    width: 100%;
+    max-width: 620px;
+    margin-inline: auto;
+  }
+
+  .profile-page-main {
+    width: min(100%, 640px);
+    margin-inline: auto;
+  }
+
+  .profile-hero,
+  .profile-actions-card,
+  .profile-settings-card,
+  .profile-sections-grid {
+    width: min(100%, calc(100% - 28px));
+    max-width: 620px;
+    margin-inline: auto;
+  }
+
   .profile-hero,
   .profile-actions-card,
   .profile-settings-card {
@@ -1741,23 +1847,58 @@ html[data-theme="dark"] .theme-toggle-button {
     padding: 0 !important;
   }
 
+  .profile-main-grid {
+    max-width: 560px;
+  }
+
+  .profile-page-main {
+    width: min(100%, 576px);
+  }
+
+  .profile-hero,
+  .profile-actions-card,
+  .profile-settings-card,
+  .profile-sections-grid {
+    width: min(100%, calc(100% - 32px));
+    max-width: 560px;
+    margin-inline: auto;
+  }
+
   .app-header-actions {
     gap: 4px !important;
   }
 
   .app-header-brand-title {
-    font-size: 0.84rem !important;
+    font-size: 1.54rem !important;
+    line-height: 1 !important;
   }
 
   .app-header-logo-wrap {
-    width: 82px !important;
-    height: 48px !important;
+    width: 84px !important;
+    height: 44px !important;
+  }
+
+  .app-header-logo-wrap img {
+    transform: translateY(-5%) !important;
   }
 
   .app-header-account-menu {
     top: 72px !important;
     left: 8px !important;
     right: 8px !important;
+    bottom: 8px !important;
+    max-height: calc(100dvh - 80px) !important;
+  }
+
+  .app-header-account-mobile-menu {
+    top: 72px !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: min(calc(100vw - 16px), 304px) !important;
+    min-width: 264px !important;
+    max-width: 304px !important;
+    max-height: min(70dvh, 500px) !important;
   }
 
   .profile-hero,

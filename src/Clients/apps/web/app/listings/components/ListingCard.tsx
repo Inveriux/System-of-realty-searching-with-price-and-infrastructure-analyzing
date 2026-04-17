@@ -229,21 +229,23 @@ export function ListingCard({ item }: ListingCardProps) {
                   <FilePenLine className="h-4.5 w-4.5" />
                 </button>
               ) : null}
-              <button
-                type="button"
-                onClick={handleToggleFavorite}
-                className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 shadow-sm backdrop-blur transition hover:scale-[1.03]"
-                style={{
-                  background: item.isFavorite
-                    ? "color-mix(in srgb, var(--color-danger-soft) 88%, white)"
-                    : "color-mix(in srgb, var(--background-elevated) 86%, var(--color-primary-soft))",
-                  color: item.isFavorite ? "var(--color-danger-strong)" : "var(--color-primary-strong)",
-                }}
-                aria-label={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
-                title={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
-              >
-                <Heart className="h-4.5 w-4.5" />
-              </button>
+              {item.onToggleFavorite ? (
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className="grid h-8.5 w-8.5 place-items-center rounded-full border border-white/25 shadow-sm backdrop-blur transition hover:scale-[1.03]"
+                  style={{
+                    background: item.isFavorite
+                      ? "color-mix(in srgb, var(--color-danger-soft) 88%, white)"
+                      : "color-mix(in srgb, var(--background-elevated) 86%, var(--color-primary-soft))",
+                    color: item.isFavorite ? "var(--color-danger-strong)" : "var(--color-primary-strong)",
+                  }}
+                  aria-label={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+                  title={item.isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+                >
+                  <Heart className="h-4.5 w-4.5" />
+                </button>
+              ) : null}
               {item.canHide ? (
                 <button
                   type="button"

@@ -42,6 +42,32 @@ PHOTO_SERVER_LOG = Path("/tmp/diploma_photo_server.log")
 PHOTO_URLS: dict[Path, str] = {}
 USED_PHOTOS: set[Path] = set()
 
+MIN_PHOTO_COUNTS = {
+    "apartment": 9,
+    "house": 10,
+    "office": 8,
+    "warehouse": 7,
+    "land": 6,
+}
+
+SEEDED_USERS = [
+    {
+        "id": "7e8f0a0a-11d7-4dc8-9f70-1a2c3df41001",
+        "name": "gromahacer",
+        "email": "gromahacer@gmail.com",
+    },
+    {
+        "id": "7e8f0a0a-11d7-4dc8-9f70-1a2c3df41002",
+        "name": "Марта Свиридова",
+        "email": "sunsetledger@gmail.com",
+    },
+    {
+        "id": "7e8f0a0a-11d7-4dc8-9f70-1a2c3df41003",
+        "name": "Олег Дорошин",
+        "email": "northsignalbox@gmail.com",
+    },
+]
+
 
 def log_output(entry: dict) -> None:
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -96,6 +122,45 @@ def safe_api_request(method: str, path: str, *, token: str | None = None, body=N
     except urllib.error.HTTPError as error:
         payload = error.read().decode("utf-8", errors="replace")
         return error.code, payload
+
+
+def parse_json_response(payload: str, *, context: str):
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError as error:
+        compact_payload = payload.strip()
+        if len(compact_payload) > 400:
+            compact_payload = compact_payload[:400] + "..."
+        raise RuntimeError(
+            f"{context} returned non-JSON response: {compact_payload or '<empty body>'}"
+        ) from error
+
+
+def ensure_required_api_routes() -> None:
+    checks = [
+        ("POST", "/api/users/signin", {"email": "gromahacer@gmail.com", "password": "12345678"}),
+        ("GET", "/api/listings/?page=0&pageSize=1", None),
+    ]
+
+    failures: list[str] = []
+    for method, path, body in checks:
+        status, payload = safe_api_request(method, path, body=body)
+        if status in {200, 400, 401, 403}:
+            continue
+
+        compact_payload = payload.strip()
+        if len(compact_payload) > 240:
+            compact_payload = compact_payload[:240] + "..."
+        failures.append(f"{method} {path} -> HTTP {status} {compact_payload or '<empty body>'}")
+
+    if failures:
+        joined = "; ".join(failures)
+        raise RuntimeError(
+            "Seed requires user-service and listing-service, but required API routes are unavailable. "
+            f"Details: {joined}. "
+            "Current lightweight kind mode does not start DB-backed services. "
+            "Recreate the cluster with INCLUDE_STATEFUL_SERVICES=true."
+        )
 
 
 def discover_gateway_service() -> str:
@@ -203,7 +268,15 @@ def sign_in() -> str:
         "/api/users/signin",
         body={"email": "gromahacer@gmail.com", "password": "12345678"},
     )
-    parsed = json.loads(payload)
+    if status != 200:
+        compact_payload = payload.strip()
+        if len(compact_payload) > 400:
+            compact_payload = compact_payload[:400] + "..."
+        raise RuntimeError(
+            f"Sign-in failed with HTTP {status}: {compact_payload or '<empty body>'}. "
+            "Seed requires user-service in the cluster."
+        )
+    parsed = parse_json_response(payload, context="Sign-in")
     log_output({"step": "signin", "httpStatus": status, "response": parsed})
     token = parsed.get("data", {}).get("token")
     if not token:
@@ -361,16 +434,45 @@ def pick_images(category: str, city: str, listing_index: int, count: int = 4) ->
                 selection_order.append(candidate)
 
     available = [candidate for candidate in selection_order if candidate not in USED_PHOTOS]
-    if len(available) < count:
+    selected = available[:count]
+    if len(selected) < count:
+        for candidate in selection_order:
+            if candidate in selected:
+                continue
+            selected.append(candidate)
+            if len(selected) == count:
+                break
+
+    if len(selected) < count:
         raise RuntimeError(
-            f"Not enough unique photos for category '{category}'. "
-            f"Need {count}, but only {len(available)} unused files remain."
+            f"Not enough photos for category '{category}'. "
+            f"Need {count}, but only {len(selection_order)} files were resolved."
         )
 
-    selected = available[:count]
     USED_PHOTOS.update(selected)
 
     return [photo_url(path) for path in selected[:count]]
+
+
+def resolve_photo_count(category: str, definition: dict, listing_index: int) -> int:
+    requested = int(definition.get("photo_count", 4))
+    minimum = MIN_PHOTO_COUNTS.get(category, 6)
+
+    if category in {"apartment", "house"}:
+        boosted = minimum + (listing_index % 3)
+    elif category in {"office", "warehouse"}:
+        boosted = minimum + (listing_index % 2)
+    else:
+        boosted = minimum
+
+    return max(requested, boosted)
+
+
+def pick_seed_user(index: int, definition: dict) -> dict:
+    if "seed_user_index" in definition:
+        selected_index = int(definition["seed_user_index"]) % len(SEEDED_USERS)
+        return SEEDED_USERS[selected_index]
+    return SEEDED_USERS[(index - 1) % len(SEEDED_USERS)]
 
 
 def apartment_payload(
@@ -381,6 +483,9 @@ def apartment_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    *,
+    listing_type: str = "Sale",
+    price_period: str = "OneTime",
 ) -> dict:
     return {
         "listingDto": {
@@ -390,13 +495,13 @@ def apartment_payload(
             "description": description,
             "priceAmountByn": price_amount_byn,
             "priceCurrency": "BYN",
-            "pricePeriod": "OneTime",
+            "pricePeriod": price_period,
             "areaTotal": 61.4,
             "buildYear": 2018,
             "publishedDate": published_date,
             "addressId": str(uuid.uuid4()),
             "buildingType": "Apartment Building (Multi-family)",
-            "listingType": "Sale",
+            "listingType": listing_type,
             "status": "Active",
             "listingDetailsType": "Apartment",
             "mediaUrls": media_urls,
@@ -427,6 +532,9 @@ def house_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    *,
+    listing_type: str = "Sale",
+    price_period: str = "OneTime",
 ) -> dict:
     return {
         "listingDto": {
@@ -436,13 +544,13 @@ def house_payload(
             "description": description,
             "priceAmountByn": price_amount_byn,
             "priceCurrency": "BYN",
-            "pricePeriod": "OneTime",
+            "pricePeriod": price_period,
             "areaTotal": 154.0,
             "buildYear": 2016,
             "publishedDate": published_date,
             "addressId": str(uuid.uuid4()),
             "buildingType": "Detached House",
-            "listingType": "Sale",
+            "listingType": listing_type,
             "status": "Active",
             "listingDetailsType": "House",
             "mediaUrls": media_urls,
@@ -473,6 +581,9 @@ def office_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    *,
+    listing_type: str = "Rent",
+    price_period: str = "Monthly",
 ) -> dict:
     return {
         "listingDto": {
@@ -482,13 +593,13 @@ def office_payload(
             "description": description,
             "priceAmountByn": price_amount_byn,
             "priceCurrency": "BYN",
-            "pricePeriod": "Monthly",
+            "pricePeriod": price_period,
             "areaTotal": 156.0,
             "buildYear": 2021,
             "publishedDate": published_date,
             "addressId": str(uuid.uuid4()),
             "buildingType": "Business Center",
-            "listingType": "Rent",
+            "listingType": listing_type,
             "status": "Active",
             "listingDetailsType": "Office",
             "mediaUrls": media_urls,
@@ -515,6 +626,9 @@ def warehouse_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    *,
+    listing_type: str = "Sale",
+    price_period: str = "OneTime",
 ) -> dict:
     return {
         "listingDto": {
@@ -524,13 +638,13 @@ def warehouse_payload(
             "description": description,
             "priceAmountByn": price_amount_byn,
             "priceCurrency": "BYN",
-            "pricePeriod": "OneTime",
+            "pricePeriod": price_period,
             "areaTotal": 2200.0,
             "buildYear": 2019,
             "publishedDate": published_date,
             "addressId": str(uuid.uuid4()),
             "buildingType": "Warehouse Complex",
-            "listingType": "Sale",
+            "listingType": listing_type,
             "status": "Active",
             "listingDetailsType": "Warehouse",
             "mediaUrls": media_urls,
@@ -559,6 +673,9 @@ def land_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    *,
+    listing_type: str = "Sale",
+    price_period: str = "OneTime",
 ) -> dict:
     return {
         "listingDto": {
@@ -568,12 +685,12 @@ def land_payload(
             "description": description,
             "priceAmountByn": price_amount_byn,
             "priceCurrency": "BYN",
-            "pricePeriod": "OneTime",
+            "pricePeriod": price_period,
             "areaTotal": 14.2,
             "publishedDate": published_date,
             "addressId": str(uuid.uuid4()),
             "buildingType": "Other",
-            "listingType": "Sale",
+            "listingType": listing_type,
             "status": "Active",
             "listingDetailsType": "Land",
             "mediaUrls": media_urls,
@@ -632,6 +749,50 @@ MULTICITY_DEFINITIONS = [
     {"category": "land", "city": "Минск", "address": "Минск, улица Монтажников, 31", "title": "Участок в деловой части Минска", "published_date": "2025-06-01T09:20:00Z", "price_amount_byn": 198000, "photo_count": 4},
     {"category": "land", "city": "Брест", "address": "Брест, улица Лейтенанта Рябцева, 126", "title": "Коммерческий участок в Бресте", "published_date": "2025-05-21T09:20:00Z", "price_amount_byn": 176000, "photo_count": 3},
     {"category": "land", "city": "Гродно", "address": "Гродно, улица Победы, 21", "title": "Участок под проект в Гродно", "published_date": "2025-05-03T09:20:00Z", "price_amount_byn": 169000, "photo_count": 5},
+
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Кальварийская, 16", "title": "Студия у Пушкинской", "published_date": "2026-03-14T09:00:00Z", "price_amount_byn": 218000, "photo_count": 2},
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Леонида Беды, 31", "title": "Квартира возле Комаровки", "published_date": "2026-03-01T09:00:00Z", "price_amount_byn": 247000, "photo_count": 2},
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Немига, 14", "title": "Апартаменты в центре у Немиги", "published_date": "2026-02-18T09:00:00Z", "price_amount_byn": 301000, "photo_count": 2},
+    {"category": "apartment", "city": "Витебск", "address": "Витебск, проспект Строителей, 17", "title": "Квартира в новом районе Витебска", "published_date": "2026-02-03T09:00:00Z", "price_amount_byn": 208000, "photo_count": 2},
+    {"category": "apartment", "city": "Могилев", "address": "Могилев, улица Первомайская, 61", "title": "Квартира рядом с центром Могилева", "published_date": "2026-01-21T09:00:00Z", "price_amount_byn": 212000, "photo_count": 2},
+    {"category": "apartment", "city": "Гомель", "address": "Гомель, Речицкий проспект, 45", "title": "Квартира в современном квартале Гомеля", "published_date": "2026-01-08T09:00:00Z", "price_amount_byn": 219000, "photo_count": 2},
+    {"category": "apartment", "city": "Брест", "address": "Брест, улица Гоголя, 87", "title": "Квартира рядом с пешеходной улицей Бреста", "published_date": "2025-12-23T09:00:00Z", "price_amount_byn": 228000, "photo_count": 2},
+    {"category": "apartment", "city": "Гродно", "address": "Гродно, улица Дзержинского, 113", "title": "Квартира в жилом квартале Гродно", "published_date": "2025-12-10T09:00:00Z", "price_amount_byn": 216000, "photo_count": 2},
+
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Богдановича, 124", "title": "Аренда квартиры у Комаровского рынка", "published_date": "2026-03-20T09:00:00Z", "price_amount_byn": 1650, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 4},
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Макаёнка, 12", "title": "Квартира в аренду рядом с парком Челюскинцев", "published_date": "2026-03-06T09:00:00Z", "price_amount_byn": 1480, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 5, "history_mode": "volatile"},
+    {"category": "apartment", "city": "Минск", "address": "Минск, улица Интернациональная, 15", "title": "Апартаменты посуточно в центре", "published_date": "2026-02-24T09:00:00Z", "price_amount_byn": 190, "photo_count": 2, "listing_type": "Rent", "price_period": "Daily", "history_entries": 4},
+    {"category": "apartment", "city": "Брест", "address": "Брест, улица Советская, 59", "title": "Квартира посуточно в центре Бреста", "published_date": "2026-02-12T09:00:00Z", "price_amount_byn": 145, "photo_count": 2, "listing_type": "Rent", "price_period": "Daily", "history_entries": 3},
+    {"category": "apartment", "city": "Гомель", "address": "Гомель, улица Кирова, 90", "title": "Квартира в аренду рядом с вокзалом", "published_date": "2026-01-29T09:00:00Z", "price_amount_byn": 1120, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 4},
+    {"category": "apartment", "city": "Гродно", "address": "Гродно, улица Советских Пограничников, 112", "title": "Квартира посуточно у исторического центра", "published_date": "2026-01-14T09:00:00Z", "price_amount_byn": 138, "photo_count": 2, "listing_type": "Rent", "price_period": "Daily", "history_entries": 4},
+    {"category": "apartment", "city": "Витебск", "address": "Витебск, улица Ленина, 48", "title": "Квартира в аренду у амфитеатра", "published_date": "2025-12-28T09:00:00Z", "price_amount_byn": 980, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 4},
+    {"category": "apartment", "city": "Могилев", "address": "Могилев, улица Крыленко, 7", "title": "Апартаменты посуточно в центре Могилева", "published_date": "2025-12-15T09:00:00Z", "price_amount_byn": 132, "photo_count": 2, "listing_type": "Rent", "price_period": "Daily", "history_entries": 5, "history_mode": "volatile"},
+
+    {"category": "house", "city": "Минск", "address": "Минск, улица Тепличная, 9", "title": "Дом в аренду для семьи в Минске", "published_date": "2026-02-16T09:05:00Z", "price_amount_byn": 2850, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 5},
+    {"category": "house", "city": "Брест", "address": "Брест, улица Махновича, 77", "title": "Коттедж в аренду в Бресте", "published_date": "2026-01-25T09:05:00Z", "price_amount_byn": 2410, "photo_count": 2, "listing_type": "Rent", "price_period": "Monthly", "history_entries": 4},
+    {"category": "house", "city": "Гродно", "address": "Гродно, улица Пушкина, 68", "title": "Дом с участком в Гродно", "published_date": "2025-12-20T09:05:00Z", "price_amount_byn": 447000, "photo_count": 2},
+    {"category": "house", "city": "Витебск", "address": "Витебск, улица Гагарина, 97", "title": "Семейный дом в Витебске", "published_date": "2025-11-30T09:05:00Z", "price_amount_byn": 384000, "photo_count": 2},
+    {"category": "house", "city": "Могилев", "address": "Могилев, улица Пионерская, 14", "title": "Коттедж в тихом районе Могилева", "published_date": "2025-11-08T09:05:00Z", "price_amount_byn": 402000, "photo_count": 2},
+    {"category": "house", "city": "Гомель", "address": "Гомель, улица Ильича, 53", "title": "Дом для большой семьи в Гомеле", "published_date": "2025-10-17T09:05:00Z", "price_amount_byn": 417000, "photo_count": 2},
+
+    {"category": "office", "city": "Минск", "address": "Минск, улица Клары Цеткин, 24", "title": "Офис у станции Фрунзенская", "published_date": "2025-10-03T09:10:00Z", "price_amount_byn": 11800, "photo_count": 2, "history_entries": 5},
+    {"category": "office", "city": "Минск", "address": "Минск, улица Платонова, 20Б", "title": "Офис с open space на Платонова", "published_date": "2025-09-17T09:10:00Z", "price_amount_byn": 12750, "photo_count": 2, "history_entries": 6, "history_mode": "volatile"},
+    {"category": "office", "city": "Брест", "address": "Брест, улица Карбышева, 74", "title": "Офис для команды в центре Бреста", "published_date": "2025-08-29T09:10:00Z", "price_amount_byn": 8600, "photo_count": 2, "history_entries": 4},
+    {"category": "office", "city": "Гродно", "address": "Гродно, улица Будённого, 37", "title": "Офис с переговорной в Гродно", "published_date": "2025-08-11T09:10:00Z", "price_amount_byn": 9050, "photo_count": 2, "history_entries": 4},
+    {"category": "office", "city": "Витебск", "address": "Витебск, улица Замковая, 4", "title": "Офис в центре Витебска", "published_date": "2025-07-23T09:10:00Z", "price_amount_byn": 7800, "photo_count": 2, "history_entries": 5},
+    {"category": "office", "city": "Могилев", "address": "Могилев, улица Космонавтов, 19", "title": "Офис для сервиса и продаж в Могилеве", "published_date": "2025-07-04T09:10:00Z", "price_amount_byn": 8350, "photo_count": 2, "history_entries": 4},
+    {"category": "office", "city": "Гомель", "address": "Гомель, улица Мазурова, 28", "title": "Офис у делового кластера Гомеля", "published_date": "2025-06-18T09:10:00Z", "price_amount_byn": 8900, "photo_count": 2, "history_entries": 5},
+    {"category": "office", "city": "Минск", "address": "Минск, улица Толбухина, 2", "title": "Офис в аренду рядом с метро Парк Челюскинцев", "published_date": "2025-05-29T09:10:00Z", "price_amount_byn": 11650, "photo_count": 2, "history_entries": 6, "history_mode": "volatile"},
+
+    {"category": "warehouse", "city": "Минск", "address": "Минск, улица Селицкого, 21", "title": "Склад рядом с МКАД в Минске", "published_date": "2025-06-11T09:15:00Z", "price_amount_byn": 1260000, "photo_count": 2},
+    {"category": "warehouse", "city": "Брест", "address": "Брест, улица Катин Бор, 108", "title": "Складской блок у трассы в Бресте", "published_date": "2025-05-18T09:15:00Z", "price_amount_byn": 1015000, "photo_count": 2},
+    {"category": "warehouse", "city": "Гомель", "address": "Гомель, улица Могилёвская, 31", "title": "Логистический склад в Гомеле", "published_date": "2025-04-27T09:15:00Z", "price_amount_byn": 1088000, "photo_count": 2},
+    {"category": "warehouse", "city": "Витебск", "address": "Витебск, улица 39-й Армии, 17", "title": "Склад с офисным блоком в Витебске", "published_date": "2025-04-09T09:15:00Z", "price_amount_byn": 998000, "photo_count": 2},
+
+    {"category": "land", "city": "Витебск", "address": "Витебск, Бешенковичское шоссе, 12", "title": "Коммерческий участок в Витебске", "published_date": "2025-04-14T09:20:00Z", "price_amount_byn": 158000, "photo_count": 2},
+    {"category": "land", "city": "Гомель", "address": "Гомель, улица Объездная, 6", "title": "Участок под сервисный объект в Гомеле", "published_date": "2025-03-26T09:20:00Z", "price_amount_byn": 163000, "photo_count": 2},
+    {"category": "land", "city": "Могилев", "address": "Могилев, улица Симонова, 3А", "title": "Участок для коммерческой застройки в Могилеве", "published_date": "2025-03-08T09:20:00Z", "price_amount_byn": 149000, "photo_count": 2},
+    {"category": "land", "city": "Минск", "address": "Минск, улица Купревича, 5", "title": "Участок под mixed-use проект у технопарка", "published_date": "2025-02-17T09:20:00Z", "price_amount_byn": 233000, "photo_count": 2},
 ]
 
 DIPLOMA_LOCAL_DEFINITIONS = [
@@ -676,6 +837,7 @@ def build_payload(
     media_urls: list[str],
     price_amount_byn: int,
     published_date: str,
+    definition: dict,
 ) -> dict:
     builders = {
         "apartment": apartment_payload,
@@ -685,9 +847,33 @@ def build_payload(
         "land": land_payload,
     }
     builder = builders[category]
+    listing_type = str(definition.get("listing_type") or ("Rent" if category == "office" else "Sale"))
+    price_period = str(
+        definition.get("price_period")
+        or ("Monthly" if listing_type == "Rent" else "OneTime")
+    )
     if category == "apartment":
-        return builder(city, address, title, description, media_urls, price_amount_byn, published_date)
-    return builder(address, title, description, media_urls, price_amount_byn, published_date)
+        return builder(
+            city,
+            address,
+            title,
+            description,
+            media_urls,
+            price_amount_byn,
+            published_date,
+            listing_type=listing_type,
+            price_period=price_period,
+        )
+    return builder(
+        address,
+        title,
+        description,
+        media_urls,
+        price_amount_byn,
+        published_date,
+        listing_type=listing_type,
+        price_period=price_period,
+    )
 
 
 def parse_iso_utc(value: str) -> datetime:
@@ -698,20 +884,73 @@ def format_iso_utc(value: datetime) -> str:
     return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def build_price_history_plan(published_date: str, current_price_byn: int) -> list[dict]:
+def build_price_history_plan(
+    published_date: str,
+    current_price_byn: int,
+    *,
+    price_period: str = "OneTime",
+    history_entries: int = 3,
+    history_mode: str = "normal",
+) -> list[dict]:
     published_dt = parse_iso_utc(published_date)
     now = datetime.now(timezone.utc)
     latest_allowed = now - timedelta(days=7)
-    candidate_dates = [
-        published_dt + timedelta(days=12),
-        published_dt + timedelta(days=48),
-        published_dt + timedelta(days=96),
-    ]
-    fallback_offsets = [28, 18, 8]
-    normalized_dates: list[datetime] = []
+    entry_count = max(2, min(history_entries, 7))
 
-    for index, candidate in enumerate(candidate_dates):
-        capped = min(candidate, latest_allowed - timedelta(days=fallback_offsets[index]))
+    if price_period in {"Monthly", "Daily"}:
+        base_offsets = [12, 39, 67, 96, 126, 158, 192]
+        if history_mode == "volatile":
+            multipliers = [0.82, 0.88, 0.93, 0.97, 1.03, 0.95, 1.0]
+            comments = [
+                "Стартовая ставка",
+                "Коррекция после первых откликов",
+                "Обновление ставки к следующему месяцу",
+                "Цена после роста спроса",
+                "Повышение в активный период",
+                "Скидка для ускорения сделки",
+                "Текущая ставка",
+            ]
+        else:
+            multipliers = [0.86, 0.9, 0.94, 0.97, 0.99, 1.0, 1.0]
+            comments = [
+                "Стартовая ставка",
+                "Коррекция после первых просмотров",
+                "Обновление к новому месяцу",
+                "Актуализация перед сезоном",
+                "Текущая ставка",
+                "Текущая ставка",
+                "Текущая ставка",
+            ]
+    else:
+        base_offsets = [12, 48, 96, 142, 188, 236, 284]
+        if history_mode == "volatile":
+            multipliers = [0.8, 0.86, 0.91, 0.95, 1.02, 0.97, 1.0]
+            comments = [
+                "Стартовая цена",
+                "Снижение после первых показов",
+                "Коррекция по рынку",
+                "Актуализация перед сезоном",
+                "Рост после ремонта",
+                "Финальная корректировка",
+                "Текущая цена",
+            ]
+        else:
+            multipliers = [0.87, 0.92, 0.95, 0.97, 0.99, 1.0, 1.0]
+            comments = [
+                "Стартовая цена",
+                "Коррекция после первых просмотров",
+                "Актуализация перед сезоном",
+                "Обновление по рынку",
+                "Текущая цена",
+                "Текущая цена",
+                "Текущая цена",
+            ]
+
+    normalized_dates: list[datetime] = []
+    for index, offset_days in enumerate(base_offsets[:entry_count]):
+        candidate = published_dt + timedelta(days=offset_days)
+        remaining_slots = entry_count - index - 1
+        capped = min(candidate, latest_allowed - timedelta(days=max(remaining_slots, 0) * 9))
         if normalized_dates:
             minimum_allowed = normalized_dates[-1] + timedelta(days=1)
             capped = max(capped, minimum_allowed)
@@ -719,26 +958,32 @@ def build_price_history_plan(published_date: str, current_price_byn: int) -> lis
 
     return [
         {
-            "effectiveDateUtc": format_iso_utc(normalized_dates[0]),
-            "priceAmountByn": int(round(current_price_byn * 0.87)),
-            "comment": "Стартовая цена",
-        },
-        {
-            "effectiveDateUtc": format_iso_utc(normalized_dates[1]),
-            "priceAmountByn": int(round(current_price_byn * 0.92)),
-            "comment": "Коррекция после первых просмотров",
-        },
-        {
-            "effectiveDateUtc": format_iso_utc(normalized_dates[2]),
-            "priceAmountByn": int(round(current_price_byn * 0.97)),
-            "comment": "Актуализация перед сезоном",
-        },
+            "effectiveDateUtc": format_iso_utc(normalized_dates[index]),
+            "priceAmountByn": max(1, int(round(current_price_byn * multipliers[index]))),
+            "comment": comments[index],
+        }
+        for index in range(entry_count)
     ]
 
 
-def append_price_history(token: str, listing_id: str, published_date: str, current_price_byn: int) -> list[dict]:
+def append_price_history(
+    token: str,
+    listing_id: str,
+    published_date: str,
+    current_price_byn: int,
+    *,
+    price_period: str = "OneTime",
+    history_entries: int = 3,
+    history_mode: str = "normal",
+) -> list[dict]:
     results = []
-    for payload in build_price_history_plan(published_date, current_price_byn):
+    for payload in build_price_history_plan(
+        published_date,
+        current_price_byn,
+        price_period=price_period,
+        history_entries=history_entries,
+        history_mode=history_mode,
+    ):
         status, response = safe_api_request(
             "POST",
             f"/api/listings/{listing_id}/price-history",
@@ -760,15 +1005,25 @@ def create_showcase_listings(token: str) -> None:
     definitions = selected_definitions()
     for index, definition in enumerate(definitions, start=1):
         category = definition["category"]
+        seeded_user = pick_seed_user(index, definition)
         city = definition["city"]
         address = definition["address"]
         short_title = definition["title"]
         published_date = definition["published_date"]
         price_amount_byn = definition["price_amount_byn"]
-        photo_count = int(definition.get("photo_count", 4))
+        photo_count = resolve_photo_count(category, definition, index)
+        listing_type = str(definition.get("listing_type") or ("Rent" if category == "office" else "Sale"))
+        price_period = str(definition.get("price_period") or ("Monthly" if listing_type == "Rent" else "OneTime"))
+        history_entries = int(definition.get("history_entries", 6 if category == "office" else 4 if listing_type == "Rent" else 3))
+        history_mode = str(definition.get("history_mode", "volatile" if index % 9 == 0 else "normal"))
         media_urls = pick_images(category, city, index, photo_count)
         title = short_title
-        description = f"{MARKER} {city}. Фото DIploma."
+        description = (
+            f"{MARKER} {city}. "
+            f"{'Аренда' if listing_type == 'Rent' else 'Продажа'} "
+            f"{'за месяц' if price_period == 'Monthly' else 'за сутки' if price_period == 'Daily' else 'с полной оплатой'}. "
+            "Фото DIploma."
+        )
         payload = build_payload(
             category,
             city,
@@ -778,12 +1033,22 @@ def create_showcase_listings(token: str) -> None:
             media_urls,
             price_amount_byn,
             published_date,
+            definition,
         )
+        payload["listingDto"]["agentId"] = seeded_user["id"]
         status, response = safe_api_request("POST", "/api/listings/", token=token, body=payload)
         parsed_response = try_parse_json(response)
         listing_id = parsed_response.get("data") if isinstance(parsed_response, dict) else None
         history_results = (
-            append_price_history(token, listing_id, published_date, price_amount_byn)
+            append_price_history(
+                token,
+                listing_id,
+                published_date,
+                price_amount_byn,
+                price_period=price_period,
+                history_entries=history_entries,
+                history_mode=history_mode,
+            )
             if status == 200 and listing_id
             else []
         )
@@ -794,6 +1059,9 @@ def create_showcase_listings(token: str) -> None:
                 "title": title,
                 "publishedDate": published_date,
                 "priceAmountByn": price_amount_byn,
+                "agentId": seeded_user["id"],
+                "agentEmail": seeded_user["email"],
+                "agentName": seeded_user["name"],
                 "httpStatus": status,
                 "photoCount": photo_count,
                 "mediaUrls": media_urls,
@@ -806,6 +1074,9 @@ def create_showcase_listings(token: str) -> None:
                 "step": f"{category}_{city}_{index}",
                 "publishedDate": published_date,
                 "priceAmountByn": price_amount_byn,
+                "agentId": seeded_user["id"],
+                "agentEmail": seeded_user["email"],
+                "agentName": seeded_user["name"],
                 "httpStatus": status,
                 "photoCount": photo_count,
                 "mediaUrls": media_urls,
@@ -814,6 +1085,7 @@ def create_showcase_listings(token: str) -> None:
             }
         )
 
+    log_output({"step": "seed_users", "items": SEEDED_USERS})
     log_output({"step": "created_summary", "items": created})
 
 
@@ -829,6 +1101,7 @@ def main() -> int:
 
     ensure_port_forward()
     ensure_photo_server()
+    ensure_required_api_routes()
     token = sign_in()
     cleanup_old_listings(token)
     create_showcase_listings(token)

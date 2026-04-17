@@ -7,6 +7,7 @@ import {
   uploadListingImage,
   type LookupOption,
 } from "@diploma/api/listings";
+import { resolveLocation } from "@diploma/api/locations";
 import type { ListingDto } from "@diploma/contracts/listings";
 import { useListingsQuery } from "@diploma/features";
 import { estimateListingPrice } from "@diploma/api/pricing-analytics";
@@ -32,6 +33,7 @@ type CreateListingState = {
   longitude: string;
   description: string;
   priceAmount: string;
+  pricePeriod: "Daily" | "Monthly" | "OneTime";
   areaTotal: string;
   buildYear: string;
   buildingType: string;
@@ -97,6 +99,13 @@ type DraftLocation = {
 };
 
 type ListingDetailsType = CreateListingState["listingDetailsType"];
+type CreateListingFieldName =
+  | keyof CreateListingState
+  | "address";
+type DropdownOption = {
+  value: string;
+  label: string;
+};
 type CreateListingClientProps = {
   mode?: "create" | "edit";
   listingId?: string;
@@ -113,6 +122,15 @@ const BELARUS_BOUNDS: [[number, number], [number, number]] = [
 ];
 const BELARUS_COUNTRY_CODES = new Set(["BY", "BYN"]);
 
+function isBelarusCountryValue(value: string | null | undefined) {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "by" || normalized === "byn" || normalized.includes("беларус") || normalized.includes("belarus");
+}
+
 const initialState: CreateListingState = {
   title: "",
   addressText: "",
@@ -120,6 +138,7 @@ const initialState: CreateListingState = {
   longitude: "",
   description: "",
   priceAmount: "",
+  pricePeriod: "OneTime",
   areaTotal: "",
   buildYear: "",
   buildingType: "",
@@ -258,6 +277,149 @@ function getListingDetailsTypeLabel(value: ListingDetailsType) {
   }
 }
 
+function DropdownField({
+  value,
+  onChange,
+  options,
+  placeholder,
+  style,
+  native = false,
+}: {
+  value: string;
+  onChange: (nextValue: string) => void;
+  options: DropdownOption[];
+  placeholder?: string;
+  style?: CSSProperties;
+  native?: boolean;
+}) {
+  if (native) {
+    return (
+      <select
+        className="field"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={style}
+      >
+        {placeholder ? (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  const [isOpen, setIsOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const activeOption = options.find((option) => option.value === value) ?? null;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
+
+  return (
+    <div ref={rootRef} style={{ position: "relative" }}>
+      <button
+        type="button"
+        className="field"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((current) => !current)}
+        style={{
+          width: "100%",
+          textAlign: "left",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          cursor: "pointer",
+          ...style,
+        }}
+      >
+        <span style={{ color: activeOption ? "var(--foreground)" : "var(--foreground-muted)" }}>
+          {activeOption?.label ?? placeholder ?? "Выберите вариант"}
+        </span>
+        <span aria-hidden="true" style={{ fontSize: 12, opacity: 0.72 }}>
+          {isOpen ? "▲" : "▼"}
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div
+          role="listbox"
+          className="surface"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            right: 0,
+            zIndex: 80,
+            display: "grid",
+            gap: 6,
+            padding: 8,
+            borderRadius: 18,
+            background: "color-mix(in srgb, var(--background-elevated) 96%, transparent)",
+            backdropFilter: "blur(18px)",
+            boxShadow: "0 18px 42px color-mix(in srgb, var(--shadow-color) 78%, transparent)",
+          }}
+        >
+          {options.map((option) => {
+            const isActive = option.value === value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={isActive}
+                className={isActive ? "button-primary" : "button-secondary"}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  justifyContent: "flex-start",
+                  textAlign: "left",
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function getListingSectionLabel(value: ListingDetailsType) {
   switch (value) {
     case "Apartment":
@@ -290,6 +452,7 @@ function buildStateFromListing(listing: ListingDto): CreateListingState {
     longitude: stringifyNullableNumber(listing.longitude),
     description: listing.description ?? "",
     priceAmount: stringifyNullableNumber(listing.priceAmountByn),
+    pricePeriod: (listing.pricePeriod as CreateListingState["pricePeriod"] | null) ?? "OneTime",
     areaTotal: stringifyNullableNumber(listing.areaTotal),
     buildYear: stringifyNullableNumber(listing.buildYear),
     buildingType: listing.buildingType ?? "",
@@ -437,11 +600,13 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
   const queryClient = useQueryClient();
   const { api, status } = useAuth();
   const [values, setValues] = useState(initialState);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<CreateListingFieldName, string>>>({});
   const [files, setFiles] = useState<File[]>([]);
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [isMobileDropdowns, setIsMobileDropdowns] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
@@ -464,6 +629,19 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
     queryKey: ["listing-create-lookups"],
     queryFn: () => getCreateListingLookups(api),
   });
+
+  useEffect(() => {
+    function syncMobileState() {
+      setIsMobileDropdowns(window.innerWidth <= 1024);
+    }
+
+    syncMobileState();
+    window.addEventListener("resize", syncMobileState);
+
+    return () => {
+      window.removeEventListener("resize", syncMobileState);
+    };
+  }, []);
 
   useEffect(() => {
     if (mode !== "edit" || !editingListing) {
@@ -594,29 +772,59 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
 
     try {
       updatePlacemark(coords, ymaps);
-
-      const result = await ymaps.geocode(coords, {
-        boundedBy: BELARUS_BOUNDS,
-        strictBounds: true,
-        results: 1,
+      const resolved = await resolveLocation(api, {
+        latitude: coords[0],
+        longitude: coords[1],
       });
-      const firstGeoObject = result.geoObjects.get(0);
-      const countryCode = getGeoObjectCountryCode(firstGeoObject);
-      if (countryCode && !BELARUS_COUNTRY_CODES.has(countryCode)) {
+      if (!isBelarusCountryValue(resolved.country)) {
         setMapError("Можно выбрать адрес только на территории Беларуси.");
         return;
       }
 
-      const addressText = getGeoObjectAddress(firstGeoObject) ?? `${coords[0].toFixed(6)}, ${coords[1].toFixed(6)}`;
+      const addressText = resolved.addressText.trim();
+      if (!addressText) {
+        setMapError("Не удалось определить адрес по точке на карте.");
+        return;
+      }
 
       setDraftLocation({
         addressText,
-        latitude: coords[0],
-        longitude: coords[1],
+        latitude: resolved.latitude,
+        longitude: resolved.longitude,
       });
       setDraftAddressQuery(addressText);
     } catch {
-      setMapError("Не удалось определить адрес по точке на карте.");
+      try {
+        const fallbackResult = await ymaps.geocode(coords, {
+          boundedBy: BELARUS_BOUNDS,
+          strictBounds: true,
+          results: 1,
+        });
+        const firstGeoObject = fallbackResult.geoObjects.get(0);
+        const countryCode = getGeoObjectCountryCode(firstGeoObject);
+        if (countryCode && !BELARUS_COUNTRY_CODES.has(countryCode)) {
+          setDraftLocation(null);
+          setMapError("Можно выбрать адрес только на территории Беларуси.");
+          return;
+        }
+
+        const fallbackAddressText = getGeoObjectAddress(firstGeoObject);
+        if (!fallbackAddressText?.trim()) {
+          setDraftLocation(null);
+          setMapError("Не удалось определить адрес по точке на карте.");
+          return;
+        }
+
+        setDraftLocation({
+          addressText: fallbackAddressText.trim(),
+          latitude: coords[0],
+          longitude: coords[1],
+        });
+        setDraftAddressQuery(fallbackAddressText.trim());
+      } catch {
+        setDraftLocation(null);
+        setMapError("Не удалось определить адрес по точке на карте.");
+      }
     } finally {
       setIsResolvingAddress(false);
     }
@@ -755,6 +963,140 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
 
   function updateField<K extends keyof CreateListingState>(key: K, value: CreateListingState[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    setFieldErrors((current) => ({ ...current, [key]: undefined }));
+  }
+
+  function getFieldStyle(fieldName: CreateListingFieldName) {
+    if (!fieldErrors[fieldName]) {
+      return undefined;
+    }
+
+    return {
+      borderColor: "var(--color-danger)",
+      boxShadow: "0 0 0 1px color-mix(in srgb, var(--color-danger) 55%, transparent)",
+      background: "color-mix(in srgb, var(--color-danger) 7%, var(--background-elevated))",
+    };
+  }
+
+  function renderFieldError(fieldName: CreateListingFieldName) {
+    const message = fieldErrors[fieldName];
+    if (!message) {
+      return null;
+    }
+
+    return (
+      <div style={{ fontSize: 12, lineHeight: 1.35, color: "var(--color-danger)", paddingLeft: 2 }}>
+        {message}
+      </div>
+    );
+  }
+
+  function validateCreateListingFields() {
+    const errors: Partial<Record<CreateListingFieldName, string>> = {};
+    const currentYear = new Date().getFullYear() + 1;
+
+    if (!values.title.trim()) {
+      errors.title = "Введите заголовок.";
+    }
+
+    if (!values.addressText.trim() || !values.latitude || !values.longitude) {
+      errors.address = "Подтвердите адрес на карте в пределах Беларуси.";
+    }
+
+    if (!values.priceAmount.trim()) {
+      errors.priceAmount = "Укажите цену.";
+    } else if (Number(values.priceAmount) <= 0) {
+      errors.priceAmount = "Цена должна быть больше нуля.";
+    }
+
+    if (values.listingType === "Rent" && !values.pricePeriod) {
+      errors.pricePeriod = "Выберите период оплаты.";
+    }
+
+    if (!values.areaTotal.trim()) {
+      errors.areaTotal = "Укажите общую площадь.";
+    } else if (Number(values.areaTotal) <= 0) {
+      errors.areaTotal = "Площадь должна быть больше нуля.";
+    }
+
+    if (!values.buildYear.trim()) {
+      errors.buildYear = "Укажите год постройки.";
+    } else {
+      const buildYear = Number(values.buildYear);
+      if (!Number.isFinite(buildYear) || buildYear < 1800 || buildYear > currentYear) {
+        errors.buildYear = "Введите корректный год постройки.";
+      }
+    }
+
+    if (!values.listingType) {
+      errors.listingType = "Выберите тип сделки.";
+    }
+
+    if (!values.buildingType) {
+      errors.buildingType = "Выберите тип здания.";
+    }
+
+    if (!values.listingDetailsType) {
+      errors.listingDetailsType = "Выберите тип недвижимости.";
+    }
+
+    switch (values.listingDetailsType) {
+      case "Apartment":
+        if (!values.rooms.trim()) errors.rooms = "Укажите количество комнат.";
+        if (!values.bedrooms.trim()) errors.bedrooms = "Укажите количество спален.";
+        if (!values.floor.trim()) errors.floor = "Укажите этаж.";
+        if (!values.floorsTotal.trim()) errors.floorsTotal = "Укажите этажность дома.";
+        if (!values.levels.trim()) errors.levels = "Укажите количество уровней.";
+        if (!values.ceilingHeight.trim()) errors.ceilingHeight = "Укажите высоту потолков.";
+        if (!values.areaLiving.trim()) errors.areaLiving = "Укажите жилую площадь.";
+        if (!values.areaKitchen.trim()) errors.areaKitchen = "Укажите площадь кухни.";
+        if (!values.bathroomType) errors.bathroomType = "Выберите тип санузла.";
+        if (!values.renovationType) errors.renovationType = "Выберите тип ремонта.";
+        if (!values.buildingMaterial) errors.buildingMaterial = "Выберите материал дома.";
+        break;
+      case "House":
+        if (!values.rooms.trim()) errors.rooms = "Укажите количество комнат.";
+        if (!values.bedrooms.trim()) errors.bedrooms = "Укажите количество спален.";
+        if (!values.houseFloors.trim()) errors.houseFloors = "Укажите этажность дома.";
+        if (!values.houseArea.trim()) errors.houseArea = "Укажите площадь дома.";
+        if (!values.plotArea.trim()) errors.plotArea = "Укажите площадь участка.";
+        if (!values.wallMaterial) errors.wallMaterial = "Выберите материал стен.";
+        if (!values.heatingType) errors.heatingType = "Выберите тип отопления.";
+        if (!values.sewerType) errors.sewerType = "Выберите канализацию.";
+        if (!values.gasType) errors.gasType = "Выберите тип газа.";
+        if (!values.roofMaterial) errors.roofMaterial = "Выберите материал крыши.";
+        if (!values.waterSupplyType) errors.waterSupplyType = "Выберите водоснабжение.";
+        break;
+      case "Land":
+        if (!values.plotArea.trim()) errors.plotArea = "Укажите площадь участка.";
+        if (!values.allowedUse.trim()) errors.allowedUse = "Укажите разрешенное использование.";
+        if (!values.landCategory) errors.landCategory = "Выберите категорию земли.";
+        if (!values.roadAccessType) errors.roadAccessType = "Выберите тип подъездных путей.";
+        break;
+      case "Office":
+        if (!values.plotArea.trim()) errors.plotArea = "Укажите площадь офиса.";
+        if (!values.floor.trim()) errors.floor = "Укажите этаж.";
+        if (!values.floorsTotal.trim()) errors.floorsTotal = "Укажите этажность здания.";
+        if (!values.levels.trim()) errors.levels = "Укажите количество уровней.";
+        if (!values.parkingSpaces.trim()) errors.parkingSpaces = "Укажите число парковочных мест.";
+        if (!values.officeClass) errors.officeClass = "Выберите класс офиса.";
+        if (!values.layoutType) errors.layoutType = "Выберите планировку.";
+        if (!values.officeRenovationType) errors.officeRenovationType = "Выберите тип ремонта.";
+        if (!values.parkingType) errors.parkingType = "Выберите тип парковки.";
+        break;
+      case "Warehouse":
+        if (!values.plotArea.trim()) errors.plotArea = "Укажите площадь склада.";
+        if (!values.warehouseCeilingHeight.trim()) errors.warehouseCeilingHeight = "Укажите высоту потолков.";
+        if (!values.floorLoadTonsPerSquareMeter.trim()) errors.floorLoadTonsPerSquareMeter = "Укажите нагрузку на пол.";
+        if (!values.gateCount.trim()) errors.gateCount = "Укажите количество ворот.";
+        if (!values.dockCount.trim()) errors.dockCount = "Укажите количество доков.";
+        if (!values.powerKw.trim()) errors.powerKw = "Укажите мощность.";
+        if (!values.classType) errors.classType = "Выберите класс склада.";
+        if (!values.warehouseHeatingType) errors.warehouseHeatingType = "Выберите тип отопления.";
+        break;
+    }
+
+    return errors;
   }
 
   function handleFilesChange(event: ChangeEvent<HTMLInputElement>) {
@@ -946,8 +1288,11 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
       return;
     }
 
-    if (!values.addressText.trim() || !values.latitude || !values.longitude) {
-      setError("Подтвердите адрес на карте в пределах Беларуси.");
+    const validationErrors = validateCreateListingFields();
+    setFieldErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setError("Исправьте поля, отмеченные красным.");
       return;
     }
 
@@ -965,7 +1310,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
       priceAmount: Number(values.priceAmount),
       priceAmountByn: Number(values.priceAmount),
       priceCurrency: "BYN",
-      pricePeriod: values.listingType === "Sale" ? "OneTime" : "Monthly",
+      pricePeriod: values.listingType === "Sale" ? "OneTime" : values.pricePeriod,
       areaTotal: Number(values.areaTotal),
       buildYear: Number(values.buildYear),
       buildingType: values.buildingType,
@@ -1021,25 +1366,28 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
     onChange: (nextValue: string) => void,
     options: LookupOption[],
     kind?: keyof typeof lookupTranslations,
+    fieldName?: CreateListingFieldName,
   ) {
     return (
       <label style={{ display: "grid", gap: 8 }}>
         <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>{label}</span>
-        <select
-          className="field"
+        <DropdownField
           value={value ?? ""}
-          onChange={(event) => onChange(event.target.value)}
-          required
-        >
-          <option value="" disabled>
-            Выберите вариант
-          </option>
-          {options.map((option) => (
-            <option key={option.name} value={option.name}>
-              {kind ? translateLookup(kind, option.name) : option.name}
-            </option>
-          ))}
-        </select>
+          onChange={(nextValue) => {
+            onChange(nextValue);
+            if (fieldName) {
+              setFieldErrors((current) => ({ ...current, [fieldName]: undefined }));
+            }
+          }}
+          options={options.map((option) => ({
+            value: option.name,
+            label: kind ? translateLookup(kind, option.name) : option.name,
+          }))}
+          placeholder="Выберите вариант"
+          style={fieldName ? getFieldStyle(fieldName) : undefined}
+          native={!isMobileDropdowns}
+        />
+        {fieldName ? renderFieldError(fieldName) : null}
       </label>
     );
   }
@@ -1124,7 +1472,9 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   value={values.title}
                   onChange={(event) => updateField("title", event.target.value)}
                   required
+                  style={getFieldStyle("title")}
                 />
+                {renderFieldError("title")}
               </label>
             </div>
 
@@ -1149,8 +1499,27 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   min="1"
                   step="0.01"
                   required
+                  style={getFieldStyle("priceAmount")}
                 />
+                {renderFieldError("priceAmount")}
               </label>
+
+              {values.listingType === "Rent" ? (
+                <label style={{ display: "grid", gap: 8 }}>
+                  <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Период оплаты</span>
+                  <DropdownField
+                    value={values.pricePeriod}
+                    onChange={(nextValue) => updateField("pricePeriod", nextValue as CreateListingState["pricePeriod"])}
+                    options={[
+                      { value: "Monthly", label: "За месяц" },
+                      { value: "Daily", label: "За сутки" },
+                    ]}
+                    style={getFieldStyle("pricePeriod")}
+                    native={!isMobileDropdowns}
+                  />
+                  {renderFieldError("pricePeriod")}
+                </label>
+              ) : null}
 
               <label style={{ display: "grid", gap: 8 }}>
                 <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Общая площадь, м²</span>
@@ -1162,7 +1531,9 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   min="0.1"
                   step="0.1"
                   required
+                  style={getFieldStyle("areaTotal")}
                 />
+                {renderFieldError("areaTotal")}
               </label>
 
               <label style={{ display: "grid", gap: 8 }}>
@@ -1175,15 +1546,21 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   min="1800"
                   max="2100"
                   required
+                  style={getFieldStyle("buildYear")}
                 />
+                {renderFieldError("buildYear")}
               </label>
 
               {lookupsQuery.data
                 ? renderLookupSelect(
                     "Тип сделки",
                     values.listingType,
-                    (nextValue) => updateField("listingType", nextValue),
+                    (nextValue) => {
+                      updateField("listingType", nextValue);
+                      updateField("pricePeriod", nextValue === "Sale" ? "OneTime" : "Monthly");
+                    },
                     lookupsQuery.data.listingTypes,
+                    "listingType",
                     "listingType",
                   )
                 : null}
@@ -1194,6 +1571,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                     values.buildingType,
                     (nextValue) => updateField("buildingType", nextValue),
                     lookupsQuery.data.buildingTypes,
+                    "buildingType",
                     "buildingType",
                   )
                 : null}
@@ -1260,20 +1638,22 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
 
               <label style={{ display: "grid", gap: 8, maxWidth: 420 }}>
                 <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Тип недвижимости</span>
-                <select
-                  className="field"
+                <DropdownField
                   value={values.listingDetailsType}
-                  onChange={(event) =>
-                    updateField("listingDetailsType", event.target.value as ListingDetailsType)
+                  onChange={(nextValue) =>
+                    updateField("listingDetailsType", nextValue as ListingDetailsType)
                   }
-                  required
-                >
-                  <option value="Apartment">Квартира</option>
-                  <option value="House">Дом</option>
-                  <option value="Land">Участок</option>
-                  <option value="Office">Офис</option>
-                  <option value="Warehouse">Склад</option>
-                </select>
+                  options={[
+                    { value: "Apartment", label: "Квартира" },
+                    { value: "House", label: "Дом" },
+                    { value: "Land", label: "Участок" },
+                    { value: "Office", label: "Офис" },
+                    { value: "Warehouse", label: "Склад" },
+                  ]}
+                  style={getFieldStyle("listingDetailsType")}
+                  native={!isMobileDropdowns}
+                />
+                {renderFieldError("listingDetailsType")}
               </label>
             </section>
 
@@ -1289,35 +1669,43 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                   <div className="listing-create-grid listing-create-grid-details">
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Комнаты</span>
-                      <input className="field" value={values.rooms} onChange={(event) => updateField("rooms", event.target.value)} type="number" min="1" required />
+                      <input className="field" value={values.rooms} onChange={(event) => updateField("rooms", event.target.value)} type="number" min="1" required style={getFieldStyle("rooms")} />
+                      {renderFieldError("rooms")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Спальни</span>
-                      <input className="field" value={values.bedrooms} onChange={(event) => updateField("bedrooms", event.target.value)} type="number" min="0" required />
+                      <input className="field" value={values.bedrooms} onChange={(event) => updateField("bedrooms", event.target.value)} type="number" min="0" required style={getFieldStyle("bedrooms")} />
+                      {renderFieldError("bedrooms")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Этаж</span>
-                      <input className="field" value={values.floor} onChange={(event) => updateField("floor", event.target.value)} type="number" min="1" required />
+                      <input className="field" value={values.floor} onChange={(event) => updateField("floor", event.target.value)} type="number" min="1" required style={getFieldStyle("floor")} />
+                      {renderFieldError("floor")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Этажей в доме</span>
-                      <input className="field" value={values.floorsTotal} onChange={(event) => updateField("floorsTotal", event.target.value)} type="number" min="1" required />
+                      <input className="field" value={values.floorsTotal} onChange={(event) => updateField("floorsTotal", event.target.value)} type="number" min="1" required style={getFieldStyle("floorsTotal")} />
+                      {renderFieldError("floorsTotal")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Уровней</span>
-                      <input className="field" value={values.levels} onChange={(event) => updateField("levels", event.target.value)} type="number" min="1" required />
+                      <input className="field" value={values.levels} onChange={(event) => updateField("levels", event.target.value)} type="number" min="1" required style={getFieldStyle("levels")} />
+                      {renderFieldError("levels")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Высота потолков, м</span>
-                      <input className="field" value={values.ceilingHeight} onChange={(event) => updateField("ceilingHeight", event.target.value)} type="number" min="0.1" step="0.1" required />
+                      <input className="field" value={values.ceilingHeight} onChange={(event) => updateField("ceilingHeight", event.target.value)} type="number" min="0.1" step="0.1" required style={getFieldStyle("ceilingHeight")} />
+                      {renderFieldError("ceilingHeight")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Жилая площадь, м²</span>
-                      <input className="field" value={values.areaLiving} onChange={(event) => updateField("areaLiving", event.target.value)} type="number" min="0" step="0.1" required />
+                      <input className="field" value={values.areaLiving} onChange={(event) => updateField("areaLiving", event.target.value)} type="number" min="0" step="0.1" required style={getFieldStyle("areaLiving")} />
+                      {renderFieldError("areaLiving")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Площадь кухни, м²</span>
-                      <input className="field" value={values.areaKitchen} onChange={(event) => updateField("areaKitchen", event.target.value)} type="number" min="0" step="0.1" required />
+                      <input className="field" value={values.areaKitchen} onChange={(event) => updateField("areaKitchen", event.target.value)} type="number" min="0" step="0.1" required style={getFieldStyle("areaKitchen")} />
+                      {renderFieldError("areaKitchen")}
                     </label>
 
                     {lookupsQuery.data
@@ -1326,6 +1714,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.bathroomType,
                           (nextValue) => updateField("bathroomType", nextValue),
                           lookupsQuery.data.bathroomTypes,
+                          "bathroomType",
                           "bathroomType",
                         )
                       : null}
@@ -1337,6 +1726,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("renovationType", nextValue),
                           lookupsQuery.data.renovationTypes,
                           "renovationType",
+                          "renovationType",
                         )
                       : null}
 
@@ -1346,6 +1736,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.buildingMaterial,
                           (nextValue) => updateField("buildingMaterial", nextValue),
                           lookupsQuery.data.buildingMaterials,
+                          "buildingMaterial",
                           "buildingMaterial",
                         )
                       : null}
@@ -1387,15 +1778,18 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Этажей</span>
-                      <input className="field" value={values.houseFloors} onChange={(event) => updateField("houseFloors", event.target.value)} type="number" min="1" required />
+                      <input className="field" value={values.houseFloors} onChange={(event) => updateField("houseFloors", event.target.value)} type="number" min="1" required style={getFieldStyle("houseFloors")} />
+                      {renderFieldError("houseFloors")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Площадь дома, м²</span>
-                      <input className="field" value={values.houseArea} onChange={(event) => updateField("houseArea", event.target.value)} type="number" min="0.1" step="0.1" required />
+                      <input className="field" value={values.houseArea} onChange={(event) => updateField("houseArea", event.target.value)} type="number" min="0.1" step="0.1" required style={getFieldStyle("houseArea")} />
+                      {renderFieldError("houseArea")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Площадь участка, м²</span>
-                      <input className="field" value={values.plotArea} onChange={(event) => updateField("plotArea", event.target.value)} type="number" min="0.1" step="0.1" required />
+                      <input className="field" value={values.plotArea} onChange={(event) => updateField("plotArea", event.target.value)} type="number" min="0.1" step="0.1" required style={getFieldStyle("plotArea")} />
+                      {renderFieldError("plotArea")}
                     </label>
 
                     {lookupsQuery.data
@@ -1404,6 +1798,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.wallMaterial,
                           (nextValue) => updateField("wallMaterial", nextValue),
                           lookupsQuery.data.wallMaterials,
+                          "wallMaterial",
                           "wallMaterial",
                         )
                       : null}
@@ -1415,6 +1810,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("heatingType", nextValue),
                           lookupsQuery.data.heatingTypes,
                           "heatingType",
+                          "heatingType",
                         )
                       : null}
 
@@ -1424,6 +1820,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.sewerType,
                           (nextValue) => updateField("sewerType", nextValue),
                           lookupsQuery.data.sewerTypes,
+                          "sewerType",
                           "sewerType",
                         )
                       : null}
@@ -1435,6 +1832,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("gasType", nextValue),
                           lookupsQuery.data.gasTypes,
                           "gasType",
+                          "gasType",
                         )
                       : null}
 
@@ -1445,6 +1843,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("roofMaterial", nextValue),
                           lookupsQuery.data.wallMaterials,
                           "wallMaterial",
+                          "roofMaterial",
                         )
                       : null}
 
@@ -1454,6 +1853,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.waterSupplyType,
                           (nextValue) => updateField("waterSupplyType", nextValue),
                           lookupsQuery.data.waterSupplyTypes,
+                          "waterSupplyType",
                           "waterSupplyType",
                         )
                       : null}
@@ -1496,7 +1896,8 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
 
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Разрешенное использование</span>
-                      <input className="field" value={values.allowedUse} onChange={(event) => updateField("allowedUse", event.target.value)} placeholder="Например: ИЖС" required />
+                      <input className="field" value={values.allowedUse} onChange={(event) => updateField("allowedUse", event.target.value)} placeholder="Например: ИЖС" required style={getFieldStyle("allowedUse")} />
+                      {renderFieldError("allowedUse")}
                     </label>
 
                     {lookupsQuery.data
@@ -1505,6 +1906,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.landCategory,
                           (nextValue) => updateField("landCategory", nextValue),
                           lookupsQuery.data.landCategories,
+                          "landCategory",
                           "landCategory",
                         )
                       : null}
@@ -1515,6 +1917,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.roadAccessType,
                           (nextValue) => updateField("roadAccessType", nextValue),
                           lookupsQuery.data.roadAccessTypes,
+                          "roadAccessType",
                           "roadAccessType",
                         )
                       : null}
@@ -1572,7 +1975,8 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Парковочных мест</span>
-                      <input className="field" value={values.parkingSpaces} onChange={(event) => updateField("parkingSpaces", event.target.value)} type="number" min="0" required />
+                      <input className="field" value={values.parkingSpaces} onChange={(event) => updateField("parkingSpaces", event.target.value)} type="number" min="0" required style={getFieldStyle("parkingSpaces")} />
+                      {renderFieldError("parkingSpaces")}
                     </label>
 
                     {lookupsQuery.data
@@ -1581,6 +1985,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           values.officeClass,
                           (nextValue) => updateField("officeClass", nextValue),
                           lookupsQuery.data.officeClasses,
+                          "officeClass",
                           "officeClass",
                         )
                       : null}
@@ -1592,6 +1997,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("layoutType", nextValue),
                           lookupsQuery.data.layoutTypes,
                           "layoutType",
+                          "layoutType",
                         )
                       : null}
 
@@ -1602,6 +2008,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("officeRenovationType", nextValue),
                           lookupsQuery.data.renovationTypes,
                           "renovationType",
+                          "officeRenovationType",
                         )
                       : null}
 
@@ -1612,6 +2019,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("parkingType", nextValue),
                           lookupsQuery.data.layoutTypes,
                           "layoutType",
+                          "parkingType",
                         )
                       : null}
                   </div>
@@ -1640,23 +2048,28 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Высота потолков, м</span>
-                      <input className="field" value={values.warehouseCeilingHeight} onChange={(event) => updateField("warehouseCeilingHeight", event.target.value)} type="number" min="0.1" step="0.1" required />
+                      <input className="field" value={values.warehouseCeilingHeight} onChange={(event) => updateField("warehouseCeilingHeight", event.target.value)} type="number" min="0.1" step="0.1" required style={getFieldStyle("warehouseCeilingHeight")} />
+                      {renderFieldError("warehouseCeilingHeight")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Нагрузка на пол, т/м²</span>
-                      <input className="field" value={values.floorLoadTonsPerSquareMeter} onChange={(event) => updateField("floorLoadTonsPerSquareMeter", event.target.value)} type="number" min="0" step="0.1" required />
+                      <input className="field" value={values.floorLoadTonsPerSquareMeter} onChange={(event) => updateField("floorLoadTonsPerSquareMeter", event.target.value)} type="number" min="0" step="0.1" required style={getFieldStyle("floorLoadTonsPerSquareMeter")} />
+                      {renderFieldError("floorLoadTonsPerSquareMeter")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Количество ворот</span>
-                      <input className="field" value={values.gateCount} onChange={(event) => updateField("gateCount", event.target.value)} type="number" min="0" required />
+                      <input className="field" value={values.gateCount} onChange={(event) => updateField("gateCount", event.target.value)} type="number" min="0" required style={getFieldStyle("gateCount")} />
+                      {renderFieldError("gateCount")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Количество доков</span>
-                      <input className="field" value={values.dockCount} onChange={(event) => updateField("dockCount", event.target.value)} type="number" min="0" required />
+                      <input className="field" value={values.dockCount} onChange={(event) => updateField("dockCount", event.target.value)} type="number" min="0" required style={getFieldStyle("dockCount")} />
+                      {renderFieldError("dockCount")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Мощность, кВт</span>
-                      <input className="field" value={values.powerKw} onChange={(event) => updateField("powerKw", event.target.value)} type="number" min="0" step="0.1" required />
+                      <input className="field" value={values.powerKw} onChange={(event) => updateField("powerKw", event.target.value)} type="number" min="0" step="0.1" required style={getFieldStyle("powerKw")} />
+                      {renderFieldError("powerKw")}
                     </label>
                     <label style={{ display: "grid", gap: 8 }}>
                       <span style={{ fontSize: 13, color: "var(--foreground-muted)" }}>Площадь офиса, м²</span>
@@ -1670,6 +2083,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("classType", nextValue),
                           lookupsQuery.data.classTypes,
                           "classType",
+                          "classType",
                         )
                       : null}
 
@@ -1680,6 +2094,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
                           (nextValue) => updateField("warehouseHeatingType", nextValue),
                           lookupsQuery.data.heatingTypes,
                           "heatingType",
+                          "warehouseHeatingType",
                         )
                       : null}
                   </div>
@@ -1788,6 +2203,7 @@ export function CreateListingClient({ mode = "create", listingId }: CreateListin
               <div style={{ fontSize: 13, color: "var(--foreground-muted)" }}>
                 Доступны только адреса на территории Беларуси. После ручного изменения адреса его нужно подтвердить заново.
               </div>
+              {renderFieldError("address")}
             </div>
 
             <div className="listing-create-summary">

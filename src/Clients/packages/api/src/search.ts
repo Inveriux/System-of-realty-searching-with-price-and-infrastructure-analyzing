@@ -20,11 +20,45 @@ const SearchListingsResultSchema = z.object({
   ),
 });
 
+function createEmptySearchResponse(request: SearchListingsRequest): SearchListingsResponse {
+  return {
+    items: [],
+    sort: request.sortBy ?? request.sort ?? "relevance",
+    searchProfile: request.searchProfile ?? "default",
+    appliedWeights: null,
+    page: request.page,
+    pageSize: request.pageSize,
+    totalCount: 0,
+  };
+}
+
+function isServiceUnavailableError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("сервис временно недоступен")
+    || message.includes("не удалось выполнить запрос")
+    || message.includes("failed to fetch")
+    || message.includes("backendnotfound")
+  );
+}
+
 export async function searchListings(api: ApiClient, request: SearchListingsRequest): Promise<SearchListingsResponse> {
   const payload = SearchListingsRequestSchema.parse(request);
-  const result = await api.post("/api/search/listings", payload, SearchListingsResultSchema, {
-    authMode: "optional",
-  });
+  try {
+    const result = await api.post("/api/search/listings", payload, SearchListingsResultSchema, {
+      authMode: "optional",
+    });
 
-  return result.data;
+    return result.data;
+  } catch (error) {
+    if (isServiceUnavailableError(error)) {
+      return createEmptySearchResponse(payload);
+    }
+
+    throw error;
+  }
 }

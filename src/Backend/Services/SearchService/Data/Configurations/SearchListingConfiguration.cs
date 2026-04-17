@@ -19,6 +19,7 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.Property(x => x.BuildingType).HasMaxLength(100);
         builder.Property(x => x.ListingDetailsType).HasMaxLength(100);
         builder.Property(x => x.PriceCurrency).HasMaxLength(10);
+        builder.Property(x => x.PricePeriod).HasMaxLength(50);
         builder.Property(x => x.MainMediaUrl).HasMaxLength(1000);
         builder.Property(x => x.Latitude).HasPrecision(10, 6);
         builder.Property(x => x.Longitude).HasPrecision(10, 6);
@@ -62,6 +63,7 @@ internal sealed class SearchListingConfiguration : IEntityTypeConfiguration<Sear
         builder.HasIndex(x => x.ListingType);
         builder.HasIndex(x => x.BuildingType);
         builder.HasIndex(x => x.PriceAmount);
+        builder.HasIndex(x => x.PricePeriod);
         builder.HasIndex(x => x.PublishedDate);
         builder.HasIndex(x => x.InfrastructureScore);
         builder.HasIndex(x => x.NearestStoreWalkMinutes);

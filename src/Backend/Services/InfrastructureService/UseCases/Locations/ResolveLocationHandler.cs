@@ -69,14 +69,51 @@ public sealed class ResolveLocationHandler(
         if (request.Request.Latitude is null || request.Request.Longitude is null)
             return Result.Validation<LocationDto>("Необходимо передать `addressText` или координаты.");
 
-        var byCoordinates = await locationRepository.GetByCoordinatesAsync(
-            request.Request.Latitude.Value,
-            request.Request.Longitude.Value,
-            cancellationToken);
+        var latitude = request.Request.Latitude.Value;
+        var longitude = request.Request.Longitude.Value;
 
-        if (byCoordinates is null)
-            return Result.NotFound<LocationDto>("Локация по указанным координатам не найдена.");
+        var byCoordinates = await locationRepository.GetByCoordinatesAsync(latitude, longitude, cancellationToken);
+        if (byCoordinates is not null)
+            return Result.Ok(mapper.Map<LocationDto>(byCoordinates));
 
-        return Result.Ok(mapper.Map<LocationDto>(byCoordinates));
+        var reverseResolved = await yandexGeocoderClient.ResolveAsync(latitude, longitude, cancellationToken);
+        if (reverseResolved is null)
+            return Result.NotFound<LocationDto>("Не удалось определить адрес по точке на карте.");
+
+        var reverseResolvedCached = await locationRepository.GetByNormalizedAddressAsync(reverseResolved.NormalizedAddressText, cancellationToken);
+        if (reverseResolvedCached is not null)
+            return Result.Ok(mapper.Map<LocationDto>(reverseResolvedCached));
+
+        var reverseResolvedLocation = new Location
+        {
+            Id = Guid.NewGuid(),
+            AddressText = reverseResolved.AddressText,
+            NormalizedAddressText = reverseResolved.NormalizedAddressText,
+            Latitude = reverseResolved.Latitude,
+            Longitude = reverseResolved.Longitude,
+            Country = reverseResolved.Country,
+            Region = reverseResolved.Region,
+            City = reverseResolved.City,
+            Street = reverseResolved.Street,
+            HouseNumber = reverseResolved.HouseNumber,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        await locationRepository.AddAsync(reverseResolvedLocation, cancellationToken);
+        try
+        {
+            await locationRepository.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            var concurrentLocation = await locationRepository.GetByNormalizedAddressAsync(reverseResolved.NormalizedAddressText, cancellationToken);
+            if (concurrentLocation is not null)
+                return Result.Ok(mapper.Map<LocationDto>(concurrentLocation));
+
+            throw;
+        }
+
+        return Result.Ok(mapper.Map<LocationDto>(reverseResolvedLocation));
     }
 }

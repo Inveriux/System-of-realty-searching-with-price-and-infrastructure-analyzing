@@ -52,6 +52,7 @@ export const CurrentUserDtoSchema: z.ZodType<CurrentUserDto> = z.object({
 export const UpdateOwnProfileDtoSchema: z.ZodType<UpdateOwnProfileDto> = z.object({
   name: z.string().min(1),
   phoneNumber: z.string().nullable().optional(),
+  accountImageUrl: z.string().url().nullable().optional(),
 });
 
 export const ChangePasswordDtoSchema: z.ZodType<ChangePasswordDto> = z.object({

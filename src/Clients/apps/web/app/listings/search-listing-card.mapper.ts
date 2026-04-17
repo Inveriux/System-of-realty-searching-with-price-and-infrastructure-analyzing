@@ -12,6 +12,30 @@ type MapSearchListingOptions = {
   onToggleFavorite?: (id: string) => void | Promise<void>;
 };
 
+function inferRentalPricePeriod(listing: SearchListingDto) {
+  if (listing.pricePeriod) {
+    return listing.pricePeriod;
+  }
+
+  if (listing.listingType !== "Rent") {
+    return undefined;
+  }
+
+  const description = (listing.description ?? "").toLowerCase();
+  const title = (listing.title ?? "").toLowerCase();
+  const source = `${title} ${description}`;
+
+  if (source.includes("за сутки") || source.includes("посуточ")) {
+    return "Daily";
+  }
+
+  if (source.includes("за месяц") || source.includes("в аренду")) {
+    return "Monthly";
+  }
+
+  return undefined;
+}
+
 export function mapSearchListingToCard(
   listing: SearchListingDto,
   options: MapSearchListingOptions,
@@ -25,6 +49,7 @@ export function mapSearchListingToCard(
     priceAmount: (listing.priceAmountByn ?? listing.priceAmount) ?? undefined,
     priceAmountUsd: listing.priceAmountUsd ?? undefined,
     priceCurrency: (listing.priceCurrency ?? "BYN") as "BYN",
+    pricePeriod: inferRentalPricePeriod(listing),
     areaTotal: listing.areaTotal,
     mainMedia: listing.mainMediaUrl,
     mediaCount: listing.mediaCount ?? undefined,

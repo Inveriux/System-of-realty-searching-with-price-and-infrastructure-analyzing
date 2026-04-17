@@ -18,6 +18,7 @@ public sealed class SearchListing
     public decimal? PriceAmountByn { get; set; }
     public decimal? PriceAmountUsd { get; set; }
     public string? PriceCurrency { get; set; }
+    public string? PricePeriod { get; set; }
     public decimal AreaTotal { get; set; }
     public string? MainMediaUrl { get; set; }
     public int MediaCount { get; set; }

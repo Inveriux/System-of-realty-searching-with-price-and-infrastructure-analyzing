@@ -9,6 +9,7 @@ public sealed class SearchListingsRequestDto
     public string? PropertyType { get; init; }
     public string? ListingType { get; init; }
     public string? BuildingType { get; init; }
+    public string? PricePeriod { get; init; }
     public decimal? PriceMin { get; init; }
     public decimal? PriceMax { get; init; }
     public decimal? MinPrice { get; init; }

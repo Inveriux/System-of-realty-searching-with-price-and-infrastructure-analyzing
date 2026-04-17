@@ -222,14 +222,17 @@ await app.InitializeTestDatabaseAsync(shouldDeleteDataAtStartup);
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.ExecuteSqlRawAsync("""
-        ALTER TABLE listing
-        ADD COLUMN IF NOT EXISTS status character varying(100) NOT NULL DEFAULT 'Active';
-        """);
-    await dbContext.Database.ExecuteSqlRawAsync("""
-        ALTER TABLE listing_price_history
-        ADD COLUMN IF NOT EXISTS comment character varying(500);
-        """);
+    if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        await dbContext.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE listing
+            ADD COLUMN IF NOT EXISTS status character varying(100) NOT NULL DEFAULT 'Active';
+            """);
+        await dbContext.Database.ExecuteSqlRawAsync("""
+            ALTER TABLE listing_price_history
+            ADD COLUMN IF NOT EXISTS comment character varying(500);
+            """);
+    }
 }
 
 app.MapOpenApi();
@@ -237,6 +240,9 @@ app.MapEndpoints(Assembly.GetExecutingAssembly());
 app.MapGet("/", () => "Listning Service is work.");
 
 app.Run();
+
+public partial class Program;
+public sealed class ListingServicePresentationAssemblyMarker;
 
 public class JwtSettingsOptions
 {

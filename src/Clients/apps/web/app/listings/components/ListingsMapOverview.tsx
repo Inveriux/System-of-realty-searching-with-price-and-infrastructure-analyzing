@@ -26,6 +26,10 @@ type YandexMapEvent = {
   get(name: "coords"): [number, number];
 };
 
+function getEffectiveRadius(radiusMeters: number | null | undefined) {
+  return radiusMeters && radiusMeters > 0 ? radiusMeters : 1000;
+}
+
 function formatPublishedDate(value: string | null) {
   if (!value) {
     return null;
@@ -182,34 +186,58 @@ export function ListingsMapOverview({
           let selectedPlacemark: YandexPlacemark | null = null;
           let radiusCircle: YandexGeoObject | null = null;
 
+          function upsertSearchCenter(point: { latitude: number; longitude: number }) {
+            if (!selectedPlacemark) {
+              selectedPlacemark = new ymaps.Placemark(
+                [point.latitude, point.longitude],
+                {
+                  hintContent: "Точка поиска",
+                  balloonContentHeader: "Точка поиска",
+                  balloonContentBody: "Объявления ищутся вокруг этой точки по заданному радиусу.",
+                },
+                {
+                  preset: "islands#redIcon",
+                },
+              );
+              map.geoObjects.add(selectedPlacemark);
+            } else {
+              selectedPlacemark.geometry?.setCoordinates?.([point.latitude, point.longitude]);
+            }
+
+            if (!radiusCircle) {
+              radiusCircle = new ymaps.Circle(
+                [
+                  [point.latitude, point.longitude],
+                  getEffectiveRadius(radiusMeters),
+                ],
+                {},
+                {
+                  fillColor: "rgba(91, 61, 245, 0.12)",
+                  strokeColor: "rgba(91, 61, 245, 0.55)",
+                  strokeWidth: 2,
+                },
+              );
+              map.geoObjects.add(radiusCircle);
+            } else {
+              radiusCircle.geometry?.setCoordinates?.([point.latitude, point.longitude]);
+              radiusCircle.geometry?.setRadius?.(getEffectiveRadius(radiusMeters));
+            }
+
+            selectedPlacemarkRef.current = selectedPlacemark;
+            radiusCircleRef.current = radiusCircle;
+          }
+
           if (selectedCenter) {
-            selectedPlacemark = new ymaps.Placemark(
-              [selectedCenter.latitude, selectedCenter.longitude],
-              {
-                hintContent: "Точка поиска",
-                balloonContentHeader: "Точка поиска",
-                balloonContentBody: "Объявления ищутся вокруг этой точки по заданному радиусу.",
-              },
-              {
-                preset: "islands#redIcon",
-              },
-            );
+            upsertSearchCenter(selectedCenter);
+          }
 
-            radiusCircle = new ymaps.Circle(
-              [
-                [selectedCenter.latitude, selectedCenter.longitude],
-                radiusMeters && radiusMeters > 0 ? radiusMeters : 1000,
-              ],
-              {},
-              {
-                fillColor: "rgba(91, 61, 245, 0.12)",
-                strokeColor: "rgba(91, 61, 245, 0.55)",
-                strokeWidth: 2,
-              },
-            );
-
-            map.geoObjects.add(radiusCircle);
-            map.geoObjects.add(selectedPlacemark);
+          if (onSelectCenter) {
+            map.events?.add("click", (event) => {
+              const [latitude, longitude] = (event as YandexMapEvent).get("coords");
+              const point = { latitude, longitude };
+              upsertSearchCenter(point);
+              onSelectCenter(point);
+            });
           }
 
           selectedPlacemarkRef.current = selectedPlacemark;

@@ -5,6 +5,7 @@ import { MessageCircleMore } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, type MouseEvent as ReactMouseEvent, type TouchEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../providers";
 import { AuthDialog } from "./AuthDialog";
 import { ThemeToggle } from "./ThemeToggle";
@@ -19,7 +20,9 @@ export function AppHeader() {
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [isMobileHeader, setIsMobileHeader] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const ignoreAccountClickUntilRef = useRef(0);
   const isFavoritesPage = pathname.startsWith("/favorites");
   const isMessagesPage = pathname.startsWith("/messages");
   const isCreateListingPage = pathname.startsWith("/create-listing");
@@ -63,6 +66,21 @@ export function AppHeader() {
     setHasHydrated(true);
   }, []);
 
+  useEffect(() => {
+    function syncMobileHeaderState() {
+      const root = document.documentElement;
+      const isMobileShell = root.hasAttribute("data-mobile-client-shell");
+      setIsMobileHeader(isMobileShell || window.innerWidth <= 1024);
+    }
+
+    syncMobileHeaderState();
+    window.addEventListener("resize", syncMobileHeaderState);
+
+    return () => {
+      window.removeEventListener("resize", syncMobileHeaderState);
+    };
+  }, []);
+
   function renderAccountAvatar() {
     if (user?.accountImageUrl) {
       return (
@@ -101,7 +119,7 @@ export function AppHeader() {
   }
 
   useEffect(() => {
-    if (!isAccountMenuOpen) {
+    if (!isAccountMenuOpen || isMobileHeader) {
       return;
     }
 
@@ -146,16 +164,191 @@ export function AppHeader() {
     setIsAccountMenuOpen((current) => !current);
   }
 
+  function closeAccountMenu() {
+    setIsAccountMenuOpen(false);
+  }
+
   function handleAccountButtonTouch(event: TouchEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
+    ignoreAccountClickUntilRef.current = Date.now() + 700;
     toggleAccountMenu();
   }
 
   function handleAccountButtonClick(event: ReactMouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();
+    if (Date.now() < ignoreAccountClickUntilRef.current) {
+      return;
+    }
     toggleAccountMenu();
+  }
+
+  function renderAccountMenuContent() {
+    if (!user) {
+      return null;
+    }
+
+    return (
+      <>
+        <div
+          style={{
+            padding: "10px 12px",
+            borderRadius: 14,
+            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 600,
+              lineHeight: 1.2,
+            }}
+          >
+            {user.name}
+          </div>
+          <div
+            className="eyebrow"
+            style={{
+              marginTop: 4,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {user.email}
+          </div>
+        </div>
+
+        <div
+          className="app-header-account-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+          }}
+        >
+          <Link
+            href="/profile/listings"
+            onClick={closeAccountMenu}
+            role="menuitem"
+            style={{
+              display: "grid",
+              gap: 4,
+              padding: "12px 12px",
+              borderRadius: 14,
+              textDecoration: "none",
+              color: "inherit",
+              background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+            }}
+          >
+            <div className="eyebrow">Раздел</div>
+            <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Мои объявления</div>
+          </Link>
+
+          <Link
+            href="/messages"
+            onClick={closeAccountMenu}
+            role="menuitem"
+            style={{
+              display: "grid",
+              gap: 4,
+              padding: "12px 12px",
+              borderRadius: 14,
+              textDecoration: "none",
+              color: "inherit",
+              background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+              position: "relative",
+            }}
+          >
+            <div className="eyebrow">Раздел</div>
+            <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Сообщения</div>
+            {unreadCount > 0 ? (
+              <span
+                style={{
+                  ...unreadBadgeStyle,
+                  top: 10,
+                  right: 10,
+                }}
+              >
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            ) : null}
+          </Link>
+
+          <Link
+            href="/favorites"
+            onClick={closeAccountMenu}
+            role="menuitem"
+            style={{
+              display: "grid",
+              gap: 4,
+              padding: "12px 12px",
+              borderRadius: 14,
+              textDecoration: "none",
+              color: "inherit",
+              background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
+            }}
+          >
+            <div className="eyebrow">Раздел</div>
+            <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Избранное</div>
+          </Link>
+
+          <Link
+            href="/create-listing"
+            onClick={closeAccountMenu}
+            role="menuitem"
+            style={{
+              gridColumn: "1 / -1",
+              display: "grid",
+              gap: 4,
+              padding: "12px 12px",
+              borderRadius: 14,
+              textDecoration: "none",
+              color: "var(--color-primary-strong)",
+              background: "color-mix(in srgb, var(--color-primary-soft) 78%, var(--background-elevated))",
+              border: "1px solid var(--color-primary-border)",
+            }}
+          >
+            <div className="eyebrow">Действие</div>
+            <div style={{ fontWeight: 800, lineHeight: 1.2 }}>Добавить объявление</div>
+          </Link>
+        </div>
+
+        <Link
+          href="/profile"
+          onClick={closeAccountMenu}
+          role="menuitem"
+          style={{
+            padding: "10px 12px",
+            borderRadius: 14,
+            textDecoration: "none",
+            color: "inherit",
+          }}
+        >
+          Профиль
+        </Link>
+
+        <button
+          onClick={() => {
+            closeAccountMenu();
+            signOut();
+          }}
+          role="menuitem"
+          type="button"
+          style={{
+            padding: "10px 12px",
+            borderRadius: 14,
+            border: "none",
+            textAlign: "left",
+            font: "inherit",
+            color: "var(--color-danger-strong)",
+            background: "transparent",
+            cursor: "pointer",
+          }}
+        >
+          Выйти
+        </button>
+      </>
+    );
   }
 
   function navigateFromHeader(href: string) {
@@ -210,17 +403,17 @@ export function AppHeader() {
         className="shell app-header"
         style={{
           position: "sticky",
-          top: 12,
-          zIndex: 30,
+          top: isMobileHeader ? 8 : 12,
+          zIndex: isMobileHeader || isAccountMenuOpen ? 140 : 30,
         }}
       >
         <div
           className="surface app-header-surface"
           style={{
             borderRadius: 28,
-            padding: "12px 14px",
+            padding: isMobileHeader ? "4px 10px 3px" : "12px 14px",
             display: "grid",
-            gap: 10,
+            gap: isMobileHeader ? 6 : 10,
             backdropFilter: "blur(18px)",
             background: "color-mix(in srgb, var(--background-elevated) 88%, transparent)",
             border: "1px solid color-mix(in srgb, var(--border-color) 82%, transparent)",
@@ -233,30 +426,30 @@ export function AppHeader() {
               display: "flex",
               justifyContent: "space-between",
               flexWrap: "wrap",
-              gap: 10,
+              gap: isMobileHeader ? 6 : 10,
               alignItems: "center",
             }}
           >
             <Link
               href="/listings"
               className="app-header-brand"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                minWidth: 0,
-                padding: "4px 0",
-                borderRadius: 0,
-                textDecoration: "none",
-                color: "inherit",
-                marginLeft: -8,
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              minWidth: 0,
+              padding: isMobileHeader ? "0" : "4px 0",
+              borderRadius: 0,
+              textDecoration: "none",
+              color: "inherit",
+              marginLeft: -8,
               }}
             >
               <div
                 className="app-header-logo-wrap"
                 style={{
-                  width: 102,
-                  height: 60,
+                  width: isMobileHeader ? 88 : 102,
+                  height: isMobileHeader ? 48 : 60,
                   borderRadius: 0,
                   overflow: "visible",
                   display: "grid",
@@ -274,16 +467,16 @@ export function AppHeader() {
                   }}
                 />
               </div>
-              <div className="app-header-brand-text" style={{ minWidth: 0, marginLeft: -8 }}>
+              <div className="app-header-brand-text" style={{ minWidth: 0, marginLeft: -8, overflow: "visible" }}>
                 <div
                   className="app-header-brand-title"
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "2.64rem",
+                    fontSize: isMobileHeader ? "3rem" : "2.64rem",
                     letterSpacing: "-0.07em",
                     fontWeight: 800,
-                    lineHeight: 1,
-                    minHeight: 60,
+                    lineHeight: isMobileHeader ? 1 : 1,
+                    minHeight: isMobileHeader ? 48 : 60,
                     display: "flex",
                     alignItems: "center",
                   }}
@@ -302,7 +495,7 @@ export function AppHeader() {
                   flex: "1 1 520px",
                   minWidth: "min(100%, 220px)",
                   maxWidth: 760,
-                  marginLeft: 28,
+                  marginLeft: isMobileHeader ? 0 : 28,
                   display: isProfilePage ? "none" : undefined,
                 }}
               >
@@ -330,8 +523,8 @@ export function AppHeader() {
                   onChange={(event) => setSearchQuery(event.target.value)}
                   style={{
                     borderRadius: 22,
-                    minHeight: 52,
-                    padding: "0.92rem 1.1rem",
+                    minHeight: isMobileHeader ? 44 : 52,
+                    padding: isMobileHeader ? "0.7rem 1.05rem" : "0.92rem 1.1rem",
                     paddingLeft: "2.85rem",
                     paddingRight: "1.15rem",
                     fontSize: "1.04rem",
@@ -514,7 +707,7 @@ export function AppHeader() {
                     {renderAccountAvatar()}
                   </button>
 
-                  {isAccountMenuOpen ? (
+                  {isAccountMenuOpen && !isMobileHeader ? (
                     <div
                       role="menu"
                       aria-label="Меню аккаунта"
@@ -533,162 +726,7 @@ export function AppHeader() {
                         boxShadow: "0 18px 42px color-mix(in srgb, var(--shadow-color) 78%, transparent)",
                       }}
                     >
-                      <div
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 14,
-                          background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {user.name}
-                        </div>
-                        <div
-                          className="eyebrow"
-                          style={{
-                            marginTop: 4,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {user.email}
-                        </div>
-                      </div>
-
-                      <div
-                        className="app-header-account-grid"
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 8,
-                        }}
-                      >
-                        <Link
-                          href="/profile/listings"
-                          onClick={() => setIsAccountMenuOpen(false)}
-                          role="menuitem"
-                          style={{
-                            display: "grid",
-                            gap: 4,
-                            padding: "12px 12px",
-                            borderRadius: 14,
-                            textDecoration: "none",
-                            color: "inherit",
-                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                          }}
-                        >
-                          <div className="eyebrow">Раздел</div>
-                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Мои объявления</div>
-                        </Link>
-
-                        <Link
-                          href="/messages"
-                          onClick={() => setIsAccountMenuOpen(false)}
-                          role="menuitem"
-                          style={{
-                            display: "grid",
-                            gap: 4,
-                            padding: "12px 12px",
-                            borderRadius: 14,
-                            textDecoration: "none",
-                            color: "inherit",
-                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                            position: "relative",
-                          }}
-                        >
-                          <div className="eyebrow">Раздел</div>
-                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Сообщения</div>
-                          {unreadCount > 0 ? (
-                            <span
-                              style={{
-                                ...unreadBadgeStyle,
-                                top: 10,
-                                right: 10,
-                              }}
-                            >
-                              {unreadCount > 99 ? "99+" : unreadCount}
-                            </span>
-                          ) : null}
-                        </Link>
-
-                        <Link
-                          href="/favorites"
-                          onClick={() => setIsAccountMenuOpen(false)}
-                          role="menuitem"
-                          style={{
-                            display: "grid",
-                            gap: 4,
-                            padding: "12px 12px",
-                            borderRadius: 14,
-                            textDecoration: "none",
-                            color: "inherit",
-                            background: "color-mix(in srgb, var(--background-elevated) 96%, var(--background-muted))",
-                          }}
-                        >
-                          <div className="eyebrow">Раздел</div>
-                          <div style={{ fontWeight: 700, lineHeight: 1.2 }}>Избранное</div>
-                        </Link>
-
-                        <Link
-                          href="/create-listing"
-                          onClick={() => setIsAccountMenuOpen(false)}
-                          role="menuitem"
-                          style={{
-                            gridColumn: "1 / -1",
-                            display: "grid",
-                            gap: 4,
-                            padding: "12px 12px",
-                            borderRadius: 14,
-                            textDecoration: "none",
-                            color: "var(--color-primary-strong)",
-                            background: "color-mix(in srgb, var(--color-primary-soft) 78%, var(--background-elevated))",
-                            border: "1px solid var(--color-primary-border)",
-                          }}
-                        >
-                          <div className="eyebrow">Действие</div>
-                          <div style={{ fontWeight: 800, lineHeight: 1.2 }}>Добавить объявление</div>
-                        </Link>
-                      </div>
-
-                      <Link
-                        href="/profile"
-                        onClick={() => setIsAccountMenuOpen(false)}
-                        role="menuitem"
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 14,
-                          textDecoration: "none",
-                          color: "inherit",
-                        }}
-                      >
-                        Профиль
-                      </Link>
-
-                      <button
-                        onClick={() => {
-                          setIsAccountMenuOpen(false);
-                          signOut();
-                        }}
-                        role="menuitem"
-                        type="button"
-                        style={{
-                          padding: "10px 12px",
-                          borderRadius: 14,
-                          border: "none",
-                          textAlign: "left",
-                          font: "inherit",
-                          color: "var(--color-danger-strong)",
-                          background: "transparent",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Выйти
-                      </button>
+                      {renderAccountMenuContent()}
                     </div>
                   ) : null}
                 </div>
@@ -736,6 +774,50 @@ export function AppHeader() {
       </header>
 
       <AuthDialog mode={dialogMode} onClose={() => setDialogMode(null)} />
+      {isAccountMenuOpen && isMobileHeader && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="app-header-account-overlay"
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 360,
+                background: "rgba(15, 17, 21, 0.12)",
+              }}
+              onClick={closeAccountMenu}
+            >
+              <div
+                role="menu"
+                aria-label="Меню аккаунта"
+                className="surface app-header-account-mobile-menu"
+                onClick={(event) => event.stopPropagation()}
+                style={{
+                  position: "fixed",
+                  top: 72,
+                  right: 8,
+                  left: "auto",
+                  bottom: "auto",
+                  width: "min(calc(100vw - 16px), 320px)",
+                  minWidth: 280,
+                  maxHeight: "min(72dvh, 540px)",
+                  padding: 8,
+                  borderRadius: 18,
+                  display: "grid",
+                  gap: 6,
+                  backdropFilter: "blur(18px)",
+                  background: "color-mix(in srgb, var(--background-elevated) 96%, transparent)",
+                  boxShadow: "0 18px 42px color-mix(in srgb, var(--shadow-color) 78%, transparent)",
+                  overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {renderAccountMenuContent()}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

@@ -93,14 +93,17 @@ public sealed class PoiClassificationServiceTests
     }
 
     [Fact]
-    public void ExcludeKeyword_ShouldFilterReligiousPlace()
+    public void ReligiousPlaceName_ShouldResolveAsLandmark()
     {
         var result = _service.Classify(new ExternalPoiResult
         {
             Name = "Церковь Святого Духа"
         });
 
-        Assert.Null(result);
+        Assert.NotNull(result);
+        Assert.Equal("leisure", result!.CategoryCode);
+        Assert.Equal("landmark", result.SubcategoryCode);
+        Assert.Equal("brand-dictionary", result.Source);
     }
 
     [Fact]

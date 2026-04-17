@@ -34,6 +34,21 @@ function formatPrice(value?: number | null) {
   }).format(value);
 }
 
+function formatPricePeriod(period?: string | null) {
+  switch (period) {
+    case "Daily":
+      return "сут";
+    case "Monthly":
+      return "мес";
+    case "Weekly":
+      return "нед";
+    case "Yearly":
+      return "год";
+    default:
+      return null;
+  }
+}
+
 function formatNumericPricePerSquareMeter(amount?: number | null, area?: number | null) {
   if (amount == null || area == null || area <= 0) {
     return null;
@@ -811,14 +826,19 @@ export function ListingDetailsClient({ listingId }: Props) {
   const media = galleryMedia.length > 0 ? galleryMedia : [fallbackImage];
   const detailEntries = getDetailEntries(listing.listingDetails);
   const publishedDateLabel = formatPublishedDate(listing.publishedDate);
-  const bynPricePerSquareMeter = formatNumericPricePerSquareMeter(
-    listing.priceAmountByn ?? listing.priceAmount,
-    listing.areaTotal,
-  );
-  const usdPricePerSquareMeter = formatNumericPricePerSquareMeter(
-    listing.priceAmountUsd,
-    listing.areaTotal,
-  );
+  const pricePeriodLabel = formatPricePeriod(listing.pricePeriod);
+  const bynPricePerSquareMeter = listing.pricePeriod === "Daily" || listing.pricePeriod === "Monthly"
+    ? null
+    : formatNumericPricePerSquareMeter(
+        listing.priceAmountByn ?? listing.priceAmount,
+        listing.areaTotal,
+      );
+  const usdPricePerSquareMeter = listing.pricePeriod === "Daily" || listing.pricePeriod === "Monthly"
+    ? null
+    : formatNumericPricePerSquareMeter(
+        listing.priceAmountUsd,
+        listing.areaTotal,
+      );
   const infrastructureFacts = infrastructure?.compactInfrastructureSummary ?? [];
   const groupedTransportSummary = infrastructure?.groupedTransportSummary ?? null;
   const infrastructureScoreCards = infrastructure ? [
@@ -988,6 +1008,11 @@ export function ListingDetailsClient({ listingId }: Props) {
                       style={bynIconStyle}
                       aria-hidden="true"
                     />
+                    {pricePeriodLabel ? (
+                      <span className="text-[0.74em] font-extrabold tracking-[-0.03em] text-[var(--foreground-muted)]">
+                        /{pricePeriodLabel}
+                      </span>
+                    ) : null}
                   </span>
                   {listing.priceAmountUsd != null ? (
                     <>
@@ -1003,6 +1028,11 @@ export function ListingDetailsClient({ listingId }: Props) {
                           style={dollarIconStyle}
                           aria-hidden="true"
                         />
+                        {pricePeriodLabel ? (
+                          <span className="text-[0.74em] font-extrabold tracking-[-0.03em] text-[var(--foreground-muted)]">
+                            /{pricePeriodLabel}
+                          </span>
+                        ) : null}
                       </span>
                     </>
                   ) : null}

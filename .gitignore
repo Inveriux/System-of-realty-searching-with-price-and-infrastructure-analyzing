@@ -17,6 +17,8 @@ TestResults/
 _Artifacts/
 src/_Artifacts/
 src/Backend/_Artifacts/
+artifacts/
+Tests/
 
 # Editors
 .vscode/

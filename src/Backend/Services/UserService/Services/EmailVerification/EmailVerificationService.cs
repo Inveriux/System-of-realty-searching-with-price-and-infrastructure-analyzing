@@ -48,14 +48,32 @@ public sealed class EmailVerificationService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        var subject = "Код подтверждения email";
+        var subject = "Подтверждение почты в Domio";
         var htmlBody = $"""
-            <div style="font-family:Arial,sans-serif;line-height:1.5">
-              <h2 style="margin-bottom:12px">Подтверждение почты</h2>
-              <p>Ваш код подтверждения для регистрации в Diploma:</p>
-              <div style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">{code}</div>
-              <p>Код действует {Math.Max(1, verificationOptions.CodeLifetimeMinutes)} минут.</p>
-              <p>Если вы не запрашивали регистрацию, просто проигнорируйте это письмо.</p>
+            <div style="margin:0;background:#f4f1fb;padding:32px 16px;font-family:Arial,'Segoe UI',sans-serif;color:#1f1630;">
+              <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 18px 48px rgba(72,35,117,0.12);">
+                <div style="padding:28px 32px 18px;background:linear-gradient(135deg,#1f1238 0%,#5b2fb0 100%);color:#ffffff;">
+                  <div style="display:inline-block;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.14);font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Domio</div>
+                  <h1 style="margin:18px 0 8px;font-size:28px;line-height:1.2;">Подтвердите вашу почту</h1>
+                  <p style="margin:0;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.82);">
+                    Используйте этот код, чтобы завершить регистрацию и войти в приложение.
+                  </p>
+                </div>
+                <div style="padding:28px 32px 32px;">
+                  <div style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#5b5470;">
+                    Код подтверждения:
+                  </div>
+                  <div style="margin:0 0 22px;padding:18px 20px;border-radius:18px;background:#f6f0ff;border:1px solid #e8dafd;font-size:32px;font-weight:700;letter-spacing:0.32em;text-align:center;color:#5b2fb0;">
+                    {code}
+                  </div>
+                  <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#5b5470;">
+                    Код действует {Math.Max(1, verificationOptions.CodeLifetimeMinutes)} минут.
+                  </p>
+                  <p style="margin:0;font-size:14px;line-height:1.7;color:#5b5470;">
+                    Если вы не запрашивали регистрацию в Domio, просто проигнорируйте это письмо.
+                  </p>
+                </div>
+              </div>
             </div>
             """;
 

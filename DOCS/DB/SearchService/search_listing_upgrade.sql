@@ -1,6 +1,7 @@
 ALTER TABLE search_listing
     ADD COLUMN IF NOT EXISTS agent_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
     ADD COLUMN IF NOT EXISTS listing_details_type character varying(100),
+    ADD COLUMN IF NOT EXISTS price_period character varying(50),
     ADD COLUMN IF NOT EXISTS education_score numeric(10,4),
     ADD COLUMN IF NOT EXISTS healthcare_score numeric(10,4),
     ADD COLUMN IF NOT EXISTS transport_score numeric(10,4),
@@ -60,6 +61,7 @@ ALTER TABLE search_listing
 CREATE INDEX IF NOT EXISTS ix_search_listing_agent_id ON search_listing (agent_id);
 CREATE INDEX IF NOT EXISTS ix_search_listing_building_type ON search_listing (building_type);
 CREATE INDEX IF NOT EXISTS ix_search_listing_price_amount ON search_listing (price_amount);
+CREATE INDEX IF NOT EXISTS ix_search_listing_price_period ON search_listing (price_period);
 CREATE INDEX IF NOT EXISTS ix_search_listing_published_date ON search_listing (published_date);
 CREATE INDEX IF NOT EXISTS ix_search_listing_infrastructure_score ON search_listing (infrastructure_score);
 CREATE INDEX IF NOT EXISTS ix_search_listing_nearest_store_walk_minutes ON search_listing (nearest_store_walk_minutes);

@@ -15,8 +15,29 @@ public sealed class YandexGeocoderClient(HttpClient httpClient, IOptions<YandexO
         if (string.IsNullOrWhiteSpace(addressText))
             return null;
 
-        var requestUri =
-            $"1.x/?apikey={Uri.EscapeDataString(_options.ApiKey)}&format=json&lang={Uri.EscapeDataString(_options.Language)}&geocode={Uri.EscapeDataString(addressText)}";
+        var requestUri = BuildRequestUri(Uri.EscapeDataString(addressText));
+
+        return await ResolveCoreAsync(requestUri, addressText.Trim(), cancellationToken);
+    }
+
+    public async Task<YandexResolvedLocation?> ResolveAsync(decimal latitude, decimal longitude, CancellationToken cancellationToken)
+    {
+        var coordinates = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{longitude},{latitude}");
+        var requestUri = BuildRequestUri(Uri.EscapeDataString(coordinates));
+
+        return await ResolveCoreAsync(
+            requestUri,
+            string.Create(CultureInfo.InvariantCulture, $"{latitude:F6}, {longitude:F6}"),
+            cancellationToken);
+    }
+
+    private async Task<YandexResolvedLocation?> ResolveCoreAsync(
+        string requestUri,
+        string fallbackAddressText,
+        CancellationToken cancellationToken)
+    {
 
         using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
 
@@ -97,8 +118,8 @@ public sealed class YandexGeocoderClient(HttpClient httpClient, IOptions<YandexO
 
         return new YandexResolvedLocation
         {
-            AddressText = string.IsNullOrWhiteSpace(resolvedAddress) ? addressText.Trim() : resolvedAddress,
-            NormalizedAddressText = NormalizeAddress(resolvedAddress ?? addressText),
+            AddressText = string.IsNullOrWhiteSpace(resolvedAddress) ? fallbackAddressText : resolvedAddress,
+            NormalizedAddressText = NormalizeAddress(resolvedAddress ?? fallbackAddressText),
             Latitude = latitude,
             Longitude = longitude,
             Country = country,
@@ -108,6 +129,9 @@ public sealed class YandexGeocoderClient(HttpClient httpClient, IOptions<YandexO
             HouseNumber = houseNumber
         };
     }
+
+    private string BuildRequestUri(string geocode)
+        => $"1.x/?apikey={Uri.EscapeDataString(_options.ApiKey)}&format=json&lang={Uri.EscapeDataString(_options.Language)}&geocode={geocode}";
 
     private static string NormalizeAddress(string value)
         => value.Trim().ToLowerInvariant();

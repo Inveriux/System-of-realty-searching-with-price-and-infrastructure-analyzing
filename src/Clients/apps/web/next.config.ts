@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   images : {
     remotePatterns: [
       {
@@ -22,11 +23,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://diploma.com:5102/api/:path*",
+        destination: "http://localhost:5102/api/:path*",
       },
       {
         source: "/hubs/:path*",
-        destination: "http://diploma.com:5102/hubs/:path*",
+        destination: "http://localhost:5102/hubs/:path*",
       },
       {
         source: "/seed-images/:path*",

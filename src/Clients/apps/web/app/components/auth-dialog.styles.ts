@@ -98,6 +98,16 @@ export const authDialogStyles = {
     color: "var(--foreground-muted)",
     fontSize: 14,
   } satisfies CSSProperties,
+  fieldGroup: {
+    display: "grid",
+    gap: 6,
+  } satisfies CSSProperties,
+  fieldErrorText: {
+    fontSize: 12,
+    lineHeight: 1.35,
+    color: "var(--color-danger)",
+    paddingLeft: 2,
+  } satisfies CSSProperties,
   error: {
     borderRadius: 18,
     padding: "12px 14px",

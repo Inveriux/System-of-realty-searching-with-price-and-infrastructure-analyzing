@@ -40,6 +40,7 @@ export type CurrentUserDto = {
 export type UpdateOwnProfileDto = {
   name: string;
   phoneNumber?: string | null;
+  accountImageUrl?: string | null;
 };
 
 export type ChangePasswordDto = {

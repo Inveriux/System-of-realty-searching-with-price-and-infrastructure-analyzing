@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Google;
 using UserService.Data.Repositiroes.Abstractions;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Http;
 using BasicBuildingBlocks.Services.Abstractions;
 using BasicBuildingBlocks.Endpoints.Extensions;
 using Microsoft.AspNetCore.Authorization;
@@ -34,6 +35,7 @@ using FluentValidation;
 using UserService.Data;
 using System.Text;
 using MediatR;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +76,13 @@ builder.Services
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
     .AddJwtBearer()
-    .AddCookie(IdentityConstants.ExternalScheme)
+    .AddCookie(IdentityConstants.ExternalScheme, options =>
+    {
+        options.Cookie.Name = "diploma_external_auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    })
     .AddGoogle();
 
 builder.Services.AddHttpContextAccessor();
@@ -177,6 +185,9 @@ builder.Services.AddOptions<GoogleOptions>(GoogleDefaults.AuthenticationScheme)
         options.ClientId = settings.Value.ClientId;
         options.ClientSecret = settings.Value.ClientSecret;
         options.CallbackPath = settings.Value.CallbackPath;
+        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.CorrelationCookie.HttpOnly = true;
 
         options.Events = new OAuthEvents
         {
@@ -245,6 +256,7 @@ builder.Services.AddScoped<IAdminSeeder, AdminSeeder>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddCors(options =>
 {
@@ -269,6 +281,15 @@ if(app.Environment.IsProduction())
     await app.InitializeTestDatabaseAsync(isDeletedata);
 }
 
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+};
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+
+app.UseForwardedHeaders(forwardedHeadersOptions);
+app.UseExceptionHandler();
 app.UseCors("WebCors");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -281,6 +302,9 @@ app.MapEndpoints(Assembly.GetExecutingAssembly());
 app.MapGet("/", () => "User sevice is work!");
 
 app.Run();
+
+public partial class Program;
+public sealed class UserServiceAssemblyMarker;
 
 
 public class JwtSettingsOptions

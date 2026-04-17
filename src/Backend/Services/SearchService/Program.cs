@@ -196,6 +196,15 @@ static async Task EnsureSearchListingSchemaAsync(ApplicationDbContext dbContext)
 
     if (tableExists)
     {
+        await using var alterCommand = dbContext.Database.GetDbConnection().CreateCommand();
+        alterCommand.CommandText = """
+            ALTER TABLE search_listing
+                ADD COLUMN IF NOT EXISTS price_period character varying(50);
+
+            CREATE INDEX IF NOT EXISTS ix_search_listing_price_period ON search_listing (price_period);
+            """;
+        await alterCommand.ExecuteNonQueryAsync();
+
         if (shouldCloseConnection)
         {
             await dbContext.Database.CloseConnectionAsync();

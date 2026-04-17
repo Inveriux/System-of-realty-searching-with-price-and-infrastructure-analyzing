@@ -43,6 +43,7 @@ export type SearchListingsRequest = {
   propertyType?: string | null;
   listingType?: string | null;
   buildingType?: string | null;
+  pricePeriod?: string | null;
   priceMin?: number | null;
   priceMax?: number | null;
   minPrice?: number | null;
@@ -145,6 +146,7 @@ export type SearchListingDto = {
   priceAmountByn: number | null;
   priceAmountUsd: number | null;
   priceCurrency: string | null;
+  pricePeriod?: string | null;
   areaTotal: number;
   mainMediaUrl: string | null;
   mediaCount?: number | null;

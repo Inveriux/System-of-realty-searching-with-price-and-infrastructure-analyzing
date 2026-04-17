@@ -12,6 +12,7 @@ using UserService.Filters;
 using UserService.DTOs;
 using MediatR;
 using System.Text.Json;
+using System.Web;
 
 namespace UserService.Endpoints;
 
@@ -66,6 +67,10 @@ public class UserEndpoints : IEndpointRegistrar
             .WithSummary("Signs in a local user.")
             .WithDescription("Validates credentials and returns an access token with a refresh token.");
         
+        group.MapGet("/google/signup", SignUpByGoogleAsync)
+            .WithName("GoogleSignUpStartGet")
+            .WithSummary("Starts Google sign-up.")
+            .WithDescription("Initiates the Google OAuth flow and redirects to Google authentication.");
         group.MapPost("/google/signup", SignUpByGoogleAsync)
             .WithName("GoogleSignUpStart")
             .WithSummary("Starts Google sign-up.")
@@ -74,6 +79,10 @@ public class UserEndpoints : IEndpointRegistrar
             .WithName("GoogleSignUpResult")
             .WithSummary("Completes Google sign-up.")
             .WithDescription("Consumes the external authentication result and creates a user from Google profile data.");
+        group.MapGet("/signin-google", GetGoogleAuthResultAsync)
+            .WithName("GoogleOAuthCallbackFallback")
+            .WithSummary("Fallback Google OAuth callback endpoint.")
+            .WithDescription("Handles Google OAuth callback on the configured callback path and completes local sign-in.");
         group.MapPost("/google/signin", SignInByGoogleAsync)
             .WithName("GoogleSignIn")
             .WithSummary("Signs in through Google.")
@@ -200,10 +209,23 @@ public class UserEndpoints : IEndpointRegistrar
 
     public async Task SignUpByGoogleAsync(HttpContext context)
     {
+        var returnUrl = context.Request.HasFormContentType
+            ? context.Request.Form["returnUrl"].ToString()
+            : context.Request.Query["returnUrl"].ToString();
+        var frontendBaseUrl = context.Request.HasFormContentType
+            ? context.Request.Form["frontendBaseUrl"].ToString()
+            : context.Request.Query["frontendBaseUrl"].ToString();
+        var prompt = context.Request.HasFormContentType
+            ? context.Request.Form["prompt"].ToString()
+            : context.Request.Query["prompt"].ToString();
+
         var props = new AuthenticationProperties
         {
             RedirectUri = "/api/users/google/result"
         };
+        props.Items["returnUrl"] = string.IsNullOrWhiteSpace(returnUrl) ? "/listings" : returnUrl;
+        props.Items["frontendBaseUrl"] = string.IsNullOrWhiteSpace(frontendBaseUrl) ? "http://localhost:3000" : frontendBaseUrl;
+        props.Parameters["prompt"] = string.IsNullOrWhiteSpace(prompt) ? "select_account" : prompt;
 
         await context.ChallengeAsync(GoogleDefaults.AuthenticationScheme, props);
     }
@@ -212,7 +234,11 @@ public class UserEndpoints : IEndpointRegistrar
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        await context.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        var authResult = await context.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        if (!authResult.Succeeded || authResult.Principal is null)
+            return Results.Unauthorized();
+
+        context.User = authResult.Principal;
         var result = await sender.Send(new SignInByGoogleCommand(), cancellationToken);
         return result.ToHttpResult();
     }
@@ -221,9 +247,89 @@ public class UserEndpoints : IEndpointRegistrar
         ISender sender, 
         CancellationToken cancellationToken)
     {
-        await context.AuthenticateAsync(IdentityConstants.ExternalScheme);
-        var result = await sender.Send(new SignUpByGoogleCommand(), cancellationToken);
-        return result.ToHttpResult();
+        var authResult = await context.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        if (!authResult.Succeeded || authResult.Principal is null)
+        {
+            var fallbackFrontendBaseUrl = context.Request.Query["frontendBaseUrl"].ToString();
+            var fallbackReturnUrl = context.Request.Query["returnUrl"].ToString();
+
+            return Results.Redirect(BuildGoogleCallbackRedirect(
+                fallbackFrontendBaseUrl,
+                fallbackReturnUrl,
+                error: "Не удалось получить данные Google-сессии."));
+        }
+
+        context.User = authResult.Principal;
+
+        var returnUrl = authResult.Properties?.Items.TryGetValue("returnUrl", out var rawReturnUrl) == true
+            ? rawReturnUrl
+            : "/listings";
+        var frontendBaseUrl = authResult.Properties?.Items.TryGetValue("frontendBaseUrl", out var rawFrontendBaseUrl) == true
+            ? rawFrontendBaseUrl
+            : "http://localhost:3000";
+
+        var signUpResult = await sender.Send(new SignUpByGoogleCommand(), cancellationToken);
+        if (!signUpResult.IsSuccess)
+        {
+            var emailExists = signUpResult.Errors.Any(error =>
+                string.Equals(error.ErrorMessage, "Пользователь с таким email уже существует.", StringComparison.Ordinal));
+
+            if (!emailExists)
+            {
+                var errorMessage = signUpResult.Errors.FirstOrDefault()?.ErrorMessage
+                    ?? signUpResult.Message
+                    ?? "Не удалось войти через Google.";
+                return Results.Redirect(BuildGoogleCallbackRedirect(
+                    frontendBaseUrl ?? "http://localhost:3000",
+                    returnUrl ?? "/listings",
+                    error: errorMessage));
+            }
+        }
+
+        var signInResult = await sender.Send(new SignInByGoogleCommand(), cancellationToken);
+        if (!signInResult.IsSuccess || signInResult.Data is null)
+        {
+            var errorMessage = signInResult.Errors.FirstOrDefault()?.ErrorMessage
+                ?? signInResult.Message
+                ?? "Не удалось завершить вход через Google.";
+            return Results.Redirect(BuildGoogleCallbackRedirect(
+                frontendBaseUrl ?? "http://localhost:3000",
+                returnUrl ?? "/listings",
+                error: errorMessage));
+        }
+
+        await context.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return Results.Redirect(BuildGoogleCallbackRedirect(
+            frontendBaseUrl ?? "http://localhost:3000",
+            returnUrl ?? "/listings",
+            accessToken: signInResult.Data.Token,
+            refreshToken: signInResult.Data.RefreshToken));
+    }
+
+    private static string BuildGoogleCallbackRedirect(
+        string frontendBaseUrl,
+        string returnUrl,
+        string? accessToken = null,
+        string? refreshToken = null,
+        string? error = null)
+    {
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["returnUrl"] = string.IsNullOrWhiteSpace(returnUrl) ? "/listings" : returnUrl;
+
+        if (!string.IsNullOrWhiteSpace(accessToken))
+            query["accessToken"] = accessToken;
+
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+            query["refreshToken"] = refreshToken;
+
+        if (!string.IsNullOrWhiteSpace(error))
+            query["error"] = error;
+
+        var normalizedBaseUrl = string.IsNullOrWhiteSpace(frontendBaseUrl)
+            ? "http://localhost:3000"
+            : frontendBaseUrl.TrimEnd('/');
+        return $"{normalizedBaseUrl}/auth/google/callback?{query}";
     }
 
 #endregion

@@ -54,6 +54,38 @@ public static class DatabaseInitialaizer
 
 public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdminSeeder adminSeeder)
 {
+    private sealed record AdminSeedDefinition(
+        Guid Id,
+        string Name,
+        string Email,
+        string Password,
+        string PhoneNumber);
+
+    private static readonly AdminSeedDefinition[] AdminSeeds =
+    [
+        new(
+            Guid.Parse("7e8f0a0a-11d7-4dc8-9f70-1a2c3df41001"),
+            "gromahacer",
+            "gromahacer@gmail.com",
+            "12345678",
+            "+375291112233"
+        ),
+        new(
+            Guid.Parse("7e8f0a0a-11d7-4dc8-9f70-1a2c3df41002"),
+            "Марта Свиридова",
+            "sunsetledger@gmail.com",
+            "12345678",
+            "+375297314862"
+        ),
+        new(
+            Guid.Parse("7e8f0a0a-11d7-4dc8-9f70-1a2c3df41003"),
+            "Олег Дорошин",
+            "northsignalbox@gmail.com",
+            "12345678",
+            "+375447825163"
+        ),
+    ];
+
     public void Initialize(bool ensureDelete = false)
     {
         try
@@ -104,7 +136,15 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 context.SaveChanges();
             }
 
-            adminSeeder.SeedAdmin("gromahacer", "gromahacer@gmail.com", "12345678", phoneNumber: "+375291112233");
+            foreach (var admin in AdminSeeds)
+            {
+                adminSeeder.SeedAdmin(
+                    admin.Id,
+                    admin.Name,
+                    admin.Email,
+                    admin.Password,
+                    phoneNumber: admin.PhoneNumber);
+            }
             context.SaveChanges();
         }
         catch (Exception ex)
@@ -124,7 +164,15 @@ public class ApplicationDatabaseInitializer(ApplicationDbContext context, IAdmin
                 await context.SaveChangesAsync();
             }
 
-            await adminSeeder.SeedAdminAsync("gromahacer", "gromahacer@gmail.com", "12345678", phoneNumber: "+375291112233");
+            foreach (var admin in AdminSeeds)
+            {
+                await adminSeeder.SeedAdminAsync(
+                    admin.Id,
+                    admin.Name,
+                    admin.Email,
+                    admin.Password,
+                    phoneNumber: admin.PhoneNumber);
+            }
             await context.SaveChangesAsync();
         }
         catch (Exception ex)

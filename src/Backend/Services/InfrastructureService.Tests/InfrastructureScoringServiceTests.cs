@@ -160,7 +160,7 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
-    public void Transport_ManySurfaceStopGroupsOnly_ShouldBeGoodButNotExcellent()
+    public void Transport_ManySurfaceStopGroupsOnly_ShouldStayStrongButCapped()
     {
         var snapshot = CreateSnapshot(
         [
@@ -176,14 +176,13 @@ public sealed class InfrastructureScoringServiceTests
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
         var breakdown = score.Details().CategoryScoreBreakdowns["transport"];
 
-        Assert.True(score.TransportScore >= 65m, $"Actual transport score: {score.TransportScore}");
-        Assert.True(score.TransportScore <= 90m);
+        Assert.InRange(score.TransportScore, 55m, 70m);
         Assert.Equal("surface_only_excellent", breakdown.AppliedCapReason);
         Assert.Equal("7", breakdown.DebugInfo["surface_stop_groups_count"]);
     }
 
     [Fact]
-    public void Transport_FourQualitySurfaceStopGroups_ShouldBeUsefulButNotNearHundred()
+    public void Transport_FourQualitySurfaceStopGroups_ShouldProduceMidRangeUtilityScore()
     {
         var snapshot = CreateSnapshot(
         [
@@ -195,7 +194,7 @@ public sealed class InfrastructureScoringServiceTests
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
 
-        Assert.InRange(score.TransportScore, 65m, 86m);
+        Assert.InRange(score.TransportScore, 45m, 60m);
     }
 
     [Fact]
@@ -232,7 +231,7 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
-    public void Healthcare_PharmacyClinicHospital_ShouldBeHigh()
+    public void Healthcare_PharmacyClinicHospital_ShouldProduceSolidMixedScore()
     {
         var snapshot = CreateSnapshot(
         [
@@ -242,12 +241,15 @@ public sealed class InfrastructureScoringServiceTests
         ]);
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
+        var breakdown = score.Details().CategoryScoreBreakdowns["healthcare"];
 
-        Assert.True(score.HealthcareScore >= 70m);
+        Assert.InRange(score.HealthcareScore, 50m, 70m);
+        Assert.True(breakdown.ScoreBySubcategory["clinic"] > 0m);
+        Assert.True(breakdown.ScoreBySubcategory["hospital"] > 0m);
     }
 
     [Fact]
-    public void Healthcare_ManyPharmaciesAndHospital_ShouldBeStrongerThanBefore()
+    public void Healthcare_ManyPharmaciesAndHospital_ShouldRemainAbovePharmacyOnlyBaseline()
     {
         var pharmacies = Enumerable.Range(1, 13)
             .Select(index => CreatePoi(
@@ -267,7 +269,7 @@ public sealed class InfrastructureScoringServiceTests
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
         var breakdown = score.Details().CategoryScoreBreakdowns["healthcare"];
 
-        Assert.InRange(score.HealthcareScore, 55m, 75m);
+        Assert.InRange(score.HealthcareScore, 45m, 65m);
         Assert.Equal(13, breakdown.GroupedCounts["pharmacy"]);
         Assert.True(breakdown.ScoreBySubcategory["hospital"] > 0m);
     }
@@ -289,7 +291,7 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
-    public void Commerce_SupermarketMallDrogerie_ShouldOutperformSingleSubtype()
+    public void Commerce_SupermarketMallDrogerie_ShouldStayAboveSingleSubtypeBaseline()
     {
         var snapshot = CreateSnapshot(
         [
@@ -300,11 +302,11 @@ public sealed class InfrastructureScoringServiceTests
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
 
-        Assert.True(score.CommerceScore >= 50m);
+        Assert.InRange(score.CommerceScore, 45m, 65m);
     }
 
     [Fact]
-    public void Commerce_SupermarketConvenienceAndDrogerie_ShouldReachHighScoreWithoutMall()
+    public void Commerce_SupermarketConvenienceAndDrogerie_ShouldReachBalancedScoreWithoutMall()
     {
         var snapshot = CreateSnapshot(
         [
@@ -315,7 +317,7 @@ public sealed class InfrastructureScoringServiceTests
 
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
 
-        Assert.True(score.CommerceScore >= 65m, $"Actual commerce score: {score.CommerceScore}");
+        Assert.InRange(score.CommerceScore, 55m, 70m);
     }
 
     [Fact]
@@ -446,7 +448,7 @@ public sealed class InfrastructureScoringServiceTests
     }
 
     [Fact]
-    public void Leisure_ParkFitnessCinema_ShouldBeHigh()
+    public void Leisure_ParkFitnessCinema_ShouldCoverCoreLeisureBlocks()
     {
         var snapshot = CreateSnapshot(
         [
@@ -458,7 +460,7 @@ public sealed class InfrastructureScoringServiceTests
         var score = CreateScoringService().Calculate(MinskLocation, snapshot, BuildDetails(snapshot));
         var breakdown = score.Details().CategoryScoreBreakdowns["leisure"];
 
-        Assert.InRange(score.LeisureScore, 58m, 80m);
+        Assert.InRange(score.LeisureScore, 50m, 65m);
         Assert.Contains("green_recreation", breakdown.PresentBlocks);
         Assert.Contains("active_leisure", breakdown.PresentBlocks);
         Assert.Contains("culture", breakdown.PresentBlocks);

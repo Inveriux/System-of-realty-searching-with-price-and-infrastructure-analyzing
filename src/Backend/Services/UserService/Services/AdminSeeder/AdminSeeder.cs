@@ -11,16 +11,19 @@ public class AdminSeeder(UserManager<User> userManager,
     ApplicationDbContext context) : IAdminSeeder
 {
     public async Task SeedAdminAsync(
+        Guid? userId,
         string name,
         string email,
         string password,
         string? accountImageUrl = null,
         string? phoneNumber = null)
     {
-        var admin = await FindExistingAdminAsync();
+        var admin = await FindExistingAdminAsync(userId, email);
         if (admin is null)
         {
             admin = User.Create(name, email, accountImageUrl);
+            if (userId.HasValue)
+                admin.Id = userId.Value;
             admin.EmailConfirmed = true;
             admin.PhoneNumber = phoneNumber;
 
@@ -32,7 +35,8 @@ public class AdminSeeder(UserManager<User> userManager,
             if(!addPasswordResult.Succeeded)
                 throw new Exception(string.Join("; ", addPasswordResult.Errors.Select(e => e.Description)));
 
-            await userManager.AddToRoleAsync(admin, UserRoles.Admin);
+            if (!await userManager.IsInRoleAsync(admin, UserRoles.Admin))
+                await userManager.AddToRoleAsync(admin, UserRoles.Admin);
             return;
         }
 
@@ -49,25 +53,30 @@ public class AdminSeeder(UserManager<User> userManager,
         var updateResult = await userManager.UpdateAsync(admin);
         if (!updateResult.Succeeded)
             throw new Exception(string.Join("; ", updateResult.Errors.Select(e => e.Description)));
+
+        if (!await userManager.IsInRoleAsync(admin, UserRoles.Admin))
+            await userManager.AddToRoleAsync(admin, UserRoles.Admin);
     }
 
     public void SeedAdmin(
+        Guid? userId,
         string name,
         string email,
         string password,
         string? accountImageUrl = null,
         string? phoneNumber = null)
     {
-        var admin = FindExistingAdmin();
+        var admin = FindExistingAdmin(userId, email);
+        var adminRoleId = context.Roles.FirstOrDefault(r => r.Name == UserRoles.Admin)?.Id;
+        if (adminRoleId is null)
+            throw new InvalidOperationException("Admin role was not found during seeding.");
+
         if (admin is null)
         {
             admin = User.Create(name, email, accountImageUrl);
+            if (userId.HasValue)
+                admin.Id = userId.Value;
             context.Add(admin);
-            context.UserRoles.Add(new IdentityUserRole<Guid>
-            {
-                RoleId = context.Roles.First(r => r.Name == UserRoles.Admin).Id,
-                UserId = admin.Id
-            });
         }
 
         admin.Name = name;
@@ -79,41 +88,39 @@ public class AdminSeeder(UserManager<User> userManager,
         admin.EmailConfirmed = true;
         admin.PhoneNumber = phoneNumber;
         admin.PasswordHash = passwordHasher.HashPassword(admin, password);
+
+        var hasAdminRole = context.UserRoles.Any(x => x.RoleId == adminRoleId && x.UserId == admin.Id);
+        if (!hasAdminRole)
+        {
+            context.UserRoles.Add(new IdentityUserRole<Guid>
+            {
+                RoleId = adminRoleId.Value,
+                UserId = admin.Id
+            });
+        }
     }
 
-    private User? FindExistingAdmin()
+    private User? FindExistingAdmin(Guid? userId, string email)
     {
-        var adminRoleId = context.Roles.FirstOrDefault(r => r.Name == UserRoles.Admin)?.Id;
-        if (adminRoleId is null)
-            return null;
+        if (userId.HasValue)
+        {
+            var byId = context.Users.FirstOrDefault(x => x.Id == userId.Value);
+            if (byId is not null)
+                return byId;
+        }
 
-        var adminUserId = context.UserRoles
-            .Where(x => x.RoleId == adminRoleId)
-            .Select(x => x.UserId)
-            .FirstOrDefault();
-
-        return adminUserId == Guid.Empty
-            ? null
-            : context.Users.FirstOrDefault(x => x.Id == adminUserId);
+        return context.Users.FirstOrDefault(x => x.Email == email);
     }
 
-    private async Task<User?> FindExistingAdminAsync()
+    private async Task<User?> FindExistingAdminAsync(Guid? userId, string email)
     {
-        var adminRoleId = await context.Roles
-            .Where(r => r.Name == UserRoles.Admin)
-            .Select(r => (Guid?)r.Id)
-            .FirstOrDefaultAsync();
+        if (userId.HasValue)
+        {
+            var byId = await context.Users.FirstOrDefaultAsync(x => x.Id == userId.Value);
+            if (byId is not null)
+                return byId;
+        }
 
-        if (adminRoleId is null)
-            return null;
-
-        var adminUserId = await context.UserRoles
-            .Where(x => x.RoleId == adminRoleId)
-            .Select(x => (Guid?)x.UserId)
-            .FirstOrDefaultAsync();
-
-        return adminUserId is null
-            ? null
-            : await context.Users.FirstOrDefaultAsync(x => x.Id == adminUserId.Value);
+        return await context.Users.FirstOrDefaultAsync(x => x.Email == email);
     }
 }

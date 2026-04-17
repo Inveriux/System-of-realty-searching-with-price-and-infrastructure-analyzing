@@ -26,7 +26,7 @@ import { THEME_STORAGE_KEY, type ThemeMode } from "./theme.constants";
 const API_BASE_URL =
   typeof window !== "undefined"
     ? ""
-    : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://diploma.com:5102");
+    : (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5102");
 const ACCESS_TOKEN_COOKIE = "diploma_access_token";
 const REFRESH_TOKEN_COOKIE = "diploma_refresh_token";
 type AuthStatus = "loading" | "authenticated" | "guest";

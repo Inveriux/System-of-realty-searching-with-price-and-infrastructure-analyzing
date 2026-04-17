@@ -32,6 +32,9 @@ public sealed class UpdateOwnProfileCommandHandler(
         user.PhoneNumber = string.IsNullOrWhiteSpace(request.Dto.PhoneNumber)
             ? null
             : request.Dto.PhoneNumber.Trim();
+        user.AccountImageUrl = string.IsNullOrWhiteSpace(request.Dto.AccountImageUrl)
+            ? null
+            : request.Dto.AccountImageUrl.Trim();
 
         await userRepository.SaveChangesAsync();
 

@@ -74,6 +74,7 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         existing.PriceAmountByn = listing.PriceAmountByn;
         existing.PriceAmountUsd = listing.PriceAmountUsd;
         existing.PriceCurrency = listing.PriceCurrency;
+        existing.PricePeriod = listing.PricePeriod;
         existing.AreaTotal = listing.AreaTotal;
         existing.MainMediaUrl = listing.MainMediaUrl;
         existing.MediaCount = listing.MediaCount;
@@ -182,6 +183,9 @@ public sealed class SearchListingRepository(ApplicationDbContext context) : ISea
         var maxPrice = request.PriceMax ?? request.MaxPrice;
         if (maxPrice.HasValue)
             searchQuery = searchQuery.Where(x => x.PriceAmount <= maxPrice.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.PricePeriod))
+            searchQuery = searchQuery.Where(x => x.PricePeriod == request.PricePeriod);
 
         var minArea = request.AreaMin ?? request.MinArea;
         if (minArea.HasValue)

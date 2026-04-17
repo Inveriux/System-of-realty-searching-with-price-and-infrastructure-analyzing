@@ -58,6 +58,11 @@ static async Task EnsureSearchListingSchemaAsync(ApplicationDbContext dbContext)
 {
     await dbContext.Database.EnsureCreatedAsync();
 
+    if (dbContext.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) != true)
+    {
+        return;
+    }
+
     var shouldCloseConnection = dbContext.Database.GetDbConnection().State != System.Data.ConnectionState.Open;
     if (shouldCloseConnection)
     {
@@ -93,3 +98,6 @@ static async Task EnsureSearchListingSchemaAsync(ApplicationDbContext dbContext)
         await dbContext.Database.CloseConnectionAsync();
     }
 }
+
+public partial class Program;
+public sealed class PricingAnalyticsServiceAssemblyMarker;
