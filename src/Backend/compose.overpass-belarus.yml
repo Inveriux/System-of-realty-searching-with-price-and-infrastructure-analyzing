@@ -13,6 +13,8 @@ services:
       OVERPASS_PLANET_URL: https://download.geofabrik.de/europe/belarus-latest.osm.pbf
       OVERPASS_DIFF_URL: https://download.geofabrik.de/europe/belarus-updates/
       OVERPASS_COMPRESSION: gz
+      OVERPASS_USE_AREAS: "false"
+      OVERPASS_HEALTHCHECK: curl --fail --silent --show-error --max-time 15 'http://localhost/api/interpreter?data=%5Bout:json%5D%5Btimeout:15%5D;node(around:500,53.9,27.56)%5B%22amenity%22~%22%5E(school)%24%22%5D;out%20tags;' >/dev/null
       OVERPASS_RULES_LOAD: "20"
       OVERPASS_UPDATE_SLEEP: "3600"
       OVERPASS_PLANET_PREPROCESS: >-
