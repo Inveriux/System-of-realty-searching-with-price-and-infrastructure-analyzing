@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <!-- 1. Базовые пути ВНЕ проекта -->
+    <ArtifactsRoot>/home/Admin/Projects/Diploma/src/_Artifacts/</ArtifactsRoot>
+    <BaseOutputPath>$(ArtifactsRoot)$(MSBuildProjectName)/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ArtifactsRoot)$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    
+    <!-- 2. ЯВНО указываем OutputPath (иначе добавится Debug/Release) -->
+    <OutputPath>$(BaseOutputPath)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+    
+    <!-- 3. ОТКЛЮЧАЕМ автоматическое добавление подпапок -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    
+    <!-- 4. 🚫 КРИТИЧЕСКИ ВАЖНО: отключаем создание obj/bin В ПРОЕКТЕ -->
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+    
+    <!-- 5. Для Web проектов -->
+    <OutDir>$(OutputPath)</OutDir>
+  </PropertyGroup>
+</Project>

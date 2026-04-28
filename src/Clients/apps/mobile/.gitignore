@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+!.env.local
 
 # typescript
 *.tsbuildinfo
@@ -41,3 +42,19 @@ app-example
 # generated native folders
 /ios
 /android
+!/android/
+!/android/.gitignore
+!/android/app/
+!/android/app/build.gradle
+!/android/app/debug.keystore
+!/android/app/proguard-rules.pro
+!/android/app/src/
+!/android/build.gradle
+!/android/gradle.properties
+!/android/gradle/
+!/android/gradle/wrapper/
+!/android/gradle/wrapper/gradle-wrapper.jar
+!/android/gradle/wrapper/gradle-wrapper.properties
+!/android/gradlew
+!/android/gradlew.bat
+!/android/settings.gradle

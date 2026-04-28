@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <ArtifactsRoot>../../_Artifacts/</ArtifactsRoot>
+    <BaseOutputPath>$(ArtifactsRoot)$(MSBuildProjectName)/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(ArtifactsRoot)$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <OutputPath>$(BaseOutputPath)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+    <OutDir>$(OutputPath)</OutDir>
+  </PropertyGroup>
+</Project>

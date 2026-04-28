@@ -35,6 +35,20 @@ tmp/
 Directory.Build.props
 /src/Backend/certs/
 
+!src/Backend/Services/InfrastructureService/appsettings.Development.json
+!src/Backend/Services/ListingPageBff/appsettings.Development.json
+!src/Backend/Services/ListingService/ListingService.Presentation/appsettings.Development.json
+!src/Backend/Services/SearchService/appsettings.Development.json
+!src/Backend/Services/UserService/appsettings.Development.json
+!src/Backend/BasicBuildingBlocks/Directory.Build.props
+!src/Backend/Services/ImageService/Directory.Build.props
+!src/Backend/Services/ListingService/Directory.Build.props
+!src/Backend/Services/UserService/Directory.Build.props
+!src/Backend/certs/
+!src/Backend/certs/localhost+2-key.pem
+!src/Backend/certs/localhost+2.pem
+!src/Backend/certs/tls.pfx
+
 # Local runtime data
 .local/
 src/.local/
